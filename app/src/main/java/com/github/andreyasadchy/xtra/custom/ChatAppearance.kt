@@ -59,6 +59,7 @@ object ChatAppearance {
         val typeface = fonts[prefs.getString(PREF_FONT, "default")]?.let { Typeface.create(it, Typeface.NORMAL) }
         recyclerView.addOnChildAttachStateChangeListener(object : RecyclerView.OnChildAttachStateChangeListener {
             override fun onChildViewAttachedToWindow(view: View) {
+                EmoteSync.onRowAttached(view) // restart synced emotes paused while off screen
                 val textView = view as? TextView ?: return
                 if (typeface != null && textView.typeface != typeface) textView.typeface = typeface
                 watchSpanTaps(textView)

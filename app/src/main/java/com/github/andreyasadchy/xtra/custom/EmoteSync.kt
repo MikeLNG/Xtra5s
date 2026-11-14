@@ -33,10 +33,22 @@ object EmoteSync {
     private const val MAX_SHARED = 100
 
     private val handler = Handler(Looper.getMainLooper())
+    private var anyPaused = false
 
     /** One shared animation and every chat row currently showing it. */
     private class Shared(val drawable: Drawable) : Drawable.Callback {
         val views = ArrayList<WeakReference<View>>()
+        /** Stopped because no row showing it is on screen (battery). */
+        var paused = false
+
+        fun anyVisible() = views.any { ref ->
+            ref.get()?.let { it.isAttachedToWindow && it.windowVisibility == View.VISIBLE && it.isShown } == true
+        }
+
+        fun start() {
+            paused = false
+            (drawable as Animatable).let { if (!it.isRunning) it.start() }
+        }
 
         fun addView(view: View) {
             views.removeAll { it.get() == null }
@@ -47,6 +59,13 @@ object EmoteSync {
             var alive = false
             views.forEach { ref -> ref.get()?.let { alive = true; it.invalidate() } }
             if (!alive) views.clear()
+            // Nothing on screen shows it (scrolled away, chat hidden, app in the background):
+            // stop decoding frames until a row showing it is visible again.
+            if (!paused && !anyVisible()) {
+                paused = true
+                anyPaused = true
+                handler.post { if (paused) (drawable as Animatable).stop() }
+            }
         }
 
         override fun scheduleDrawable(who: Drawable, what: Runnable, `when`: Long) {
@@ -97,13 +116,29 @@ object EmoteSync {
      */
     fun attachTo(chatList: View) {
         chatList.setTag(R.id.xtra5_sync_emotes, true)
+        // The chat shown again (or re-laid out): restart paused animations that are visible now.
+        chatList.viewTreeObserver.addOnGlobalLayoutListener { resumeVisible() }
         chatList.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
             override fun onViewAttachedToWindow(v: View) {}
             override fun onViewDetachedFromWindow(v: View) = reset()
         })
     }
 
+    /** A chat row came on screen: restart the paused animations it shows. */
+    fun onRowAttached(view: View) {
+        if (!anyPaused) return
+        shared.values.forEach { entry -> if (entry.paused && entry.views.any { it.get() === view }) entry.start() }
+        anyPaused = shared.values.any { it.paused }
+    }
+
+    private fun resumeVisible() {
+        if (!anyPaused) return
+        shared.values.forEach { entry -> if (entry.paused && entry.anyVisible()) entry.start() }
+        anyPaused = shared.values.any { it.paused }
+    }
+
     fun reset() {
+        anyPaused = false
         shared.values.forEach {
             (it.drawable as? Animatable)?.stop()
             it.drawable.callback = null
@@ -127,10 +162,9 @@ object EmoteSync {
             shared[key] = entry
             loaded.callback = entry
             loaded.setVisible(true, false)
-            (loaded as Animatable).start()
         }
         entry.addView(itemView)
-        if (!(entry.drawable as Animatable).isRunning) (entry.drawable as Animatable).start()
+        entry.start()
         return SyncedDrawable(entry)
     }
 }

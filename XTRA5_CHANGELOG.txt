@@ -1,6 +1,14 @@
 Xtra5 changelog (newest first)
 
 ========================================
+Xtra5 1.39.2 (2026-11-14)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+Fixed
+- Battery: synced animated emotes kept animating while none of them were on screen (scrolled
+  away, chat hidden, player minimized or the app in the background). Each one now pauses
+  while it isn't visible and starts again, still in sync, when it's back on screen.
+========================================
 Xtra5 1.39.1 (2026-11-14)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
