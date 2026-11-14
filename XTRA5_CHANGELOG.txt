@@ -1,6 +1,12 @@
 Xtra5 changelog (newest first)
 
 ========================================
+Xtra5 1.41.1 (2026-11-14)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+Changed
+- Settings > Shortcuts: the [TV] tag now starts the line (or group heading) it applies to.
+========================================
 Xtra5 1.41.0 (2026-11-14)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
