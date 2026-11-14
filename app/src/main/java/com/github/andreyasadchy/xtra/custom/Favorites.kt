@@ -134,7 +134,7 @@ object Favorites {
                 endToEnd = avatar.id
                 bottomToBottom = avatar.id
             })
-            star.translationY = dp(layout, 7).toFloat() // hangs slightly below the picture
+            star.translationY = dp(layout, 7 + RING_DP).toFloat() // hangs slightly below the ring (outside the picture)
         }
         if (layout.indexOfChild(star) != layout.childCount - 1) star.bringToFront() // above the ring
         fun show(favorite: Boolean) {

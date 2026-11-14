@@ -1,6 +1,13 @@
 Xtra5 changelog (newest first)
 
 ========================================
+Xtra5 1.39.4 (2026-11-14)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+Fixed
+- The favourite star sits 3dp lower, matching the outside ring, so it hangs off the ring the
+  same way it did before the ring moved outside the picture.
+========================================
 Xtra5 1.39.3 (2026-11-14)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
