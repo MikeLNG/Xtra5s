@@ -1,6 +1,19 @@
 Xtra5 changelog (newest first)
 
 ========================================
+Xtra5 1.40.0 (2026-11-14)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+New
+- "Favourites first" switch in the Following > Channels sort dropdown. When on, favourite
+  channels are grouped at the top and everyone else below; both groups use the sort and order
+  picked in the dropdown. Favouriting or unfavouriting a channel regroups the list straight
+  away. Off by default (the list is then as in official Xtra).
+
+Behind the scenes
+- With the switch on, all followed channels are loaded at once (Twitch sends 100 at a time),
+  so the sort and grouping cover the whole list rather than only the first 100.
+========================================
 Xtra5 1.39.4 (2026-11-14)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 

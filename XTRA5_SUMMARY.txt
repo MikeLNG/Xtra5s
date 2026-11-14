@@ -44,7 +44,8 @@ Watching
 ========================================
 Browsing
 - Favourite streamers: long-press a profile picture to add a gold ring and star. Favourites
-  appear first in your Live list, with everyone else in alphabetical order.
+  appear first in your Live list, with everyone else in alphabetical order, and can be grouped
+  at the top of your Channels list too ("Favourites first" in its sort options).
 - Long-press a stream to open it audio-only.
 - Clean stream cards: streamer, category and title, with text sizes you can adjust.
 - Layouts that stay readable on big screens and TVs with lots of columns.

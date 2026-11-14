@@ -80,20 +80,26 @@ object Favorites {
         binding.root.post { remember(binding.root) }
         decorate(binding.userImage, stream.channelId, stream.channelName ?: stream.channelLogin) {
             fragment.activity?.let { RefreshButton.refreshCurrentScreen(it, showMessage = false) } // re-sort
+            FavoriteChannels.onFavoritesChanged(lists.mapNotNull { it.get() }) // Channels, if favourites first
         }
     }
 
-    /** Following > Channels cards: same toggle and look, but the order there doesn't change. */
+    /** Following > Channels cards: same toggle and look; the order only changes with "Favourites first". */
     fun bindChannel(binding: FragmentFollowedChannelsListItemBinding, user: User) {
         remember(binding.root)
         decorate(binding.userImage, user.id, user.name ?: user.login) { reloadLiveLists() }
     }
 
-    /** Re-sorts the live stream lists in the background (the Channels page itself is untouched). */
+    /**
+     * Re-sorts the live stream lists in the background. The Channels page only regroups when it
+     * is set to "Favourites first" (see FavoriteChannels).
+     */
     private fun reloadLiveLists() {
-        lists.mapNotNull { it.get()?.adapter }
+        val alive = lists.mapNotNull { it.get() }
+        alive.mapNotNull { it.adapter }
             .filterIsInstance<com.github.andreyasadchy.xtra.ui.common.StreamsAdapter>()
             .forEach { it.refresh() }
+        FavoriteChannels.onFavoritesChanged(alive)
     }
 
     /** Gold ring + star on [avatar] for favourites; long-press toggles. */

@@ -49,6 +49,7 @@ class FollowedChannelsViewModel(
         Pager(
             PagingConfig(pageSize = 15, prefetchDistance = 5, initialLoadSize = 15)
         ) {
+            com.github.andreyasadchy.xtra.custom.FavoriteChannels.wrap(applicationContext, sort = sort, order = order, source = // Xtra5 custom: favourites first
             FollowedChannelsDataSource(
                 userId = applicationContext.tokenPrefs().getString(C.USER_ID, null),
                 sort = when (sort) {
@@ -71,7 +72,7 @@ class FollowedChannelsViewModel(
                 helixRepository = helixRepository,
                 enableIntegrity = applicationContext.prefs().getBoolean(C.ENABLE_INTEGRITY, false),
                 networkLibrary = applicationContext.prefs().getString(C.NETWORK_LIBRARY, C.OKHTTP),
-            )
+            )) // Xtra5 custom
         }.flow
     }.cachedIn(viewModelScope)
 
