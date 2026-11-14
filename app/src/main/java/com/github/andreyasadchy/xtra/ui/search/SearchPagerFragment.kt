@@ -106,6 +106,7 @@ class SearchPagerFragment : BaseNetworkFragment(), FragmentHost {
                 }
             }
             val adapter = SearchPagerAdapter(this@SearchPagerFragment, tabs)
+            com.github.andreyasadchy.xtra.custom.StaleTabs.check(this@SearchPagerFragment, viewPager, tabs) // Xtra5 custom: fresh pages after tab changes
             viewPager.adapter = adapter
             viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
                 override fun onPageSelected(position: Int) {

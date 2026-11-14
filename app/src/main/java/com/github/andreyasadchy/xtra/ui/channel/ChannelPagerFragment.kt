@@ -457,6 +457,7 @@ class ChannelPagerFragment : BaseNetworkFragment(), Scrollable, FragmentHost, In
                 }
             }
             val adapter = ChannelPagerAdapter(this@ChannelPagerFragment, args, tabs)
+            com.github.andreyasadchy.xtra.custom.StaleTabs.check(this@ChannelPagerFragment, viewPager, tabs) // Xtra5 custom: fresh pages after tab changes
             viewPager.adapter = adapter
             if (!requireContext().prefs().getBoolean(C.UI_THEME_APPBAR_LIFT, true)) {
                 appBar.setLiftable(false)

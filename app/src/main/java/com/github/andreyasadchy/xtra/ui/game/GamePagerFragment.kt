@@ -256,6 +256,7 @@ class GamePagerFragment : BaseNetworkFragment(), Scrollable, FragmentHost, Integ
                 }
             }
             val adapter = GamePagerAdapter(this@GamePagerFragment, tabs)
+            com.github.andreyasadchy.xtra.custom.StaleTabs.check(this@GamePagerFragment, viewPager, tabs) // Xtra5 custom: fresh pages after tab changes
             viewPager.adapter = adapter
             if (!requireContext().prefs().getBoolean(C.UI_THEME_APPBAR_LIFT, true)) {
                 appBar.setLiftable(false)

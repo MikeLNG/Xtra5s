@@ -58,6 +58,10 @@ object BackToLive {
         if ((activity.playerFragment as? PlayerFragment)?.isAdded == true) return false
         val navBar = activity.findViewById<BottomNavigationView>(R.id.navBar) ?: return false
         if (navBar.menu.findItem(R.id.followPagerFragment) == null) return false // no Following section
+        // On a subpage (a channel, a game...), Back just goes back; only a section's main page jumps to Live.
+        val host = activity.supportFragmentManager.findFragmentById(R.id.navHostFragment) as? androidx.navigation.fragment.NavHostFragment ?: return false
+        val destination = host.navController.currentDestination?.id ?: return false
+        if (navBar.menu.findItem(destination) == null) return false
         val screen = currentScreen(activity)
         if (screen is FollowPagerFragment) {
             val tabs = screen.view?.findViewById<TabLayout>(R.id.tabLayout) ?: return false

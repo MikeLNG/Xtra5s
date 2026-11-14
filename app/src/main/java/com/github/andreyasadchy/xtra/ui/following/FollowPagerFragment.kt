@@ -122,6 +122,7 @@ class FollowPagerFragment : Fragment(), Scrollable, FragmentHost {
                 }
             }
             val adapter = FollowPagerAdapter(this@FollowPagerFragment, tabs)
+            com.github.andreyasadchy.xtra.custom.StaleTabs.check(this@FollowPagerFragment, viewPager, tabs) // Xtra5 custom: fresh pages after tab changes
             viewPager.adapter = adapter
             viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
                 override fun onPageSelected(position: Int) {

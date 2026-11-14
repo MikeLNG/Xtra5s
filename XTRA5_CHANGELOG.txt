@@ -1,6 +1,17 @@
 Xtra5 changelog (newest first)
 
 ========================================
+Xtra5 1.40.1 (2026-11-14)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+Fixed
+- Back from a channel page (or any other page opened from a list) jumped straight to Live.
+  It now goes back normally; only Back on a section's main page (like the Channels list)
+  jumps to Live.
+- Tab pages could show the wrong content after enabling, disabling or reordering tabs in
+  Settings (e.g. the "Channels" tab showing videos). This is an official Xtra issue, fixed for
+  the Following, channel, game, search and saved tab bars.
+========================================
 Xtra5 1.40.0 (2026-11-14)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
