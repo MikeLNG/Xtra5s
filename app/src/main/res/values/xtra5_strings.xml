@@ -89,4 +89,47 @@
     <string name="xtra5_color_mention" translatable="false">Mentions of you</string>
     <string name="xtra5_color_bot" translatable="false">Bot messages</string>
     <string name="xtra5_bot_accounts" translatable="false">Bot accounts</string>
+    <!-- Settings > Shortcuts: "# " = heading, "- " = shortcut, "Setting: " = related setting, other = note -->
+    <string-array name="xtra5_shortcuts" translatable="false">
+        <item>Items marked [TV] need the setting Enable TV mode shortcuts. They work with a TV remote, keyboard or game controller.</item>
+        <item># Anywhere in the app</item>
+        <item>- Back on a section\'s main page (Following, Games...): goes to Following &gt; Live and refreshes it. Back on Live exits the app.</item>
+        <item>- Hold OK with no video, or with the video minimized [TV]: refreshes every section of the screen.</item>
+        <item># Bottom bar</item>
+        <item>- Following, pressed again on Following\'s main page: switches to Live, refreshes it and scrolls to the top (already on Live: refreshes and scrolls to the top).</item>
+        <item># Following &gt; Live and stream lists</item>
+        <item>- Tap the Live tab: refreshes the Live list and scrolls to the top.</item>
+        <item>- Long-press a stream card: opens the stream in audio-only, just this once (your quality setting isn\'t changed).</item>
+        <item>- Long-press a streamer\'s profile picture: adds or removes them as a favourite (gold ring and star) and lists them first in Live. Shared with Following &gt; Channels: favouriting here shows the ring and star there too, and vice versa.</item>
+        <item># Following &gt; Channels</item>
+        <item>- Long-press a profile picture: adds or removes the channel as a favourite. Shared with Following &gt; Live: favouriting here shows the ring and star there and moves them to the top of Live, and vice versa.</item>
+        <item>Setting: Favourites first</item>
+        <item># Video player (full screen, controls hidden) [TV]</item>
+        <item>- Left / Right: skip back / forward (VODs, clips, downloads).</item>
+        <item>Setting: Seek step (seconds)</item>
+        <item>- Up: shows the controls and takes hold of the seek bar (live streams: just shows the controls).</item>
+        <item>- Down: opens Chapters, if the VOD has any.</item>
+        <item>Setting: Chapter columns (landscape), Chapter columns (portrait)</item>
+        <item>- Hold OK on a live stream: reloads the stream (like Restart player).</item>
+        <item>- Hold Back: closes the video.</item>
+        <item># Video player, holding the seek bar (after Up) [TV]</item>
+        <item>- Left / Right: moves the marker; hold to keep moving.</item>
+        <item>Setting: Seek bar jump (% of video length)</item>
+        <item>- OK: jumps to the marker.</item>
+        <item>- Back: cancels (also cancels by itself after 6 seconds).</item>
+        <item>- After jumping, while the controls are still showing, Left / Right take hold of the seek bar again.</item>
+        <item># Minimized video</item>
+        <item>- Tap a paused mini player: resumes it.</item>
+        <item>- Back [TV]: closes the video.</item>
+        <item>- Hold Back [TV]: closes the video.</item>
+        <item># Chat</item>
+        <item>- Tap an emote: shows the emote\'s details.</item>
+        <item>- Long-press an emote: puts it in your message (not sent; the chat input appears if it was hidden).</item>
+        <item>- Long-press a message or name: adds the chatter to your default highlight group, or takes them out.</item>
+        <item>Setting: Set as default group</item>
+        <item># Color picker</item>
+        <item>- Long-press a saved color: removes it.</item>
+    </string-array>
+    <string name="xtra5_shortcuts_title" translatable="false">Shortcuts</string>
+    <string name="xtra5_shortcuts_summary" translatable="false">Every press and gesture Xtra5 adds, by screen</string>
 </resources>

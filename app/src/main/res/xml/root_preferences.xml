@@ -43,6 +43,14 @@
         app:iconSpaceReserved="false"
         app:singleLineTitle="false" />
 
+    <!-- Xtra5 custom: list of Xtra5 shortcuts -->
+    <com.github.andreyasadchy.xtra.custom.ShortcutsPreference
+        android:key="xtra5_shortcuts"
+        android:title="@string/xtra5_shortcuts_title"
+        android:summary="@string/xtra5_shortcuts_summary"
+        app:iconSpaceReserved="false"
+        app:singleLineTitle="false" />
+
     <SwitchPreferenceCompat
         android:defaultValue="true"
         android:key="player_picture_in_picture"

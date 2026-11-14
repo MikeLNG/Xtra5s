@@ -1,6 +1,14 @@
 Xtra5 changelog (newest first)
 
 ========================================
+Xtra5 1.41.0 (2026-11-14)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+New
+- Settings > Shortcuts: a list of every press and gesture Xtra5 adds, grouped by screen
+  (anywhere, bottom bar, Live and Channels, video player, minimized video, chat, color
+  picker), with TV-only ones marked [TV] and the setting that changes each one named.
+========================================
 Xtra5 1.40.1 (2026-11-14)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
