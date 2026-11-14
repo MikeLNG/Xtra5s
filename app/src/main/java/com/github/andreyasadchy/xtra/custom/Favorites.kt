@@ -19,7 +19,7 @@ import com.github.andreyasadchy.xtra.util.prefs
 /**
  * Xtra5 custom: favourite streamers.
  *  - Long-press a streamer's profile picture on a live stream card to favourite / unfavourite.
- *  - Favourites get a gold ring around the profile picture and a gold star on top of it, centred at
+ *  - Favourites get a gold ring around the outside of the profile picture and a gold star on top of it, centred at
  *    the bottom and hanging slightly below.
  *  - Following > Live lists favourites first (A-Z), then everyone else (A-Z).
  *  - Following > Channels: same long-press and look (the order there doesn't change), so offline
@@ -99,6 +99,30 @@ object Favorites {
     /** Gold ring + star on [avatar] for favourites; long-press toggles. */
     private fun decorate(avatar: ImageView, channelId: String?, name: String?, onToggled: () -> Unit) {
         val layout = avatar.parent as? ConstraintLayout ?: return
+        val ringWidth = dp(layout, RING_DP)
+        // A true border: the ring wraps around the outside of the picture, which stays fully visible.
+        val ring = layout.findViewById(R.id.xtra5_favorite_ring) ?: View(layout.context).also { ring ->
+            ring.id = R.id.xtra5_favorite_ring
+            ring.isClickable = false
+            ring.isFocusable = false
+            ring.background = GradientDrawable().apply {
+                shape = GradientDrawable.OVAL
+                setStroke(ringWidth, GOLD)
+            }
+            layout.addView(ring, ConstraintLayout.LayoutParams(0, 0).apply {
+                startToStart = avatar.id
+                endToEnd = avatar.id
+                topToTop = avatar.id
+                bottomToBottom = avatar.id
+            })
+            // Follow the picture's size (card size settings can change it).
+            avatar.addOnLayoutChangeListener { v, l, t, r, b, _, _, _, _ ->
+                val w = (r - l) + 2 * ringWidth
+                val h = (b - t) + 2 * ringWidth
+                val lp = ring.layoutParams
+                if (lp.width != w || lp.height != h) v.post { ring.layoutParams = lp.apply { width = w; height = h } }
+            }
+        }
         val star = layout.findViewById(R.id.xtra5_favorite_star) ?: ImageView(layout.context).also { star ->
             star.id = R.id.xtra5_favorite_star
             star.setImageResource(R.drawable.xtra5_star)
@@ -112,13 +136,17 @@ object Favorites {
             })
             star.translationY = dp(layout, 7).toFloat() // hangs slightly below the picture
         }
+        if (layout.indexOfChild(star) != layout.childCount - 1) star.bringToFront() // above the ring
         fun show(favorite: Boolean) {
             val visible = favorite && avatar.visibility == View.VISIBLE
             star.visibility = if (visible) View.VISIBLE else View.GONE
-            avatar.foreground = if (visible) GradientDrawable().apply {
-                shape = GradientDrawable.OVAL
-                setStroke(dp(layout, 3), GOLD)
-            } else null
+            ring.visibility = if (visible) View.VISIBLE else View.GONE
+            avatar.foreground = null
+            val size = avatar.layoutParams.width.takeIf { it > 0 } ?: avatar.width
+            if (size > 0) ring.layoutParams = ring.layoutParams.apply {
+                width = size + 2 * ringWidth
+                height = (avatar.layoutParams.height.takeIf { it > 0 } ?: avatar.height.takeIf { it > 0 } ?: size) + 2 * ringWidth
+            }
         }
         show(isFavorite(channelId))
         if (channelId == null) {
@@ -135,6 +163,8 @@ object Favorites {
             true
         }
     }
+
+    private const val RING_DP = 3
 
     private fun dp(view: View, value: Int) =
         TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, value.toFloat(), view.resources.displayMetrics).toInt()

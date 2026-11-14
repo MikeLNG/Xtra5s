@@ -1,6 +1,14 @@
 Xtra5 changelog (newest first)
 
 ========================================
+Xtra5 1.39.3 (2026-11-14)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+Changed
+- The gold favourite ring is now a true border around the outside of the profile picture
+  instead of covering its outer edge, so the whole picture stays visible. Same 3dp ring and
+  star; the picture and cards keep their size.
+========================================
 Xtra5 1.39.2 (2026-11-14)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
