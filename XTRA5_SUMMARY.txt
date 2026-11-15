@@ -1,4 +1,4 @@
-Xtra5s - feature list (version 1.3.0)
+Xtra5s - feature list (version 1.4.0)
 Everything official Xtra does, plus the features below.
 
 ========================================
@@ -12,7 +12,8 @@ Always up to date
 ========================================
 Side-By-Side
 - Watch two live streams at once from the Side-By-Side tab: each side has its video on top
-  and its own chat underneath, with all your highlights and chat colors.
+  and its own chat underneath, with all your highlights and chat colors. On a phone in
+  portrait, both videos stack at full width with the two chats side by side below.
   - Tap + and type a channel on each side (suggestions from the channels you follow), each
     with its own quality (720p by default) and its own mute and volume.
   - Tap a video to pause it (playing again jumps to live, chat keeps going), mute it or set

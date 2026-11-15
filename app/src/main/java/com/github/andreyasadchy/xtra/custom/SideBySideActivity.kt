@@ -61,8 +61,11 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
- * Xtra5s custom: the Side-By-Side screen. Two live streams next to each other, each with its own
- * video on top and its own chat (the normal Xtra5 chat, so highlights and colors apply) underneath.
+ * Xtra5s custom: the Side-By-Side screen. Two live streams, each with its own video and its own
+ * chat (the normal Xtra5 chat, so highlights and colors apply).
+ *  - Landscape (and TV): side by side, each side's video on top and its chat underneath.
+ *  - Portrait: both videos stacked at full width on top (left stream first), the two chats
+ *    side by side underneath (left stream's chat on the left).
  *
  * Tap (or OK on) a video to show its controls: a big pause / play in the middle (playing again
  * jumps to live; the chat keeps going while paused), and mute, volume, quality, message box
@@ -146,7 +149,6 @@ class SideBySideActivity : AppCompatActivity() {
     private var expanded: Pane? = null
     private var stopped = false
     private lateinit var row: LinearLayout
-    private lateinit var divider: View
 
     private val module get() = (application as XtraApp).xtraModule
     private val networkLibrary get() = prefs().getString(C.NETWORK_LIBRARY, C.OKHTTP)
@@ -209,11 +211,8 @@ class SideBySideActivity : AppCompatActivity() {
             orientation = LinearLayout.HORIZONTAL
             setBackgroundColor(Color.BLACK)
         }
-        divider = View(this).apply { setBackgroundColor(0xFF303030.toInt()) }
-        panes.forEachIndexed { index, pane ->
-            if (index == 1) row.addView(divider, LinearLayout.LayoutParams((2 * dp).toInt(), ViewGroup.LayoutParams.MATCH_PARENT))
-            row.addView(buildPane(pane), LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f))
-        }
+        panes.forEach { buildPane(it) }
+        arrange()
         ViewCompat.setOnApplyWindowInsetsListener(row) { view, windowInsets ->
             val bars = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
             val ime = windowInsets.getInsets(WindowInsetsCompat.Type.ime())
@@ -223,7 +222,88 @@ class SideBySideActivity : AppCompatActivity() {
         return row
     }
 
-    private fun buildPane(pane: Pane): View {
+    private fun divider(): View = View(this).apply { setBackgroundColor(0xFF303030.toInt()) }
+
+    private fun isPortrait() = resources.configuration.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT
+
+    private fun detach(view: View) = (view.parent as? ViewGroup)?.removeView(view)
+
+    /** Containers of the current arrangement, hidden in fullscreen. */
+    private val arrangedExtras = ArrayList<View>()
+    private var arrangedPortrait: Boolean? = null
+
+    /**
+     * Puts the videos and chats in place for the orientation (only when it changed: moving a chat
+     * re-creates its rows), then applies fullscreen by hiding everything but that video.
+     * Views are moved, not rebuilt, so the players and chats keep going.
+     */
+    private fun arrange() {
+        val dp = resources.displayMetrics.density
+        val line = (2 * dp).toInt()
+        val match = ViewGroup.LayoutParams.MATCH_PARENT
+        val wrap = ViewGroup.LayoutParams.WRAP_CONTENT
+        val portrait = isPortrait()
+        if (arrangedPortrait != portrait) {
+            val moved = arrangedPortrait != null
+            arrangedPortrait = portrait
+            arrangedExtras.clear()
+            panes.forEach { pane ->
+                detach(pane.videoFrame)
+                detach(pane.chat)
+                detach(pane.root)
+                pane.root.removeAllViews()
+            }
+            row.removeAllViews()
+            if (portrait) {
+                row.orientation = LinearLayout.VERTICAL
+                row.addView(panes[0].videoFrame, LinearLayout.LayoutParams(match, wrap))
+                val between = divider()
+                row.addView(between, LinearLayout.LayoutParams(match, line))
+                row.addView(panes[1].videoFrame, LinearLayout.LayoutParams(match, wrap))
+                val chats = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+                chats.addView(panes[0].chat, LinearLayout.LayoutParams(0, match, 1f))
+                chats.addView(divider(), LinearLayout.LayoutParams(line, match))
+                chats.addView(panes[1].chat, LinearLayout.LayoutParams(0, match, 1f))
+                row.addView(chats, LinearLayout.LayoutParams(match, 0, 1f))
+                arrangedExtras.add(between)
+                arrangedExtras.add(chats)
+            } else {
+                row.orientation = LinearLayout.HORIZONTAL
+                panes.forEachIndexed { index, pane ->
+                    if (index == 1) row.addView(divider().also { arrangedExtras.add(it) }, LinearLayout.LayoutParams(line, match))
+                    pane.root.addView(pane.videoFrame, LinearLayout.LayoutParams(match, wrap))
+                    pane.root.addView(pane.chat, LinearLayout.LayoutParams(match, 0, 1f))
+                    row.addView(pane.root, LinearLayout.LayoutParams(0, match, 1f))
+                }
+            }
+            // Rows moved with their chat re-load their emotes.
+            if (moved) row.post { ChatLive.refreshChat() }
+        }
+        val open = expanded
+        arrangedExtras.forEach { it.isVisible = open == null }
+        panes.forEach { pane ->
+            val isExpanded = pane == open
+            val hidden = open != null && !isExpanded
+            if (portrait) {
+                pane.videoFrame.isVisible = !hidden
+            } else {
+                pane.root.isVisible = !hidden
+                pane.chat.isVisible = !isExpanded
+            }
+            pane.videoFrame.layoutParams = LinearLayout.LayoutParams(match, if (isExpanded) 0 else wrap, if (isExpanded) 1f else 0f)
+            pane.aspect.resizeMode = if (isExpanded) AspectRatioFrameLayout.RESIZE_MODE_FIT else AspectRatioFrameLayout.RESIZE_MODE_FIXED_WIDTH
+            pane.aspect.layoutParams = FrameLayout.LayoutParams(match, if (isExpanded) match else wrap, Gravity.CENTER)
+            pane.expand.setImageResource(if (isExpanded) R.drawable.xtra5s_fullscreen_exit else R.drawable.xtra5s_fullscreen)
+            pane.expand.contentDescription = if (isExpanded) "Exit fullscreen" else "Fullscreen"
+        }
+    }
+
+    override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
+        super.onConfigurationChanged(newConfig)
+        arrange()
+    }
+
+    private fun buildPane(pane: Pane) {
         val dp = resources.displayMetrics.density
         pane.root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
 
@@ -356,15 +436,13 @@ class SideBySideActivity : AppCompatActivity() {
         pane.volumeBar.addView(pane.volumeText, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
         pane.videoFrame.addView(pane.volumeBar, FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER))
         pane.videoFrame.addView(buildControls(pane), FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM))
-        pane.root.addView(pane.videoFrame, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
 
         pane.chat = FrameLayout(this).apply {
             id = pane.chatId
             // Chat uses the app theme's background, as in the normal player.
             TypedValue().also { theme.resolveAttribute(android.R.attr.colorBackground, it, true) }.let { setBackgroundColor(it.data) }
         }
-        pane.root.addView(pane.chat, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
-        return pane.root
+
     }
 
     private fun buildControls(pane: Pane): View {
@@ -380,8 +458,7 @@ class SideBySideActivity : AppCompatActivity() {
             setOnFocusChangeListener { v, hasFocus -> (v as ImageButton).imageTintList = if (hasFocus) android.content.res.ColorStateList.valueOf(SideBySide.GOLD) else SideBySide.WHITE }
         }
         pane.controls = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
+            orientation = LinearLayout.VERTICAL
             background = GradientDrawable(GradientDrawable.Orientation.BOTTOM_TOP, intArrayOf(0xCC000000.toInt(), 0x00000000))
             setPadding(pad / 2, pad * 2, pad / 2, 0)
             isVisible = false
@@ -428,15 +505,31 @@ class SideBySideActivity : AppCompatActivity() {
         val reload = button(R.drawable.xtra5s_refresh, "Reload") { pane.paused = false; load(pane) }
         val only = button(R.drawable.xtra5s_open, "Watch only this stream") { watchOnly(pane) }
         pane.expand = button(R.drawable.xtra5s_fullscreen, "Fullscreen") { setExpanded(pane, expanded != pane) }
-        val wrap = ViewGroup.LayoutParams.WRAP_CONTENT
-        pane.controls.addView(pane.mute, LinearLayout.LayoutParams(wrap, wrap))
-        pane.controls.addView(pane.slider, LinearLayout.LayoutParams(0, wrap, 1f))
-        pane.controls.addView(pane.qualitySpinner, LinearLayout.LayoutParams(wrap, wrap))
-        pane.controls.addView(input, LinearLayout.LayoutParams(wrap, wrap))
-        pane.controls.addView(replace, LinearLayout.LayoutParams(wrap, wrap))
-        pane.controls.addView(reload, LinearLayout.LayoutParams(wrap, wrap))
-        pane.controls.addView(only, LinearLayout.LayoutParams(wrap, wrap))
-        pane.controls.addView(pane.expand, LinearLayout.LayoutParams(wrap, wrap))
+        val top = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+        val bottom = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL or Gravity.END }
+        pane.controls.addView(top, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        pane.controls.addView(bottom, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        val buttons = listOf(pane.qualitySpinner, input, replace, reload, only, pane.expand)
+        // One row when the video is wide enough, else volume on one row and the buttons below it.
+        var twoRows: Boolean? = null
+        fun place(narrow: Boolean) {
+            if (twoRows == narrow) return
+            twoRows = narrow
+            val wrap = ViewGroup.LayoutParams.WRAP_CONTENT
+            top.removeAllViews()
+            bottom.removeAllViews()
+            top.addView(pane.mute, LinearLayout.LayoutParams(wrap, wrap))
+            top.addView(pane.slider, LinearLayout.LayoutParams(0, wrap, 1f))
+            buttons.forEach { (if (narrow) bottom else top).addView(it, LinearLayout.LayoutParams(wrap, wrap)) }
+            bottom.isVisible = narrow
+        }
+        place(false)
+        pane.videoFrame.addOnLayoutChangeListener { v, left, _, right, _, oldLeft, _, oldRight, _ ->
+            if (right - left != oldRight - oldLeft) {
+                val narrow = (right - left) < 440 * dp // phones: two rows; each half of a TV (~480dp) keeps one
+                if (narrow != twoRows) v.post { place(narrow) }
+            }
+        }
         return pane.controls
     }
 
@@ -577,25 +670,7 @@ class SideBySideActivity : AppCompatActivity() {
 
     private fun setExpanded(pane: Pane, expand: Boolean) {
         expanded = if (expand) pane else null
-        panes.forEach { other ->
-            val isExpanded = expand && other == pane
-            other.root.isVisible = !expand || other == pane
-            other.chat.isVisible = !isExpanded
-            other.videoFrame.layoutParams = LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                if (isExpanded) 0 else ViewGroup.LayoutParams.WRAP_CONTENT,
-                if (isExpanded) 1f else 0f,
-            )
-            other.aspect.resizeMode = if (isExpanded) AspectRatioFrameLayout.RESIZE_MODE_FIT else AspectRatioFrameLayout.RESIZE_MODE_FIXED_WIDTH
-            other.aspect.layoutParams = FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                if (isExpanded) ViewGroup.LayoutParams.MATCH_PARENT else ViewGroup.LayoutParams.WRAP_CONTENT,
-                Gravity.CENTER,
-            )
-            other.expand.setImageResource(if (isExpanded) R.drawable.xtra5s_fullscreen_exit else R.drawable.xtra5s_fullscreen)
-            other.expand.contentDescription = if (isExpanded) "Exit fullscreen" else "Fullscreen"
-        }
-        divider.isVisible = !expand
+        arrange()
     }
 
     // ---- Playback ----
