@@ -1,6 +1,21 @@
 Xtra5s changelog (newest first)
 
 ========================================
+Xtra5s 1.5.0 (2026-11-15)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+New
+- Video player: touch and hold the video (a short buzz), then slide left / right to change the
+  volume: half the video's width is 0 to 100%, with a volume bar in the middle while you slide.
+  It is the same volume as the Volume button and is saved when you let go. Quick taps,
+  double-taps and drag-to-minimize work as before; holds on the player's buttons and seek bar
+  are left alone. Listed in Settings > Shortcuts.
+
+Changed
+- Video player volume now matches what you hear, like Side-By-Side: 30% sounds about 30% as
+  loud, 50% about half (before, low settings were much louder than their number). Your saved
+  volume stays the same number.
+========================================
 Xtra5s 1.4.5 (2026-11-15)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 

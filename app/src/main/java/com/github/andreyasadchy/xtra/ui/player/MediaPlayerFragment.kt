@@ -352,7 +352,7 @@ class MediaPlayerFragment : PlayerFragment() {
     }
 
     override fun changeVolume(volume: Float) {
-        playbackService?.player?.setVolume(volume, volume)
+        com.github.andreyasadchy.xtra.custom.SoloVolume.gain(volume).let { playbackService?.player?.setVolume(it, it) } // Xtra5s custom: volume curve
     }
 
     override fun updateProgress() {

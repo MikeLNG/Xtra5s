@@ -347,7 +347,7 @@ class ExoPlayerFragment : PlayerFragment() {
     override fun getCurrentSpeed() = playbackService?.player?.playbackParameters?.speed
 
     override fun getCurrentVolume(): Float? {
-        return playbackService?.getCurrentVolume()
+        return playbackService?.getCurrentVolume()?.let { com.github.andreyasadchy.xtra.custom.SoloVolume.level(it) } // Xtra5s custom: volume curve
     }
 
     override fun getTotalDuration() = (playbackService?.player?.currentManifest as? HlsManifest)?.mediaPlaylist?.durationUs?.div(1000)
@@ -377,7 +377,7 @@ class ExoPlayerFragment : PlayerFragment() {
     }
 
     override fun changeVolume(volume: Float) {
-        playbackService?.changeVolume(volume)
+        playbackService?.changeVolume(com.github.andreyasadchy.xtra.custom.SoloVolume.gain(volume)) // Xtra5s custom: volume curve
     }
 
     override fun updateProgress() {

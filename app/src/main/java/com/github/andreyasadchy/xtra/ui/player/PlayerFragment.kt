@@ -448,6 +448,7 @@ abstract class PlayerFragment : BaseNetworkFragment(), RadioButtonDialogFragment
             }
 
             dragView.setOnTouchListener { _, event ->
+                if (com.github.andreyasadchy.xtra.custom.SoloVolume.onTouch(this@PlayerFragment, dragView, event)) return@setOnTouchListener true // Xtra5s custom: hold-and-slide volume
                 if (!isAnimating) {
                     when (event.actionMasked) {
                         MotionEvent.ACTION_DOWN -> {

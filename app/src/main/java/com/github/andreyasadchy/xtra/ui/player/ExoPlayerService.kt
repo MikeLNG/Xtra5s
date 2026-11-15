@@ -377,7 +377,7 @@ class ExoPlayerService : BasePlaybackService() {
                                                                 setTrackTypeDisabled(androidx.media3.common.C.TRACK_TYPE_VIDEO, false)
                                                             }.build()
                                                         }
-                                                        player.volume = prefs().getInt(C.PLAYER_VOLUME, 100) / 100f
+                                                        player.volume = com.github.andreyasadchy.xtra.custom.SoloVolume.gain(prefs().getInt(C.PLAYER_VOLUME, 100) / 100f) // Xtra5s custom: volume curve
                                                     }
                                                 }
                                                 adDelayJob = null
@@ -530,7 +530,7 @@ class ExoPlayerService : BasePlaybackService() {
                                                             MediaItem.fromUri(url)
                                                         )
                                                     )
-                                                    player.volume = prefs().getInt(C.PLAYER_VOLUME, 100) / 100f
+                                                    player.volume = com.github.andreyasadchy.xtra.custom.SoloVolume.gain(prefs().getInt(C.PLAYER_VOLUME, 100) / 100f) // Xtra5s custom: volume curve
                                                     player.setPlaybackSpeed(prefs().getFloat(C.PLAYER_SPEED, 1f))
                                                     player.prepare()
                                                     player.playWhenReady = true
@@ -844,7 +844,7 @@ class ExoPlayerService : BasePlaybackService() {
                                             MediaItem.fromUri(url)
                                         )
                                     )
-                                    player.volume = prefs().getInt(C.PLAYER_VOLUME, 100) / 100f
+                                    player.volume = com.github.andreyasadchy.xtra.custom.SoloVolume.gain(prefs().getInt(C.PLAYER_VOLUME, 100) / 100f) // Xtra5s custom: volume curve
                                     player.setPlaybackSpeed(prefs().getFloat(C.PLAYER_SPEED, 1f))
                                     player.prepare()
                                     player.playWhenReady = !restorePauseState || !paused
@@ -888,7 +888,7 @@ class ExoPlayerService : BasePlaybackService() {
                                         }.build()
                                     }
                                     player.setMediaItem(MediaItem.fromUri(url))
-                                    player.volume = prefs().getInt(C.PLAYER_VOLUME, 100) / 100f
+                                    player.volume = com.github.andreyasadchy.xtra.custom.SoloVolume.gain(prefs().getInt(C.PLAYER_VOLUME, 100) / 100f) // Xtra5s custom: volume curve
                                     player.setPlaybackSpeed(prefs().getFloat(C.PLAYER_SPEED, 1f))
                                     player.prepare()
                                     player.playWhenReady = true
@@ -1218,7 +1218,7 @@ class ExoPlayerService : BasePlaybackService() {
                             }.build()
                         )
                     )
-                    player.volume = prefs().getInt(C.PLAYER_VOLUME, 100) / 100f
+                    player.volume = com.github.andreyasadchy.xtra.custom.SoloVolume.gain(prefs().getInt(C.PLAYER_VOLUME, 100) / 100f) // Xtra5s custom: volume curve
                     player.setPlaybackSpeed(1f)
                     player.prepare()
                     player.playWhenReady = !restorePauseState || !paused
@@ -1310,7 +1310,7 @@ class ExoPlayerService : BasePlaybackService() {
                             MediaItem.fromUri(url)
                         )
                     )
-                    player.volume = prefs().getInt(C.PLAYER_VOLUME, 100) / 100f
+                    player.volume = com.github.andreyasadchy.xtra.custom.SoloVolume.gain(prefs().getInt(C.PLAYER_VOLUME, 100) / 100f) // Xtra5s custom: volume curve
                     player.setPlaybackSpeed(prefs().getFloat(C.PLAYER_SPEED, 1f))
                     player.prepare()
                     player.playWhenReady = !restorePauseState || !paused
@@ -1463,7 +1463,7 @@ class ExoPlayerService : BasePlaybackService() {
                             MediaItem.fromUri(url)
                         )
                     )
-                    player.volume = prefs().getInt(C.PLAYER_VOLUME, 100) / 100f
+                    player.volume = com.github.andreyasadchy.xtra.custom.SoloVolume.gain(prefs().getInt(C.PLAYER_VOLUME, 100) / 100f) // Xtra5s custom: volume curve
                     player.setPlaybackSpeed(prefs().getFloat(C.PLAYER_SPEED, 1f))
                     player.prepare()
                     player.playWhenReady = !restorePauseState || !paused
@@ -2056,7 +2056,7 @@ class ExoPlayerService : BasePlaybackService() {
                         }.build()
                     )
                 )
-                player.volume = prefs().getInt(C.PLAYER_VOLUME, 100) / 100f
+                player.volume = com.github.andreyasadchy.xtra.custom.SoloVolume.gain(prefs().getInt(C.PLAYER_VOLUME, 100) / 100f) // Xtra5s custom: volume curve
                 player.setPlaybackSpeed(1f)
                 player.prepare()
                 player.playWhenReady = true
@@ -2085,7 +2085,7 @@ class ExoPlayerService : BasePlaybackService() {
                     setTrackTypeDisabled(androidx.media3.common.C.TRACK_TYPE_VIDEO, false)
                 }.build()
             }
-            player.volume = prefs().getInt(C.PLAYER_VOLUME, 100) / 100f
+            player.volume = com.github.andreyasadchy.xtra.custom.SoloVolume.gain(prefs().getInt(C.PLAYER_VOLUME, 100) / 100f) // Xtra5s custom: volume curve
         }
         secondaryPlayer?.release()
         secondaryPlayer = null
