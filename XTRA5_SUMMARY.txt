@@ -1,4 +1,4 @@
-Xtra5 - feature list (version 1.43.0)
+Xtra5 - feature list (version 1.45.0)
 Everything official Xtra does, plus the features below.
 
 ========================================
@@ -43,6 +43,7 @@ Watching
     as you browse down.
 - Settings button right in the player, and playback picks up where it left off when you return.
 - Battery percentage in fullscreen that fades out of the way.
+- Optional always-visible progress bar on VODs and clips, and chapter markers on the seek bar.
 - Live streams keep playing when your earbuds disconnect or go in their case, and resuming a
   live stream always jumps back to live.
 - Tap a paused mini player to resume it.

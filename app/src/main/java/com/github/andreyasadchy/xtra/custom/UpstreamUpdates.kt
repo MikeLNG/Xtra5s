@@ -52,6 +52,7 @@ object UpstreamUpdates {
             BackToLive.register(it) // Xtra5: Back goes to Following > Live before exiting
             FavoriteChannels.register(it) // Xtra5: "Favourites first" on Following > Channels
             TvNavigation.register(it) // Xtra5: remote navigation (banner collapse, card outline)
+            ProgressOverlay.register(it) // Xtra5: chapter markers and persistent progress bar
         }
         val prefs = activity.prefs()
         // Xtra5: don't pause when headphones / Bluetooth audio disconnect (see AudioGuard).

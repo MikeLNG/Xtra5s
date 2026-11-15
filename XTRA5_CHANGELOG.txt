@@ -1,6 +1,17 @@
 Xtra5 changelog (newest first)
 
 ========================================
+Xtra5 1.45.0 (2026-11-15)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+New
+- Chapter markers: VODs with chapters show a marker on the seek bar at each chapter start.
+- Persistent progress bar (Settings > Player > Progress bar): on VODs, downloads and clips
+  in fullscreen (landscape), the progress bar stays exactly where the seek bar is when the
+  controls hide. Full opacity, then faded to the chosen opacity 4 seconds after the controls
+  were last shown (same as the battery percentage); touching the screen brings it back to
+  full. Off by default.
+========================================
 Xtra5 1.44.0 (2026-11-15)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 

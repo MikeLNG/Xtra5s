@@ -39,6 +39,7 @@
     <item name="xtra5_span_tap" type="id" />
     <item name="xtra5_span_tap_watch" type="id" />
     <item name="xtra5_battery" type="id" />
+    <item name="xtra5_progress_bar" type="id" />
     <item name="xtra5_row_login" type="id" />
     <item name="xtra5_row_name" type="id" />
     <item name="xtra5_row_preview" type="id" />
@@ -135,4 +136,8 @@
     </string-array>
     <string name="xtra5_shortcuts_title" translatable="false">Shortcuts</string>
     <string name="xtra5_shortcuts_summary" translatable="false">Every press and gesture Xtra5 adds, by screen</string>
+    <string name="xtra5_progress_bar_category" translatable="false">Progress bar (Xtra5)</string>
+    <string name="xtra5_progress_bar_show" translatable="false">Persistent progress bar</string>
+    <string name="xtra5_progress_bar_show_summary" translatable="false">VODs, downloads and clips in fullscreen: the progress bar stays where the seek bar is when the controls hide</string>
+    <string name="xtra5_progress_bar_faded_opacity" translatable="false">Faded opacity (%) after 4 s without touching</string>
 </resources>

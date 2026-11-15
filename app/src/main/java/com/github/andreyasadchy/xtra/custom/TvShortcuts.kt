@@ -67,6 +67,10 @@ object TvShortcuts {
         val hideController: () -> Unit = {},
         /** Shows / hides the chat beside the video; false if chat is off. */
         val toggleChat: () -> Boolean = { false },
+        /** BasePlaybackService type (stream, video, clip, offlineVideo). */
+        val type: String? = null,
+        /** VOD chapter start times (ms). */
+        val chapters: List<Long> = emptyList(),
     )
 
     /** Keys whose ACTION_DOWN we consumed, so their ACTION_UP is consumed too. */
