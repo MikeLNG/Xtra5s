@@ -23,6 +23,8 @@ import com.github.andreyasadchy.xtra.util.prefs
 /**
  * Xtra5 custom: VOD / clip timeline extras.
  *  - Chapter markers: on VODs with chapters, a marker for each chapter start on the seek bar.
+ *  - End time (both timelines): "−time left in the current chapter / total length" (no
+ *    chapters, or the last chapter: time left in the video).
  *  - Persistent progress bar (Settings > Player): on VODs, downloads and clips in fullscreen
  *    (landscape), a copy of the seek bar and its start / end times stays in exactly the same
  *    place when the controls hide. It fades with the controls, frame by frame: as they fade out
@@ -177,6 +179,15 @@ object ProgressOverlay {
             state.realBar.setAdGroupTimesMs(times, played, times.size)
             bar.setAdGroupTimesMs(times, played, times.size)
         }
+        // End time on both timelines: "−time left in this chapter / total length".
+        val isVod = ps.type == BasePlaybackService.VIDEO || ps.type == BasePlaybackService.OFFLINE_VIDEO || ps.type == BasePlaybackService.CLIP
+        val total = player.getTotalDuration()?.takeIf { it > 0 }
+        val endText = if (isVod && total != null) {
+            val now = (player.getCurrentPosition() ?: 0L).coerceIn(0L, total)
+            val chapterEnd = state.chapters.firstOrNull { it > now } ?: total
+            "−" + android.text.format.DateUtils.formatElapsedTime((chapterEnd - now) / 1000) + " / " + android.text.format.DateUtils.formatElapsedTime(total / 1000)
+        } else null
+        if (endText != null) state.realDuration?.let { if (it.text.toString() != endText) it.text = endText }
         val context = bar.context
         val show = context.prefs().getBoolean(PREF_ENABLED, false) &&
             ps.isMaximized && player.isResumed &&
@@ -197,7 +208,7 @@ object ProgressOverlay {
         bar.setDuration(duration)
         bar.setPosition(position)
         state.position.text = android.text.format.DateUtils.formatElapsedTime(position / 1000)
-        state.duration.text = android.text.format.DateUtils.formatElapsedTime(duration / 1000)
+        state.duration.text = endText ?: android.text.format.DateUtils.formatElapsedTime(duration / 1000)
         if (!state.shown) {
             state.shown = true
             views.forEach { it.visibility = View.VISIBLE }

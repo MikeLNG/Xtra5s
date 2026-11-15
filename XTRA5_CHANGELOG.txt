@@ -1,6 +1,14 @@
 Xtra5 changelog (newest first)
 
 ========================================
+Xtra5 1.47.0 (2026-11-15)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+Changed
+- VODs, downloads and clips: the end time on the timeline (normal controls and persistent
+  progress bar) now reads "−time left in the current chapter / total length". Without
+  chapters, or in the last chapter, it counts down to the end of the video.
+========================================
 Xtra5 1.46.1 (2026-11-15)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
