@@ -38,10 +38,18 @@ class ShortcutsPreference @JvmOverloads constructor(
             orientation = LinearLayout.VERTICAL
             setPadding(dp(24), dp(4), dp(24), dp(12))
         }
+        var inSub = false
         ctx.resources.getStringArray(R.array.xtra5_shortcuts).forEach { item ->
             list.addView(TextView(ctx).apply {
                 when {
+                    item.startsWith("-- ") -> {
+                        inSub = true
+                        text = "◦  " + item.removePrefix("-- ")
+                        setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
+                        setPadding(dp(18), dp(3), 0, 0)
+                    }
                     item.startsWith("# ") -> {
+                        inSub = false
                         text = item.removePrefix("# ")
                         setTypeface(typeface, Typeface.BOLD)
                         setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
@@ -49,6 +57,7 @@ class ShortcutsPreference @JvmOverloads constructor(
                         setPadding(0, dp(16), 0, dp(4))
                     }
                     item.startsWith("- ") -> {
+                        inSub = false
                         text = "•  " + item.removePrefix("- ")
                         setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
                         setPadding(0, dp(4), 0, 0)
@@ -57,7 +66,7 @@ class ShortcutsPreference @JvmOverloads constructor(
                         text = item
                         setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
                         setTextColor(attrColor(android.R.attr.textColorSecondary))
-                        setPadding(dp(14), dp(1), 0, 0)
+                        setPadding(dp(if (inSub) 32 else 14), dp(1), 0, 0)
                     }
                     else -> {
                         text = item

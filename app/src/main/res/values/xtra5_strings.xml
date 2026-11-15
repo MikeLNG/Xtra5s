@@ -90,7 +90,7 @@
     <string name="xtra5_color_mention" translatable="false">Mentions of you</string>
     <string name="xtra5_color_bot" translatable="false">Bot messages</string>
     <string name="xtra5_bot_accounts" translatable="false">Bot accounts</string>
-    <!-- Settings > Shortcuts: "# " = heading, "- " = shortcut, "Setting: " = related setting, other = note -->
+    <!-- Settings > Shortcuts: "# " = heading, "- " = shortcut, "-- " = sub-point of the shortcut above, "Setting: " = related setting, other = note -->
     <string-array name="xtra5_shortcuts" translatable="false">
         <item>Items marked [TV] need the setting Enable TV mode shortcuts. They work with a TV remote, keyboard or game controller.</item>
         <item># Anywhere in the app</item>
@@ -109,17 +109,16 @@
         <item>- Left / Right: skip back / forward and show the seek bar (VODs, clips, downloads). While it shows, Left / Right keep skipping, Up moves to the player buttons and Back hides the controls.</item>
         <item>Setting: Seek step (seconds)</item>
         <item>- Up: shows the controls and takes hold of the seek bar (live streams: just shows the controls).</item>
+        <item>-- Left / Right: moves the marker; hold to keep moving.</item>
+        <item>Setting: Seek bar jump (% of video length)</item>
+        <item>-- OK: jumps to the marker.</item>
+        <item>-- Back: cancels the move (also cancels by itself after 6 seconds). If the marker hasn\'t moved, hides the controls.</item>
+        <item>-- After jumping, while the controls are still showing: Left / Right skip by the seek step, Up moves to the player buttons, Back hides the controls.</item>
+        <item>Setting: Seek step (seconds)</item>
         <item>- Down: opens Chapters, if the VOD has any. On a live stream: shows or hides the chat.</item>
         <item>Setting: Chapter columns (landscape), Chapter columns (portrait)</item>
         <item>- Hold OK on a live stream: reloads the stream (like Restart player).</item>
         <item>- Hold Back: closes the video.</item>
-        <item># [TV] Video player, holding the seek bar (after Up)</item>
-        <item>- Left / Right: moves the marker; hold to keep moving.</item>
-        <item>Setting: Seek bar jump (% of video length)</item>
-        <item>- OK: jumps to the marker.</item>
-        <item>- Back: cancels the move (also cancels by itself after 6 seconds). If the marker hasn\'t moved, hides the controls.</item>
-        <item>- After jumping, while the controls are still showing: Left / Right skip by the seek step, Up moves to the player buttons, Back hides the controls.</item>
-        <item>Setting: Seek step (seconds)</item>
         <item># Minimized video</item>
         <item>- Tap a paused mini player: resumes it.</item>
         <item>- [TV] Back: closes the video.</item>

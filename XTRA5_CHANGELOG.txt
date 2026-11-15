@@ -1,6 +1,13 @@
 Xtra5 changelog (newest first)
 
 ========================================
+Xtra5 1.42.2 (2026-11-15)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+Changed
+- Settings > Shortcuts: the "holding the seek bar" shortcuts are now listed as sub-points
+  right under Up, instead of in a separate group.
+========================================
 Xtra5 1.42.1 (2026-11-15)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
