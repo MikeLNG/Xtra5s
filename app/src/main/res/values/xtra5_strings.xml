@@ -90,7 +90,7 @@
     <string name="xtra5_color_mention" translatable="false">Mentions of you</string>
     <string name="xtra5_color_bot" translatable="false">Bot messages</string>
     <string name="xtra5_bot_accounts" translatable="false">Bot accounts</string>
-    <!-- Settings > Shortcuts: "# " = heading, "- " = shortcut, "-- " = sub-point of the shortcut above, "Setting: " = related setting, other = note -->
+    <!-- Settings > Shortcuts: "# " = heading, "- " = shortcut, two dashes and a space = sub-point of the shortcut above, "Setting: " = related setting, other = note -->
     <string-array name="xtra5_shortcuts" translatable="false">
         <item>Items marked [TV] need the setting Enable TV mode shortcuts. They work with a TV remote, keyboard or game controller.</item>
         <item># Anywhere in the app</item>
