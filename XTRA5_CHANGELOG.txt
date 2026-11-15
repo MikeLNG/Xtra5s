@@ -1,6 +1,14 @@
 Xtra5s changelog (newest first)
 
 ========================================
+Xtra5s 1.4.4 (2026-11-15)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+Fixed
+- Changing highlights (in the highlights panel, special message colours, or coming back from
+  Settings) no longer nudges the chat: at the bottom it stays at the bottom, scrolled up the
+  same message stays in the same spot.
+========================================
 Xtra5s 1.4.3 (2026-11-15)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
