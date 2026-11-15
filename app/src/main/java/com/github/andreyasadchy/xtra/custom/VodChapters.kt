@@ -9,10 +9,8 @@ import android.view.View
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
-import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
@@ -27,14 +25,13 @@ import com.github.andreyasadchy.xtra.model.ui.Video
 import com.github.andreyasadchy.xtra.ui.main.MainActivity
 import com.github.andreyasadchy.xtra.util.C
 import com.github.andreyasadchy.xtra.util.TwitchApiHelper
-import com.github.andreyasadchy.xtra.util.getAlertDialogBuilder
 import com.github.andreyasadchy.xtra.util.prefs
 import kotlinx.coroutines.launch
 
 /**
  * Xtra5 custom: a Chapters button on every VOD card (top-right of the thumbnail). It loads that
- * VOD's chapters (only when pressed) and lists them; picking one starts the VOD from there,
- * in fullscreen.
+ * VOD's chapters (only when pressed) and lists them in a dropdown from the button; picking one
+ * starts the VOD from there, in fullscreen.
  *
  * Kept in its own package so upstream Xtra updates can be merged without conflicts.
  * Upstream hook: VideosAdapter.PagingViewHolder.bind.
@@ -67,10 +64,10 @@ object VodChapters {
             return
         }
         button.visibility = View.VISIBLE
-        button.setOnClickListener { load(fragment, item) }
+        button.setOnClickListener { load(fragment, item, button) }
     }
 
-    private fun load(fragment: Fragment, video: Video) {
+    private fun load(fragment: Fragment, video: Video, anchor: View) {
         val context = fragment.context ?: return
         val app = context.applicationContext as? XtraApp ?: return
         val repository = app.xtraModule.graphQLRepository
@@ -109,64 +106,70 @@ object VodChapters {
                 Toast.makeText(context, "No chapters for this video", Toast.LENGTH_SHORT).show()
                 return@launch
             }
-            show(fragment, video, chapters)
+            if (anchor.isAttachedToWindow) show(fragment, video, chapters, anchor)
         }
     }
 
-    private fun show(fragment: Fragment, video: Video, chapters: List<Game>) {
-        val builder = fragment.requireContext().getAlertDialogBuilder()
-        val ctx = builder.context
+    /** The chapters as a dropdown attached to the Chapters button. */
+    private fun show(fragment: Fragment, video: Video, chapters: List<Game>, anchor: View) {
+        val ctx = anchor.context
         val density = ctx.resources.displayMetrics.density
         fun dp(v: Int) = (v * density).toInt()
-        lateinit var dialog: AlertDialog
-        val list = LinearLayout(ctx).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dp(12), dp(4), dp(12), dp(8))
+        val rowHeight = dp(60)
+        val secondary = TypedValue().also { ctx.theme.resolveAttribute(android.R.attr.textColorSecondary, it, true) }.let { tv ->
+            if (tv.resourceId != 0) ctx.getColor(tv.resourceId) else tv.data
         }
-        chapters.forEach { chapter ->
-            list.addView(LinearLayout(ctx).apply {
-                orientation = LinearLayout.HORIZONTAL
-                gravity = Gravity.CENTER_VERTICAL
-                minimumHeight = dp(56)
-                setPadding(dp(8), dp(6), dp(8), dp(6))
-                isClickable = true
-                isFocusable = true
-                background = TypedValue().let { tv ->
-                    ctx.theme.resolveAttribute(android.R.attr.selectableItemBackground, tv, true)
-                    ctx.getDrawable(tv.resourceId)
-                }
-                setOnClickListener {
-                    dialog.dismiss()
-                    play(fragment, video, chapter.vodPosition?.toLong() ?: 0L)
-                }
-                addView(ImageView(ctx).apply {
-                    scaleType = ImageView.ScaleType.CENTER_CROP
-                    chapter.boxArt?.let { url ->
-                        ctx.imageLoader.enqueue(ImageRequest.Builder(ctx).data(url).target(this).build())
-                    }
-                }, LinearLayout.LayoutParams(dp(36), dp(48)).apply { marginEnd = dp(14) })
-                addView(LinearLayout(ctx).apply {
-                    orientation = LinearLayout.VERTICAL
-                    addView(TextView(ctx).apply {
-                        text = chapter.name ?: "Unknown"
-                        setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
+        val adapter = object : android.widget.BaseAdapter() {
+            override fun getCount() = chapters.size
+            override fun getItem(position: Int) = chapters[position]
+            override fun getItemId(position: Int) = position.toLong()
+            override fun getView(position: Int, convertView: View?, parent: android.view.ViewGroup): View {
+                val chapter = chapters[position]
+                val row = (convertView as? LinearLayout) ?: LinearLayout(ctx).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER_VERTICAL
+                    minimumHeight = rowHeight
+                    setPadding(dp(12), dp(6), dp(12), dp(6))
+                    addView(ImageView(ctx).apply { scaleType = ImageView.ScaleType.CENTER_CROP },
+                        LinearLayout.LayoutParams(dp(36), dp(48)).apply { marginEnd = dp(12) })
+                    addView(LinearLayout(ctx).apply {
+                        orientation = LinearLayout.VERTICAL
+                        addView(TextView(ctx).apply {
+                            setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
+                            maxLines = 1
+                            ellipsize = android.text.TextUtils.TruncateAt.END
+                        })
+                        addView(TextView(ctx).apply {
+                            setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
+                            setTextColor(secondary)
+                        })
                     })
-                    addView(TextView(ctx).apply {
-                        val start = android.text.format.DateUtils.formatElapsedTime((chapter.vodPosition ?: 0) / 1000L)
-                        val length = chapter.vodDuration?.takeIf { it > 0 }?.let { " · " + android.text.format.DateUtils.formatElapsedTime(it / 1000L) } ?: ""
-                        text = start + length
-                        setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
-                        TypedValue().also { ctx.theme.resolveAttribute(android.R.attr.textColorSecondary, it, true) }.let { tv ->
-                            setTextColor(if (tv.resourceId != 0) ctx.getColor(tv.resourceId) else tv.data)
-                        }
-                    })
-                })
-            })
+                }
+                val image = row.getChildAt(0) as ImageView
+                val texts = row.getChildAt(1) as LinearLayout
+                image.setImageDrawable(null)
+                chapter.boxArt?.let { url -> ctx.imageLoader.enqueue(ImageRequest.Builder(ctx).data(url).target(image).build()) }
+                (texts.getChildAt(0) as TextView).text = chapter.name ?: "Unknown"
+                val start = android.text.format.DateUtils.formatElapsedTime((chapter.vodPosition ?: 0) / 1000L)
+                val length = chapter.vodDuration?.takeIf { it > 0 }?.let { " · " + android.text.format.DateUtils.formatElapsedTime(it / 1000L) } ?: ""
+                (texts.getChildAt(1) as TextView).text = start + length
+                return row
+            }
         }
-        dialog = builder.setTitle("Chapters")
-            .setView(ScrollView(ctx).apply { addView(list) })
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
+        android.widget.ListPopupWindow(ctx).apply {
+            anchorView = anchor
+            setAdapter(adapter)
+            width = dp(280)
+            height = rowHeight * chapters.size.coerceAtMost(5) + dp(8)
+            isModal = true
+            setOnItemClickListener { _, _, position, _ ->
+                dismiss()
+                play(fragment, video, chapters[position].vodPosition?.toLong() ?: 0L)
+            }
+            show()
+            listView?.isFocusable = true
+            listView?.requestFocus()
+        }
     }
 
     /** Starts the VOD at [positionMs], in fullscreen. */

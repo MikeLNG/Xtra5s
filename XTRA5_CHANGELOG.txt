@@ -1,6 +1,13 @@
 Xtra5 changelog (newest first)
 
 ========================================
+Xtra5 1.46.1 (2026-11-15)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+Changed
+- VOD card Chapters button: the chapters now drop down from the button (up to 5 rows, then it
+  scrolls) instead of opening a dialog in the middle of the screen.
+========================================
 Xtra5 1.46.0 (2026-11-15)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
