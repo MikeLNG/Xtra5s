@@ -10,7 +10,6 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
-import android.widget.Toast
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
@@ -31,7 +30,8 @@ import kotlinx.coroutines.launch
 /**
  * Xtra5 custom: a Chapters button on every VOD card (top-right of the thumbnail). It loads that
  * VOD's chapters (only when pressed) and lists them in a dropdown from the button; picking one
- * starts the VOD from there, in fullscreen.
+ * starts the VOD from there, in fullscreen. Without chapters it lists the video's one category,
+ * from 00:00.
  *
  * Kept in its own package so upstream Xtra updates can be merged without conflicts.
  * Upstream hook: VideosAdapter.PagingViewHolder.bind.
@@ -102,11 +102,16 @@ object VodChapters {
                 }
             }
             if (!fragment.isAdded) return@launch
-            if (chapters.isNullOrEmpty()) {
-                Toast.makeText(context, "No chapters for this video", Toast.LENGTH_SHORT).show()
-                return@launch
-            }
-            if (anchor.isAttachedToWindow) show(fragment, video, chapters, anchor)
+            // No chapters: one entry for the category the whole video stayed in, from 00:00.
+            val list = chapters?.takeIf { it.isNotEmpty() } ?: listOf(
+                Game(
+                    name = video.gameName,
+                    boxArtURL = video.gameId?.let { "https://static-cdn.jtvnw.net/ttv-boxart/$it-{width}x{height}.jpg" },
+                    vodPosition = 0,
+                    vodDuration = video.durationSeconds?.let { it * 1000 },
+                )
+            )
+            if (anchor.isAttachedToWindow) show(fragment, video, list, anchor)
         }
     }
 

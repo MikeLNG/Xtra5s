@@ -1,6 +1,13 @@
 Xtra5 changelog (newest first)
 
 ========================================
+Xtra5 1.47.2 (2026-11-15)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+Changed
+- VOD Chapters button: a video without chapters now lists its one category, starting at
+  00:00 (picking it plays from the start in fullscreen), instead of "No chapters".
+========================================
 Xtra5 1.47.1 (2026-11-15)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
