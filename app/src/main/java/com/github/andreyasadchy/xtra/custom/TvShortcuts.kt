@@ -227,7 +227,9 @@ object TvShortcuts {
                 if (handled) consumed.add(keyCode)
                 return handled
             }
-            return false // normal D-pad navigation of the controls
+            // Normal D-pad navigation of the controls; keep them up while the remote is in use.
+            if (keyCode in dpadKeys || keyCode in okKeys) state.showController()
+            return false
         }
         afterSeek = null
 
@@ -323,7 +325,7 @@ object TvShortcuts {
         state.showController()
         val current = Scrub(WeakReference(player), state.showController, state.hideController, duration, position)
         scrub = current
-        bar.requestFocus() // after scrub is set, so the focus listener doesn't start a second hold
+        bar.requestFocusFromTouch() // after scrub is set, so the focus listener doesn't start a second hold
         showScrubPosition(current)
         handler.removeCallbacks(timeout)
         handler.postDelayed(timeout, SCRUB_TIMEOUT_MS)
@@ -368,7 +370,7 @@ object TvShortcuts {
             (0 until row.childCount).map { row.getChildAt(it) }.lastOrNull { it.isShown && it.isFocusable && it.isEnabled }
         } ?: view.findViewById<View>(R.id.playPause)?.takeIf { it.isShown }
         afterSeek = null
-        target?.requestFocus()
+        target?.requestFocusFromTouch() // also leaves touch mode, or the selection would be refused
         showController() // restarts the auto-hide timer
         return true
     }

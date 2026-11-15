@@ -1,6 +1,19 @@
 Xtra5 changelog (newest first)
 
 ========================================
+Xtra5 1.48.1 (2026-11-15)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+Changed
+- TV: the selected player button now has a gold outline and a gold icon (same gold as the
+  held seek bar marker) instead of white.
+- TV: any remote press while the player controls are showing keeps them up for another
+  3 seconds, so they don't hide while you're choosing a button.
+
+Fixed
+- TV: Up from the held seek bar (and Down onto the seek bar) sometimes selected nothing after
+  touch or touchpad input; it now always lands on the player button / seek bar.
+========================================
 Xtra5 1.48.0 (2026-11-15)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 

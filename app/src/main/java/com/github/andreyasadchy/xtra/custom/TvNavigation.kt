@@ -33,6 +33,7 @@ import java.util.WeakHashMap
 object TvNavigation {
 
     private const val OUTLINE_DP = 3
+    private const val SELECTED = 0xFFFFC107.toInt() // gold, as the held seek bar marker
     private val headerListeners = WeakHashMap<Fragment, ViewTreeObserver.OnScrollChangedListener>()
 
     fun register(activity: MainActivity) {
@@ -139,7 +140,7 @@ object TvNavigation {
 
     // ---- Player buttons ----
 
-    /** The selected player button (remote / D-pad) gets a clear white box around it. */
+    /** The selected player button (remote / D-pad) gets a gold box around it and a gold icon. */
     private fun outlinePlayerButtons(player: com.github.andreyasadchy.xtra.ui.player.PlayerFragment, root: View) {
         val controls = root.findViewById<ViewGroup>(R.id.playerControls) ?: return
         val density = root.resources.displayMetrics.density
@@ -149,9 +150,17 @@ object TvNavigation {
                 view.foreground = android.graphics.drawable.StateListDrawable().apply {
                     addState(intArrayOf(android.R.attr.state_focused), android.graphics.drawable.GradientDrawable().apply {
                         cornerRadius = 8 * density
-                        setColor(0x33FFFFFF)
-                        setStroke((2 * density).toInt(), android.graphics.Color.WHITE)
+                        setColor(0x33FFC107)
+                        setStroke((2 * density).toInt(), SELECTED)
                     })
+                }
+                // The selected button's icon turns gold too (same gold as the held seek bar marker).
+                if (view is android.widget.ImageView) {
+                    val normal = view.imageTintList?.defaultColor ?: android.graphics.Color.WHITE
+                    view.imageTintList = android.content.res.ColorStateList(
+                        arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf()),
+                        intArrayOf(SELECTED, normal)
+                    )
                 }
             }
             if (view is ViewGroup) for (i in 0 until view.childCount) outline(view.getChildAt(i))
