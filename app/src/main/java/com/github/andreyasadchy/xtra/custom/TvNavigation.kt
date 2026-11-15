@@ -22,10 +22,9 @@ import com.google.android.material.card.MaterialCardView
 import java.util.WeakHashMap
 
 /**
- * Xtra5 custom: easier remote (D-pad) navigation. Only reacts to focus, which touch doesn't use.
- *  - Channel and game pages: moving down past the first row of a list slides the banner away,
- *    keeping the top bar and the tabs; moving back to the first row (or onto the tabs) brings
- *    it back. (Touch swiping already collapses it; remote movement didn't.)
+ * Xtra5 custom: easier browsing, mostly for remote (D-pad) navigation.
+ *  - Channel and game pages: scrolling a list away from the top (touch or remote) slides the
+ *    banner away, keeping the top bar and the tabs; back at the top brings it back.
  *  - Cards (streams, videos, clips, channels, games) show a clear outline while selected.
  *
  * Kept in its own package so upstream Xtra updates can be merged without conflicts.
@@ -34,7 +33,7 @@ import java.util.WeakHashMap
 object TvNavigation {
 
     private const val OUTLINE_DP = 3
-    private val focusListeners = WeakHashMap<Fragment, ViewTreeObserver.OnGlobalFocusChangeListener>()
+    private val headerListeners = WeakHashMap<Fragment, ViewTreeObserver.OnScrollChangedListener>()
 
     fun register(activity: MainActivity) {
         activity.supportFragmentManager.registerFragmentLifecycleCallbacks(object : FragmentManager.FragmentLifecycleCallbacks() {
@@ -45,8 +44,8 @@ object TvNavigation {
             }
 
             override fun onFragmentViewDestroyed(fm: FragmentManager, f: Fragment) {
-                val listener = focusListeners.remove(f) ?: return
-                f.activity?.window?.decorView?.viewTreeObserver?.takeIf { it.isAlive }?.removeOnGlobalFocusChangeListener(listener)
+                val listener = headerListeners.remove(f) ?: return
+                f.activity?.window?.decorView?.viewTreeObserver?.takeIf { it.isAlive }?.removeOnScrollChangedListener(listener)
             }
         }, true)
     }
@@ -59,25 +58,20 @@ object TvNavigation {
         val bottomBar = root.findViewById<View>(R.id.toolbarContainer2) ?: return
         var animator: ValueAnimator? = null
         var collapsed = false
-        val listener = ViewTreeObserver.OnGlobalFocusChangeListener { _, newFocus ->
-            if (newFocus == null || !isInside(newFocus, root)) return@OnGlobalFocusChangeListener
-            val collapse = when {
-                isInside(newFocus, appBar) -> false
-                else -> pastFirstRow(newFocus, root) ?: return@OnGlobalFocusChangeListener
-            }
-            if (collapse == collapsed) return@OnGlobalFocusChangeListener
+        fun setCollapsed(collapse: Boolean) {
+            if (collapse == collapsed) return
             collapsed = collapse
             animator?.cancel()
             if (!collapse) {
                 appBar.setExpanded(true, true)
-                return@OnGlobalFocusChangeListener
+                return
             }
             // Leave the top bar and the tabs showing.
             val target = -(appBar.height - toolbar.height - bottomBar.height).coerceIn(0, appBar.totalScrollRange)
-            val coordinator = appBar.parent as? CoordinatorLayout ?: return@OnGlobalFocusChangeListener
-            val behavior = (appBar.layoutParams as? CoordinatorLayout.LayoutParams)?.behavior as? AppBarLayout.Behavior ?: return@OnGlobalFocusChangeListener
+            val coordinator = appBar.parent as? CoordinatorLayout ?: return
+            val behavior = (appBar.layoutParams as? CoordinatorLayout.LayoutParams)?.behavior as? AppBarLayout.Behavior ?: return
             val start = behavior.topAndBottomOffset
-            if (start <= target) return@OnGlobalFocusChangeListener
+            if (start <= target) return
             var last = start
             animator = ValueAnimator.ofInt(start, target).apply {
                 duration = 200L
@@ -90,32 +84,23 @@ object TvNavigation {
                 start()
             }
         }
+        // Any scroll of the list on screen (touch or remote): away from the top hides the banner,
+        // back at the top shows it. The header no longer scrolls with the list by itself, so the
+        // tabs always stay visible.
+        val listener = ViewTreeObserver.OnScrollChangedListener {
+            if (!root.isAttachedToWindow || !root.isShown) return@OnScrollChangedListener
+            val list = findLists(root).firstOrNull { it.isShown && !isInside(it, appBar) } ?: return@OnScrollChangedListener
+            findLists(root).forEach { if (it.isNestedScrollingEnabled) it.isNestedScrollingEnabled = false }
+            setCollapsed(list.computeVerticalScrollOffset() > 0)
+        }
         val observer = fragment.activity?.window?.decorView?.viewTreeObserver ?: return
-        observer.addOnGlobalFocusChangeListener(listener)
-        focusListeners[fragment] = listener
+        observer.addOnScrollChangedListener(listener)
+        root.post { findLists(root).forEach { it.isNestedScrollingEnabled = false } }
+        headerListeners[fragment] = listener
     }
 
     private fun isInside(view: View, parent: View): Boolean =
         generateSequence(view) { it.parent as? View }.any { it === parent }
-
-    /** True if [focused] is a list item below the first row, false if in the first row, null if not in a list. */
-    private fun pastFirstRow(focused: View, root: View): Boolean? {
-        var child: View = focused
-        var parent = child.parent
-        while (parent != null && parent !is RecyclerView) {
-            child = parent as? View ?: return null
-            if (child === root) return null
-            parent = child.parent
-        }
-        val list = parent as? RecyclerView ?: return null
-        val position = list.getChildAdapterPosition(child).takeIf { it != RecyclerView.NO_POSITION } ?: return null
-        val firstRow = when (val lm = list.layoutManager) {
-            is GridLayoutManager -> lm.spanCount
-            is StaggeredGridLayoutManager -> lm.spanCount
-            else -> 1
-        }
-        return position >= firstRow
-    }
 
     // ---- Card outline ----
 

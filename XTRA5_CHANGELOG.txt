@@ -1,6 +1,19 @@
 Xtra5 changelog (newest first)
 
 ========================================
+Xtra5 1.47.3 (2026-11-15)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+Changed
+- Long chat messages (landscape, chat beside the video): the full message now floats over
+  the video right next to the chat input, lined up with it and following it if it moves.
+  The box is as long as the message, growing leftwards as you type and wrapping upwards at
+  the video's left edge; dark fill with a light border.
+
+Fixed
+- Channel and game pages: scrolling a list away from the top (touch or remote) now slides
+  the banner away, keeping the top bar and the tabs; back at the top it returns.
+========================================
 Xtra5 1.47.2 (2026-11-15)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
