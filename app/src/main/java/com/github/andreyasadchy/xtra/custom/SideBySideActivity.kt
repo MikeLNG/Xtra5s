@@ -322,6 +322,13 @@ class SideBySideActivity : AppCompatActivity() {
                     adjusting = true
                     startX = e.x
                     startVolume = if (pane.muted) 0 else pane.volume
+                    // The video saw the finger go down: tell it the touch is over, so it drops its
+                    // pressed (white) highlight and doesn't count it as a tap.
+                    MotionEvent.obtain(e).apply { action = MotionEvent.ACTION_CANCEL }.let { cancel ->
+                        this@apply.onTouchEvent(cancel)
+                        cancel.recycle()
+                    }
+                    isPressed = false
                     performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS)
                     showVolumeBar(pane)
                 }
@@ -354,6 +361,7 @@ class SideBySideActivity : AppCompatActivity() {
                         }
                         MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                             adjusting = false
+                            v.isPressed = false
                             hideVolumeBar(pane)
                         }
                     }
