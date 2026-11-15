@@ -1,6 +1,13 @@
 Xtra5s changelog (newest first)
 
 ========================================
+Xtra5s 1.1.1 (2026-11-15)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+Fixed
+- Restoring settings exported from Xtra5 no longer points the updater at Xtra5: Xtra5s keeps
+  updating from its own releases.
+========================================
 Xtra5s 1.1.0 (2026-11-15)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 

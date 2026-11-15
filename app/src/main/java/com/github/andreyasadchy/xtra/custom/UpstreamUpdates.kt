@@ -59,9 +59,10 @@ object UpstreamUpdates {
         if (prefs.getBoolean(C.PLAYER_HANDLE_AUDIO_BECOMING_NOISY, true)) {
             prefs.edit { putBoolean(C.PLAYER_HANDLE_AUDIO_BECOMING_NOISY, false) }
         }
-        // Point the built-in updater at Xtra5 releases, never at official Xtra builds.
+        // Point the built-in updater at Xtra5s releases, never at official Xtra builds.
+        // Xtra5s: also not at Xtra5's (restored with settings exported from Xtra5).
         val url = prefs.getString(C.UPDATE_URL, null)
-        if (url.isNullOrBlank() || url.equals(OFFICIAL_UPDATE_URL, true)) {
+        if (url.isNullOrBlank() || url.equals(OFFICIAL_UPDATE_URL, true) || url.contains("/repos/prime385/Xtra5/", true)) {
             prefs.edit { putString(C.UPDATE_URL, XTRA5_UPDATE_URL) }
         }
         // First run: turn on daily update checks (the user can change this in Update settings).
