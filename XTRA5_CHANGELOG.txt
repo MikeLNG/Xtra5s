@@ -1,6 +1,15 @@
 Xtra5s changelog (newest first)
 
 ========================================
+Xtra5s 1.4.3 (2026-11-15)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+Fixed
+- Long-pressing a chatter (or an emote) no longer moves the chat: once it buzzes, a small
+  finger move before lifting can't drag the chat any more, and when you lift your finger the
+  chat is put back: at the bottom it carries on following new messages, scrolled up it stays
+  exactly where you were. (Normal player and Side-By-Side.)
+========================================
 Xtra5s 1.4.2 (2026-11-15)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
