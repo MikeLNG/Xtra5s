@@ -69,6 +69,8 @@ import kotlinx.coroutines.launch
  * (show / hide that side's chat input; hidden by default), replace (another channel on this
  * side), reload, watch only this (in the normal player) and fullscreen.
  * Swipe down on a video = replace it; swipe up = keep only that stream, in the normal player.
+ * Touch and hold a video, then slide left / right: that video's volume (its width = 0-100%),
+ * with a volume bar in the middle of it while adjusting.
  * Quality and volume here only apply to this screen.
  */
 @OptIn(UnstableApi::class)
@@ -110,12 +112,19 @@ class SideBySideActivity : AppCompatActivity() {
         /** The live stream on this side, for handing it to the normal player (null while offline). */
         var stream: Stream? = null
         lateinit var center: ImageButton
+        lateinit var volumeBar: LinearLayout
+        lateinit var volumeFill: View
+        lateinit var volumeText: TextView
+        lateinit var volumeIcon: android.widget.ImageView
+        var volumeBarJob: Job? = null
         /** Paused by the user (the big button). Playing again jumps to live. */
         var paused = false
         /** This side's chat input is shown (Side-By-Side only setting, hidden by default). */
         var inputShown = false
         /** The chat turned its input on (logged in), so it can be shown. */
         var inputAvailable = false
+        /** The message text when the input was hidden: new text (an emote put in) shows it again. */
+        var textWhenHidden = ""
 
         fun showStatus(text: String?) {
             status.text = text
@@ -224,7 +233,19 @@ class SideBySideActivity : AppCompatActivity() {
             isClickable = true
             foreground = SideBySide.selectableBackground(context)
             setOnClickListener { toggleControls(pane) }
+            // Hold-and-slide volume: set by onLongPress, then driven by the touch listener below.
+            var adjusting = false
+            var startX = 0f
+            var startVolume = 0
             val swipes = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
+                override fun onLongPress(e: MotionEvent) {
+                    adjusting = true
+                    startX = e.x
+                    startVolume = if (pane.muted) 0 else pane.volume
+                    performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS)
+                    showVolumeBar(pane)
+                }
+
                 override fun onFling(e1: MotionEvent?, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
                     val start = e1 ?: return false
                     val dy = e2.y - start.y
@@ -235,8 +256,29 @@ class SideBySideActivity : AppCompatActivity() {
                 }
             })
             var swiped = false
-            setOnTouchListener { _, event ->
-                if (event.actionMasked == MotionEvent.ACTION_DOWN) swiped = false
+            setOnTouchListener { v, event ->
+                if (event.actionMasked == MotionEvent.ACTION_DOWN) { swiped = false; adjusting = false }
+                if (adjusting) {
+                    when (event.actionMasked) {
+                        MotionEvent.ACTION_MOVE -> {
+                            val change = ((event.x - startX) / v.width.coerceAtLeast(1) * 100).toInt()
+                            val volume = (startVolume + change).coerceIn(0, 100)
+                            if (volume != pane.volume || (pane.muted && volume > 0)) {
+                                pane.volume = volume
+                                if (volume > 0) pane.muted = false
+                                pane.slider.value = volume.toFloat()
+                                pane.applyVolume()
+                            }
+                            showVolumeBar(pane)
+                        }
+                        MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                            adjusting = false
+                            hideVolumeBar(pane)
+                        }
+                    }
+                    // Holding: no tap, and no swipe up / down.
+                    return@setOnTouchListener true
+                }
                 if (swipes.onTouchEvent(event)) swiped = true
                 // A swipe is not a tap: don't toggle the controls for it.
                 swiped && event.actionMasked == MotionEvent.ACTION_UP
@@ -284,6 +326,35 @@ class SideBySideActivity : AppCompatActivity() {
             setOnFocusChangeListener { v, hasFocus -> (v as ImageButton).imageTintList = if (hasFocus) android.content.res.ColorStateList.valueOf(SideBySide.GOLD) else SideBySide.WHITE }
         }
         pane.videoFrame.addView(pane.center, FrameLayout.LayoutParams((72 * dp).toInt(), (72 * dp).toInt(), Gravity.CENTER))
+        pane.volumeBar = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            val pad = (10 * dp).toInt()
+            setPadding(pad, pad, (14 * dp).toInt(), pad)
+            background = GradientDrawable().apply { setColor(0xB3000000.toInt()); cornerRadius = 24 * dp }
+            isVisible = false
+        }
+        pane.volumeIcon = android.widget.ImageView(this).apply { imageTintList = SideBySide.WHITE }
+        val track = FrameLayout(this).apply {
+            background = GradientDrawable().apply { setColor(0x4DFFFFFF); cornerRadius = 3 * dp }
+        }
+        pane.volumeFill = View(this).apply {
+            background = GradientDrawable().apply { setColor(SideBySide.GOLD); cornerRadius = 3 * dp }
+        }
+        track.addView(pane.volumeFill, FrameLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT))
+        pane.volumeText = TextView(this).apply {
+            setTextColor(Color.WHITE)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
+            minEms = 2
+            gravity = Gravity.END
+        }
+        pane.volumeBar.addView(pane.volumeIcon, LinearLayout.LayoutParams((24 * dp).toInt(), (24 * dp).toInt()))
+        pane.volumeBar.addView(track, LinearLayout.LayoutParams((140 * dp).toInt(), (6 * dp).toInt()).apply {
+            marginStart = (10 * dp).toInt()
+            marginEnd = (10 * dp).toInt()
+        })
+        pane.volumeBar.addView(pane.volumeText, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        pane.videoFrame.addView(pane.volumeBar, FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER))
         pane.videoFrame.addView(buildControls(pane), FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM))
         pane.root.addView(pane.videoFrame, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
 
@@ -385,9 +456,33 @@ class SideBySideActivity : AppCompatActivity() {
         }
     }
 
+    /** The volume bar in the middle of [pane]'s video, while its volume is being slid. */
+    private fun showVolumeBar(pane: Pane) {
+        pane.volumeBarJob?.cancel()
+        val volume = if (pane.muted) 0 else pane.volume
+        pane.volumeIcon.setImageResource(if (volume == 0) R.drawable.xtra5s_volume_off else R.drawable.xtra5s_volume_up)
+        pane.volumeText.text = "$volume%"
+        val trackWidth = (140 * resources.displayMetrics.density).toInt()
+        pane.volumeFill.layoutParams = pane.volumeFill.layoutParams.apply { width = trackWidth * volume / 100 }
+        pane.volumeBar.alpha = 1f
+        pane.volumeBar.isVisible = true
+        pane.center.isVisible = false
+    }
+
+    private fun hideVolumeBar(pane: Pane) {
+        pane.volumeBarJob?.cancel()
+        pane.volumeBarJob = lifecycleScope.launch {
+            delay(1000)
+            pane.volumeBar.animate().alpha(0f).setDuration(250).withEndAction {
+                pane.volumeBar.isVisible = false
+                updateCenter(pane)
+            }.start()
+        }
+    }
+
     /** The big middle button: shown with the controls, and always while paused. */
     private fun updateCenter(pane: Pane) {
-        pane.center.isVisible = pane.playing && (pane.paused || pane.controls.isVisible)
+        pane.center.isVisible = pane.playing && (pane.paused || pane.controls.isVisible) && !pane.volumeBar.isVisible
         pane.center.setImageResource(if (pane.paused) R.drawable.xtra5s_play else R.drawable.xtra5s_pause)
         pane.center.contentDescription = if (pane.paused) "Play" else "Pause"
     }
@@ -425,8 +520,17 @@ class SideBySideActivity : AppCompatActivity() {
     /** Shows or hides [pane]'s chat input. The chat turns it on by itself when logged in. */
     private fun applyInput(pane: Pane) {
         val messageView = pane.chat.findViewById<View>(R.id.messageView) ?: return
+        // Long-pressing an emote puts it in the message: show the input then, as in the normal player.
+        val text = messageView.findViewById<TextView>(R.id.editText)?.text?.toString().orEmpty()
+        if (!pane.inputShown && pane.inputAvailable && !messageView.isVisible && text.isNotEmpty() && text != pane.textWhenHidden) {
+            pane.inputShown = true
+            SideBySide.setInputShown(this, pane.prefix, true)
+            messageView.isVisible = true
+            return
+        }
         if (messageView.isVisible && !pane.inputShown) {
             pane.inputAvailable = true
+            pane.textWhenHidden = text
             messageView.findFocus()?.let { focused ->
                 focused.clearFocus()
                 (getSystemService(INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager).hideSoftInputFromWindow(focused.windowToken, 0)
@@ -744,6 +848,7 @@ class SideBySideActivity : AppCompatActivity() {
         panes.forEach { pane ->
             pane.job?.cancel()
             pane.hideJob?.cancel()
+            pane.volumeBarJob?.cancel()
             pane.player?.release()
             pane.player = null
         }

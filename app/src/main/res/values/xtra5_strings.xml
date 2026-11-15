@@ -128,6 +128,17 @@
         <item>- Tap a paused mini player: resumes it.</item>
         <item>- [TV] Back: closes the video.</item>
         <item>- [TV] Hold Back: closes the video.</item>
+        <item># Side-By-Side</item>
+        <item>- Tap the big + on the Side-By-Side tab: type two channels, each with its own quality and volume.</item>
+        <item>- Tap a recent pair: opens the popup with it filled in. Long-press it: removes it.</item>
+        <item>- Tap a video (or OK on it): shows its controls: pause / play in the middle, then mute, volume, quality, message box, replace, reload, watch only this and fullscreen. They hide after 4 seconds.</item>
+        <item>- Pause / play (big button in the middle): pauses that side only; the chat keeps going. Playing again jumps to live.</item>
+        <item>- Touch and hold a video, then slide left / right: changes that video\'s volume (the video\'s width is 0 to 100%), with a volume bar while you slide.</item>
+        <item>- Swipe down on a video (or the Replace button): puts another channel on that side.</item>
+        <item>- Swipe up on a video (or the Watch only this button): closes the other side and plays this stream on its own in the normal player.</item>
+        <item>- Message box button: shows or hides that side\'s chat input (hidden by default, remembered per side). Long-pressing an emote shows it.</item>
+        <item>- Back: leaves fullscreen first, otherwise closes Side-By-Side.</item>
+        <item>- Remote, keyboard or controller (no setting needed): Left / Right / Up / Down move between the two videos, their controls and the chats. The selected video has a gold outline.</item>
         <item># Chat</item>
         <item>- Tap an emote: shows the emote\'s details.</item>
         <item>- Long-press an emote: puts it in your message (not sent; the chat input appears if it was hidden).</item>

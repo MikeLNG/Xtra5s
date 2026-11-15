@@ -1,4 +1,4 @@
-Xtra5s - feature list (version 1.2.0)
+Xtra5s - feature list (version 1.3.0)
 Everything official Xtra does, plus the features below.
 
 ========================================
@@ -18,6 +18,7 @@ Side-By-Side
   - Tap a video to pause it (playing again jumps to live, chat keeps going), mute it or set
     its volume (the number matches how loud it sounds), change its quality, show or hide its
     message box, reload it, or make it fullscreen.
+  - Touch, hold and slide left / right on a video to set its volume, with a volume bar.
   - Swap one side for another channel (Replace, or swipe down on it), or keep just one
     stream in the normal player (Watch only this, or swipe up on it).
   - Offline channels start playing by themselves when they go live; dropped streams

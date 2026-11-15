@@ -1,6 +1,20 @@
 Xtra5s changelog (newest first)
 
 ========================================
+Xtra5s 1.3.0 (2026-11-15)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+New
+- Side-By-Side: touch and hold a video (a short buzz), then slide left / right to change that
+  video's volume. The video's width is 0 to 100%; a volume bar with the percentage shows in
+  the middle of that video while you slide and fades a second after you let go. Sliding up
+  from 0 unmutes; the controls' volume slider follows. Quick taps and swipes are unchanged.
+- Settings > Shortcuts: new Side-By-Side section listing all its presses, gestures and buttons.
+
+Fixed
+- Side-By-Side: long-pressing an emote while that side's message box is hidden now shows the
+  message box with the emote in it (as in the normal player).
+========================================
 Xtra5s 1.2.0 (2026-11-15)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
