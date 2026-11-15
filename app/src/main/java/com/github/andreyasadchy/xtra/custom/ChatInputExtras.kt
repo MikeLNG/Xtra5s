@@ -41,7 +41,7 @@ import com.github.andreyasadchy.xtra.ui.player.PlayerFragment
 object ChatInputExtras {
 
     fun attach(input: MultiAutoCompleteTextView, row: View, adapter: ArrayAdapter<*>?) {
-        val activity = generateSequence(input.context) { (it as? ContextWrapper)?.baseContext }.firstNotNullOfOrNull { it as? MainActivity } ?: return
+        val activity = generateSequence(input.context) { (it as? ContextWrapper)?.baseContext }.firstNotNullOfOrNull { it as? android.app.Activity } ?: return // Xtra5s: any screen with a chat (also Side-By-Side)
         val top = activity.findViewById<FrameLayout>(android.R.id.content) ?: return
         val density = input.resources.displayMetrics.density
         fun dp(v: Int) = (v * density).toInt()
@@ -95,7 +95,7 @@ object ChatInputExtras {
         /** Left edge of the video, if the chat is beside it (landscape, full-size player). */
         fun videoLeft(): Int? {
             if (input.resources.configuration.orientation != Configuration.ORIENTATION_LANDSCAPE) return null
-            val player = activity.playerFragment as? PlayerFragment ?: return null
+            val player = (activity as? MainActivity)?.playerFragment as? PlayerFragment ?: return null
             val root = player.view ?: return null
             if (!player.isResumed || !player.xtra5PlayerState().isMaximized) return null
             if (generateSequence(input as View) { it.parent as? View }.none { it === root }) return null

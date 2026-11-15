@@ -138,7 +138,7 @@ File("${project.gradle.gradleUserHomeDir.absolutePath}/daemon/${project.gradle.g
 // above (including their versionCode/versionName bumps) merge without conflicts.
 // Versioning: MAJOR.FEATURE.FIX -> versionCode = MAJOR*10000 + FEATURE*100 + FIX
 // ---------------------------------------------------------------------------
-val xtra5Version = "1.48.1"
+val xtra5Version = "1.0.0"
 // Newest official (upstream) commit this build contains: the latest commit not authored by prime385.
 // Used by the in-app "official Xtra changes" check. Keep Xtra5 commits authored as prime385.
 val xtra5UpstreamSha: String = try {
@@ -149,7 +149,7 @@ val xtra5UpstreamSha: String = try {
 android {
     defaultConfig {
         buildConfigField("String", "XTRA5_UPSTREAM_SHA", "\"$xtra5UpstreamSha\"")
-        applicationId = "com.prime385.xtra5"
+        applicationId = "com.prime385.xtra5s"
         versionName = xtra5Version
         versionCode = xtra5Version.split(".").map { it.toInt() }.let { (major, feature, fix) -> major * 10000 + feature * 100 + fix }
     }

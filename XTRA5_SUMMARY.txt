@@ -1,13 +1,24 @@
-Xtra5 - feature list (version 1.46.0)
+Xtra5s - feature list (version 1.0.0)
 Everything official Xtra does, plus the features below.
 
 ========================================
 Always up to date
 - Stays current with official Xtra: new versions arrive automatically and install with one tap
   from inside the app.
-- Installs alongside official Xtra, so you can keep both.
+- Installs alongside official Xtra and Xtra5, so you can keep all of them.
 - See what's new in official Xtra right from Settings.
 - Settings > Shortcuts lists every extra press and gesture, grouped by screen.
+
+========================================
+Side-By-Side
+- Watch two live streams at once from the Side-By-Side tab: each side has its video on top
+  and its own chat underneath, with all your highlights and chat colors.
+  - Tap + and type a channel on each side (suggestions from the channels you follow), each
+    with its own quality (720p by default) and its own mute and volume.
+  - Tap a video to mute it, change its volume or quality, reload it, or make it fullscreen.
+  - Offline channels start playing by themselves when they go live; dropped streams
+    reconnect on their own.
+  - Recent pairs are one tap away.
 
 ========================================
 Chat

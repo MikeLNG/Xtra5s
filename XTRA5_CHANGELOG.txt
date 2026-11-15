@@ -1,4 +1,38 @@
-Xtra5 changelog (newest first)
+Xtra5s changelog (newest first)
+
+========================================
+Xtra5s 1.0.0 (2026-11-15)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+New
+- Xtra5s: a separate app, started from Xtra5 1.48.1 with all its features. It installs next to
+  Xtra5 (its own app name and package), and updates itself from the Xtra5s releases.
+- Side-By-Side: a new tab on the Following page (after Channels; reorder or hide it in
+  Settings > UI like the other tabs) for watching two live streams at once.
+  - Tap the big + to open a popup with a Left and a Right side. On each side: type a channel
+    (suggestions come from the channels you follow and ones you watched before), choose a
+    quality (720p by default) and set its sound with a mute button and a volume slider.
+  - Watch opens both streams side by side: each side has its video on top and that channel's
+    own chat underneath, with your highlights, special message colors, fonts and emotes. Both
+    chats can be typed in.
+  - Tap (or press OK on) a video for its controls: mute, volume, quality, reload, and
+    fullscreen for that video (Back or the button again returns to side by side).
+  - Offline channels show "Offline" and start playing by themselves when they go live
+    (checked every minute); their chat still works. Dropped streams reconnect by themselves.
+  - The quality and volume chosen here only apply to Side-By-Side; the normal player's
+    settings are not changed.
+  - Recent pairs are listed under the + : tap one to open the popup with it filled in,
+    long-press to remove it.
+  - Opening Side-By-Side closes the normal player, so only the two streams play.
+
+Behind the scenes
+- New package com.prime385.xtra5s; updater and release workflow point at prime385/Xtra5s
+  (releases tagged xtra5s-v*, changelog attached as xtra5s-Custom-Changelog.txt).
+- Red clear button on the chat input also works outside the main screen (Side-By-Side chats).
+- Popups from a Side-By-Side chat open centred instead of "beside the chat".
+
+========================================
+Xtra5 history (Xtra5s started from Xtra5 1.48.1; everything below is from Xtra5)
 
 ========================================
 Xtra5 1.48.1 (2026-11-15)

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Xtra5s custom: fixed view ids for Side-By-Side, so restored chat fragments find their containers. -->
+<resources>
+    <item name="xtra5s_sbs_chat_left" type="id" />
+    <item name="xtra5s_sbs_chat_right" type="id" />
+</resources>

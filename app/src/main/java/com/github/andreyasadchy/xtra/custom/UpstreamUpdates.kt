@@ -35,7 +35,7 @@ object UpstreamUpdates {
     private const val MAX_LISTED = 50
 
     /** Xtra5 builds (official Xtra + custom features) are published here by .github/workflows/xtra5.yml */
-    const val XTRA5_UPDATE_URL = "https://api.github.com/repos/prime385/Xtra5/releases/latest"
+    const val XTRA5_UPDATE_URL = "https://api.github.com/repos/prime385/Xtra5s/releases/latest"
     private const val OFFICIAL_UPDATE_URL = "https://api.github.com/repos/crackededed/xtra/releases/tags/latest"
     private const val PREF_MIGRATED = "xtra5_updater_configured"
 
@@ -78,7 +78,7 @@ object UpstreamUpdates {
     fun setupSettings(fragment: PreferenceFragmentCompat) {
         val context = fragment.requireContext()
         val checkPref = fragment.findPreference<Preference>("check_updates") ?: return
-        checkPref.summary = "Xtra5 ${BuildConfig.VERSION_NAME}, based on official Xtra ${BuildConfig.XTRA5_UPSTREAM_SHA.take(7)}"
+        checkPref.summary = "Xtra5s ${BuildConfig.VERSION_NAME}, based on official Xtra ${BuildConfig.XTRA5_UPSTREAM_SHA.take(7)}"
         val parent = checkPref.parent ?: return
         parent.addPreference(Preference(context).apply {
             key = "xtra5_official_changelog"
@@ -152,7 +152,7 @@ object UpstreamUpdates {
         connection.connectTimeout = 15000
         connection.readTimeout = 15000
         connection.setRequestProperty("Accept", "application/vnd.github+json")
-        connection.setRequestProperty("User-Agent", "Xtra5")
+        connection.setRequestProperty("User-Agent", "Xtra5s")
         try {
             if (connection.responseCode == 200) connection.inputStream.bufferedReader().use { it.readText() } else null
         } finally {

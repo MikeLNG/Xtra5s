@@ -1,0 +1,578 @@
+package com.github.andreyasadchy.xtra.custom
+
+import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
+import android.os.Bundle
+import android.util.TypedValue
+import android.view.Gravity
+import android.view.KeyEvent
+import android.view.MotionEvent
+import android.view.SurfaceView
+import android.view.View
+import android.view.ViewGroup
+import android.view.WindowManager
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
+import android.widget.FrameLayout
+import android.widget.ImageButton
+import android.widget.LinearLayout
+import android.widget.Spinner
+import android.widget.TextView
+import androidx.activity.OnBackPressedCallback
+import androidx.annotation.OptIn
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.net.toUri
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
+import androidx.core.view.isVisible
+import androidx.lifecycle.lifecycleScope
+import androidx.media3.common.AudioAttributes
+import androidx.media3.common.MediaItem
+import androidx.media3.common.MimeTypes
+import androidx.media3.common.PlaybackException
+import androidx.media3.common.Player
+import androidx.media3.common.TrackSelectionOverride
+import androidx.media3.common.Tracks
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.datasource.DefaultDataSource
+import androidx.media3.exoplayer.DefaultLoadControl
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.hls.HlsMediaSource
+import androidx.media3.exoplayer.upstream.DefaultLoadErrorHandlingPolicy
+import androidx.media3.ui.AspectRatioFrameLayout
+import com.github.andreyasadchy.xtra.R
+import com.github.andreyasadchy.xtra.XtraApp
+import com.github.andreyasadchy.xtra.player.lowlatency.OkHttpDataSource
+import com.github.andreyasadchy.xtra.ui.chat.ChatFragment
+import com.github.andreyasadchy.xtra.ui.player.ExoPlayerService
+import com.github.andreyasadchy.xtra.util.C
+import com.github.andreyasadchy.xtra.util.TwitchApiHelper
+import com.github.andreyasadchy.xtra.util.applyTheme
+import com.github.andreyasadchy.xtra.util.prefs
+import com.google.android.material.slider.Slider
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+
+/**
+ * Xtra5s custom: the Side-By-Side screen. Two live streams next to each other, each with its own
+ * video on top and its own chat (the normal Xtra5 chat, so highlights and colors apply) underneath.
+ *
+ * Tap (or OK on) a video to show its controls: mute, volume, quality, reload and fullscreen.
+ * Quality and volume here only apply to this screen.
+ */
+@OptIn(UnstableApi::class)
+class SideBySideActivity : AppCompatActivity() {
+
+    companion object {
+        const val LEFT = "left"
+        const val RIGHT = "right"
+        private const val CONTROLS_TIMEOUT = 4000L
+        private const val OFFLINE_RECHECK = 60_000L
+    }
+
+    private inner class Pane(val prefix: String, val chatId: Int) {
+        lateinit var side: SideBySide.Side
+        var quality = SideBySide.DEFAULT_QUALITY
+        var volume = 100
+        var muted = false
+
+        lateinit var root: LinearLayout
+        lateinit var videoFrame: FrameLayout
+        lateinit var aspect: AspectRatioFrameLayout
+        lateinit var surface: SurfaceView
+        lateinit var label: TextView
+        lateinit var status: TextView
+        lateinit var controls: LinearLayout
+        lateinit var mute: ImageButton
+        lateinit var slider: Slider
+        lateinit var qualitySpinner: Spinner
+        lateinit var expand: ImageButton
+        lateinit var chat: FrameLayout
+
+        var player: ExoPlayer? = null
+        var job: Job? = null
+        var hideJob: Job? = null
+        var qualityApplied = false
+        var chatAdded = false
+        var errors = 0
+        var playing = false
+
+        fun showStatus(text: String?) {
+            status.text = text
+            status.isVisible = text != null
+        }
+
+        fun applyVolume() {
+            player?.volume = if (muted) 0f else volume / 100f
+            mute.setImageResource(if (muted || volume == 0) R.drawable.xtra5s_volume_off else R.drawable.xtra5s_volume_up)
+            mute.contentDescription = if (muted) "Unmute" else "Mute"
+            slider.alpha = if (muted) 0.5f else 1f
+        }
+    }
+
+    private val panes = listOf(Pane(LEFT, R.id.xtra5s_sbs_chat_left), Pane(RIGHT, R.id.xtra5s_sbs_chat_right))
+    private var expanded: Pane? = null
+    private var stopped = false
+    private lateinit var row: LinearLayout
+    private lateinit var divider: View
+
+    private val module get() = (application as XtraApp).xtraModule
+    private val networkLibrary get() = prefs().getString(C.NETWORK_LIBRARY, C.OKHTTP)
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        applyTheme()
+        super.onCreate(savedInstanceState)
+        val left = SideBySide.readSide(intent, LEFT)
+        val right = SideBySide.readSide(intent, RIGHT)
+        if (left == null || right == null) {
+            finish()
+            return
+        }
+        panes[0].side = left
+        panes[1].side = right
+        panes.forEach { pane ->
+            pane.quality = savedInstanceState?.getString("${pane.prefix}_quality") ?: pane.side.quality
+            pane.volume = savedInstanceState?.getInt("${pane.prefix}_volume", pane.side.volume) ?: pane.side.volume
+            pane.muted = savedInstanceState?.getBoolean("${pane.prefix}_muted", pane.side.muted) ?: pane.side.muted
+        }
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        WindowCompat.getInsetsController(window, window.decorView).apply {
+            systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            hide(WindowInsetsCompat.Type.systemBars())
+        }
+        setContentView(buildLayout())
+        panes.forEach { pane ->
+            createPlayer(pane)
+            pane.applyVolume()
+            // A restored chat (after the app was in the background) is reused.
+            pane.chatAdded = supportFragmentManager.findFragmentById(pane.chatId) != null
+            load(pane)
+        }
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                val open = expanded
+                if (open != null) setExpanded(open, false) else finish()
+            }
+        })
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        panes.forEach { pane ->
+            outState.putString("${pane.prefix}_quality", pane.quality)
+            outState.putInt("${pane.prefix}_volume", pane.volume)
+            outState.putBoolean("${pane.prefix}_muted", pane.muted)
+        }
+    }
+
+    // ---- Layout ----
+
+    private fun buildLayout(): View {
+        val dp = resources.displayMetrics.density
+        row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setBackgroundColor(Color.BLACK)
+        }
+        divider = View(this).apply { setBackgroundColor(0xFF303030.toInt()) }
+        panes.forEachIndexed { index, pane ->
+            if (index == 1) row.addView(divider, LinearLayout.LayoutParams((2 * dp).toInt(), ViewGroup.LayoutParams.MATCH_PARENT))
+            row.addView(buildPane(pane), LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f))
+        }
+        ViewCompat.setOnApplyWindowInsetsListener(row) { view, windowInsets ->
+            val bars = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
+            val ime = windowInsets.getInsets(WindowInsetsCompat.Type.ime())
+            view.setPadding(bars.left, bars.top, bars.right, maxOf(bars.bottom, ime.bottom))
+            WindowInsetsCompat.CONSUMED
+        }
+        return row
+    }
+
+    private fun buildPane(pane: Pane): View {
+        val dp = resources.displayMetrics.density
+        pane.root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+
+        pane.videoFrame = FrameLayout(this).apply {
+            setBackgroundColor(Color.BLACK)
+            isFocusable = true
+            isClickable = true
+            foreground = SideBySide.selectableBackground(context)
+            setOnClickListener { toggleControls(pane) }
+            setOnFocusChangeListener { _, hasFocus -> outline(pane, hasFocus) }
+        }
+        pane.aspect = AspectRatioFrameLayout(this).apply {
+            setAspectRatio(16f / 9f)
+            resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIXED_WIDTH
+        }
+        pane.surface = SurfaceView(this)
+        pane.aspect.addView(pane.surface, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+        pane.videoFrame.addView(pane.aspect, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER))
+
+        pane.label = TextView(this).apply {
+            text = pane.side.login
+            setTextColor(Color.WHITE)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
+            setShadowLayer(4f, 0f, 0f, Color.BLACK)
+            val pad = (6 * dp).toInt()
+            setPadding(pad, pad / 2, pad, pad / 2)
+            background = GradientDrawable().apply { setColor(0x66000000); cornerRadius = 4 * dp }
+        }
+        pane.videoFrame.addView(pane.label, FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.TOP or Gravity.START).apply {
+            val m = (6 * dp).toInt()
+            setMargins(m, m, m, m)
+        })
+        pane.status = TextView(this).apply {
+            setTextColor(Color.WHITE)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
+            setShadowLayer(4f, 0f, 0f, Color.BLACK)
+            gravity = Gravity.CENTER
+        }
+        pane.videoFrame.addView(pane.status, FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER))
+        pane.videoFrame.addView(buildControls(pane), FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM))
+        pane.root.addView(pane.videoFrame, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+
+        pane.chat = FrameLayout(this).apply {
+            id = pane.chatId
+            // Chat uses the app theme's background, as in the normal player.
+            TypedValue().also { theme.resolveAttribute(android.R.attr.colorBackground, it, true) }.let { setBackgroundColor(it.data) }
+        }
+        pane.root.addView(pane.chat, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
+        return pane.root
+    }
+
+    private fun buildControls(pane: Pane): View {
+        val dp = resources.displayMetrics.density
+        val pad = (8 * dp).toInt()
+        fun button(icon: Int, description: String, onClick: () -> Unit) = ImageButton(this).apply {
+            setImageResource(icon)
+            imageTintList = SideBySide.WHITE
+            contentDescription = description
+            background = SideBySide.selectableBackground(context)
+            setPadding(pad, pad, pad, pad)
+            setOnClickListener { onClick(); keepControls(pane) }
+            setOnFocusChangeListener { v, hasFocus -> (v as ImageButton).imageTintList = if (hasFocus) android.content.res.ColorStateList.valueOf(SideBySide.GOLD) else SideBySide.WHITE }
+        }
+        pane.controls = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            background = GradientDrawable(GradientDrawable.Orientation.BOTTOM_TOP, intArrayOf(0xCC000000.toInt(), 0x00000000))
+            setPadding(pad / 2, pad * 2, pad / 2, 0)
+            isVisible = false
+        }
+        pane.mute = button(R.drawable.xtra5s_volume_up, "Mute") {
+            pane.muted = !pane.muted
+            pane.applyVolume()
+        }
+        pane.slider = Slider(SideBySide.material(this)).apply {
+            valueFrom = 0f
+            valueTo = 100f
+            stepSize = 1f
+            value = pane.volume.toFloat()
+            setLabelFormatter { "${it.toInt()}%" }
+            addOnChangeListener { _, value, fromUser ->
+                if (fromUser) {
+                    pane.volume = value.toInt()
+                    pane.muted = false
+                    pane.applyVolume()
+                    keepControls(pane)
+                }
+            }
+        }
+        pane.qualitySpinner = Spinner(this, Spinner.MODE_DROPDOWN).apply {
+            adapter = object : ArrayAdapter<String>(context, android.R.layout.simple_spinner_item, SideBySide.QUALITIES) {
+                override fun getView(position: Int, convertView: View?, parent: ViewGroup): View =
+                    (super.getView(position, convertView, parent) as TextView).apply { setTextColor(Color.WHITE) }
+            }.also { it.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item) }
+            setSelection(SideBySide.QUALITIES.indexOf(pane.quality).coerceAtLeast(0), false)
+            onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                    val quality = SideBySide.QUALITIES[position]
+                    if (quality != pane.quality) {
+                        pane.quality = quality
+                        applyQuality(pane)
+                    }
+                    keepControls(pane)
+                }
+                override fun onNothingSelected(parent: AdapterView<*>?) {}
+            }
+        }
+        val reload = button(R.drawable.xtra5s_refresh, "Reload") { load(pane) }
+        pane.expand = button(R.drawable.xtra5s_fullscreen, "Fullscreen") { setExpanded(pane, expanded != pane) }
+        val wrap = ViewGroup.LayoutParams.WRAP_CONTENT
+        pane.controls.addView(pane.mute, LinearLayout.LayoutParams(wrap, wrap))
+        pane.controls.addView(pane.slider, LinearLayout.LayoutParams(0, wrap, 1f))
+        pane.controls.addView(pane.qualitySpinner, LinearLayout.LayoutParams(wrap, wrap))
+        pane.controls.addView(reload, LinearLayout.LayoutParams(wrap, wrap))
+        pane.controls.addView(pane.expand, LinearLayout.LayoutParams(wrap, wrap))
+        return pane.controls
+    }
+
+    private fun outline(pane: Pane, focused: Boolean) {
+        pane.videoFrame.foreground = if (focused) {
+            GradientDrawable().apply { setStroke((2 * resources.displayMetrics.density).toInt(), SideBySide.GOLD) }
+        } else SideBySide.selectableBackground(this)
+    }
+
+    // ---- Controls ----
+
+    private fun toggleControls(pane: Pane) {
+        if (pane.controls.isVisible) hideControls(pane) else {
+            pane.controls.isVisible = true
+            keepControls(pane)
+        }
+    }
+
+    private fun keepControls(pane: Pane) {
+        pane.hideJob?.cancel()
+        pane.hideJob = lifecycleScope.launch {
+            delay(CONTROLS_TIMEOUT)
+            hideControls(pane)
+        }
+    }
+
+    private fun hideControls(pane: Pane) {
+        pane.hideJob?.cancel()
+        // Keep the controls while one of them is being used with the remote.
+        if (pane.controls.hasFocus()) {
+            keepControls(pane)
+            return
+        }
+        pane.controls.isVisible = false
+    }
+
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        panes.forEach { if (it.controls.isVisible && it.controls.hasFocus()) keepControls(it) }
+        return super.dispatchKeyEvent(event)
+    }
+
+    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        if (ev.action == MotionEvent.ACTION_DOWN) panes.forEach { if (it.controls.isVisible) keepControls(it) }
+        return super.dispatchTouchEvent(ev)
+    }
+
+    private fun setExpanded(pane: Pane, expand: Boolean) {
+        expanded = if (expand) pane else null
+        panes.forEach { other ->
+            val isExpanded = expand && other == pane
+            other.root.isVisible = !expand || other == pane
+            other.chat.isVisible = !isExpanded
+            other.videoFrame.layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                if (isExpanded) 0 else ViewGroup.LayoutParams.WRAP_CONTENT,
+                if (isExpanded) 1f else 0f,
+            )
+            other.aspect.resizeMode = if (isExpanded) AspectRatioFrameLayout.RESIZE_MODE_FIT else AspectRatioFrameLayout.RESIZE_MODE_FIXED_WIDTH
+            other.aspect.layoutParams = FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                if (isExpanded) ViewGroup.LayoutParams.MATCH_PARENT else ViewGroup.LayoutParams.WRAP_CONTENT,
+                Gravity.CENTER,
+            )
+            other.expand.setImageResource(if (isExpanded) R.drawable.xtra5s_fullscreen_exit else R.drawable.xtra5s_fullscreen)
+            other.expand.contentDescription = if (isExpanded) "Exit fullscreen" else "Fullscreen"
+        }
+        divider.isVisible = !expand
+    }
+
+    // ---- Playback ----
+
+    private fun createPlayer(pane: Pane) {
+        val player = ExoPlayer.Builder(this).apply {
+            setLoadControl(
+                DefaultLoadControl.Builder().apply {
+                    setBufferDurationsMs(
+                        prefs().getString(C.PLAYER_BUFFER_MIN, "15000")?.toIntOrNull() ?: 15000,
+                        prefs().getString(C.PLAYER_BUFFER_MAX, "50000")?.toIntOrNull() ?: 50000,
+                        prefs().getString(C.PLAYER_BUFFER_PLAYBACK, "2000")?.toIntOrNull() ?: 2000,
+                        prefs().getString(C.PLAYER_BUFFER_REBUFFER, "2000")?.toIntOrNull() ?: 2000
+                    )
+                }.build()
+            )
+            // Both players play together, so neither may take audio focus from the other.
+            setAudioAttributes(AudioAttributes.DEFAULT, false)
+        }.build()
+        player.setVideoSurfaceView(pane.surface)
+        player.addListener(object : Player.Listener {
+            override fun onTracksChanged(tracks: Tracks) {
+                if (!pane.qualityApplied && tracks.groups.any { it.type == androidx.media3.common.C.TRACK_TYPE_VIDEO }) {
+                    pane.qualityApplied = true
+                    applyQuality(pane)
+                }
+            }
+
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                when (playbackState) {
+                    Player.STATE_READY -> {
+                        pane.errors = 0
+                        pane.showStatus(if (pane.quality == SideBySide.AUDIO_ONLY) "Audio only" else null)
+                    }
+                    Player.STATE_ENDED -> {
+                        pane.showStatus("Stream ended")
+                        load(pane, after = 5000)
+                    }
+                    else -> {}
+                }
+            }
+
+            override fun onVideoSizeChanged(videoSize: androidx.media3.common.VideoSize) {
+                if (videoSize.width > 0 && videoSize.height > 0) {
+                    pane.aspect.setAspectRatio(videoSize.width * videoSize.pixelWidthHeightRatio / videoSize.height)
+                }
+            }
+
+            override fun onPlayerError(error: PlaybackException) {
+                pane.errors++
+                pane.showStatus("Reconnecting…")
+                load(pane, after = (2000L * pane.errors).coerceAtMost(15000))
+            }
+        })
+        pane.player = player
+    }
+
+    /** Looks the channel up, adds its chat, and plays the stream (or waits while it's offline). */
+    private fun load(pane: Pane, after: Long = 0) {
+        pane.job?.cancel()
+        pane.job = lifecycleScope.launch {
+            if (after > 0) delay(after)
+            pane.playing = false
+            pane.qualityApplied = false
+            if (pane.player?.isPlaying != true) pane.showStatus("Loading…")
+            val user = try {
+                module.graphQLRepository.loadQueryUsersStream(networkLibrary, TwitchApiHelper.getGQLHeaders(this@SideBySideActivity), logins = listOf(pane.side.login)).data?.users?.firstOrNull()
+            } catch (e: Exception) {
+                pane.showStatus("Couldn't load ${pane.side.login}")
+                load(pane, after = 10000)
+                return@launch
+            }
+            if (user == null) {
+                pane.showStatus("Channel not found:\n${pane.side.login}")
+                return@launch
+            }
+            pane.label.text = user.displayName ?: user.login ?: pane.side.login
+            if (!pane.chatAdded && !isFinishing && !supportFragmentManager.isStateSaved) {
+                supportFragmentManager.beginTransaction()
+                    .replace(pane.chatId, ChatFragment.newInstance(user.id, user.login, user.displayName, user.stream?.id))
+                    .commit()
+                pane.chatAdded = true
+            }
+            if (user.stream == null) {
+                pane.player?.stop()
+                pane.showStatus("Offline")
+                load(pane, after = OFFLINE_RECHECK)
+                return@launch
+            }
+            val url = try {
+                module.playerRepository.loadStreamPlaylistUrl(
+                    context = this@SideBySideActivity,
+                    networkLibrary = networkLibrary,
+                    gqlHeaders = TwitchApiHelper.getGQLHeaders(this@SideBySideActivity, prefs().getBoolean(C.TOKEN_INCLUDE_TOKEN_STREAM, true)),
+                    channelLogin = user.login ?: pane.side.login,
+                    platform = prefs().getString(C.TOKEN_PLATFORM, "web"),
+                    playerType = prefs().getString(C.TOKEN_PLAYER_TYPE, "site"),
+                    supportedCodecs = prefs().getString(C.TOKEN_SUPPORTED_CODECS, "av1,h265,h264"),
+                    proxyPlaybackAccessToken = false,
+                    proxyHost = null,
+                    proxyPort = null,
+                    proxyUser = null,
+                    proxyPassword = null,
+                    proxyTimeout = null,
+                    enableIntegrity = false,
+                )
+            } catch (e: Exception) {
+                pane.showStatus("Couldn't load the stream")
+                load(pane, after = 10000)
+                return@launch
+            }
+            play(pane, url)
+        }
+    }
+
+    private fun play(pane: Pane, url: String) {
+        val player = pane.player ?: return
+        val source = HlsMediaSource.Factory(
+            DefaultDataSource.Factory(this, OkHttpDataSource.Factory(module.okHttpClient.value, null, null, null, null) { false })
+        ).apply {
+            setPlaylistParserFactory(ExoPlayerService.CustomHlsPlaylistParserFactory())
+            setLoadErrorHandlingPolicy(DefaultLoadErrorHandlingPolicy(6))
+        }.createMediaSource(
+            MediaItem.Builder()
+                .setUri(url.toUri())
+                .setMimeType(MimeTypes.APPLICATION_M3U8)
+                .setLiveConfiguration(MediaItem.LiveConfiguration.Builder().apply {
+                    prefs().getString(C.PLAYER_LIVE_TARGET_OFFSET, "2000")?.toLongOrNull()?.let { setTargetOffsetMs(it) }
+                }.build())
+                .build()
+        )
+        // Start near the chosen quality straight away; the exact track is picked once it's known.
+        player.trackSelectionParameters = player.trackSelectionParameters.buildUpon().apply {
+            clearOverridesOfType(androidx.media3.common.C.TRACK_TYPE_VIDEO)
+            val height = SideBySide.targetHeight(pane.quality)
+            setTrackTypeDisabled(androidx.media3.common.C.TRACK_TYPE_VIDEO, height == null)
+            setMaxVideoSize(Int.MAX_VALUE, height ?: Int.MAX_VALUE)
+        }.build()
+        player.setMediaSource(source)
+        player.prepare()
+        player.playWhenReady = !stopped
+        pane.playing = true
+        pane.applyVolume()
+    }
+
+    /** Picks the stream's variant closest to (not above) the chosen quality. */
+    private fun applyQuality(pane: Pane) {
+        val player = pane.player ?: return
+        val height = SideBySide.targetHeight(pane.quality)
+        val params = player.trackSelectionParameters.buildUpon()
+        if (height == null) {
+            params.clearOverridesOfType(androidx.media3.common.C.TRACK_TYPE_VIDEO)
+            params.setTrackTypeDisabled(androidx.media3.common.C.TRACK_TYPE_VIDEO, true)
+            pane.showStatus("Audio only")
+        } else {
+            params.setTrackTypeDisabled(androidx.media3.common.C.TRACK_TYPE_VIDEO, false)
+            params.setMaxVideoSize(Int.MAX_VALUE, height)
+            if (pane.status.text == "Audio only") pane.showStatus(null)
+            val group = player.currentTracks.groups.firstOrNull { it.type == androidx.media3.common.C.TRACK_TYPE_VIDEO }
+            if (group != null) {
+                val formats = (0 until group.length).filter { group.isTrackSupported(it) }.map { it to group.getTrackFormat(it) }
+                val best = formats.filter { it.second.height in 1..height }
+                    .maxWithOrNull(compareBy({ it.second.height }, { it.second.frameRate }, { it.second.bitrate }))
+                    ?: formats.minByOrNull { it.second.height.takeIf { h -> h > 0 } ?: Int.MAX_VALUE }
+                if (best != null) {
+                    params.setOverrideForType(TrackSelectionOverride(group.mediaTrackGroup, best.first))
+                }
+            }
+        }
+        player.trackSelectionParameters = params.build()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        if (stopped) {
+            stopped = false
+            // Back from the background: jump to live again.
+            panes.forEach { load(it) }
+        }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        if (!isChangingConfigurations) {
+            stopped = true
+            panes.forEach { pane ->
+                pane.job?.cancel()
+                pane.player?.stop()
+            }
+        }
+    }
+
+    override fun onDestroy() {
+        panes.forEach { pane ->
+            pane.job?.cancel()
+            pane.hideJob?.cancel()
+            pane.player?.release()
+            pane.player = null
+        }
+        super.onDestroy()
+    }
+}

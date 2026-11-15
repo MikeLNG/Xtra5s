@@ -19,6 +19,7 @@ class FollowPagerAdapter(
             "1" -> FollowedStreamsFragment()
             "2" -> FollowedVideosFragment()
             "3" -> FollowedChannelsFragment()
+            com.github.andreyasadchy.xtra.custom.SideBySide.TAB_KEY -> com.github.andreyasadchy.xtra.custom.SideBySideFragment() // Xtra5s custom
             else -> FollowedStreamsFragment()
         }
     }
