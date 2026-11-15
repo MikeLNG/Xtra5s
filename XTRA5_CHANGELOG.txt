@@ -1,6 +1,21 @@
 Xtra5 changelog (newest first)
 
 ========================================
+Xtra5 1.46.0 (2026-11-15)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+New
+- Chapters button on every VOD card (top-right of the thumbnail): lists the VOD's chapters
+  with box art, start time and length; picking one starts the VOD from there in fullscreen.
+  Shows "No chapters for this video" when there are none.
+- The persistent progress bar now also shows the start and end times, in the same places as
+  on the normal controls.
+
+Changed
+- The battery percentage and the persistent progress bar now fade in and out together with
+  the player controls (same moment, same speed): full while the controls show, the faded
+  opacity once they are hidden. The separate 4-second delay is gone.
+========================================
 Xtra5 1.45.0 (2026-11-15)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 

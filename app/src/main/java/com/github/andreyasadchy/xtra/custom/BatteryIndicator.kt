@@ -27,8 +27,8 @@ import com.github.andreyasadchy.xtra.util.prefs
  *
  * Shown at the top-right corner of the video, right of the ⋮ menu (the top-right player buttons
  * move left to make room), only while the player is full-size in fullscreen (landscape). It stays
- * in place when the controls hide: full opacity while the controls are showing, faded to the
- * chosen opacity 4 seconds after they were last shown. A white bolt shows while charging. Hidden
+ * in place when the controls hide: it fades in and out together with the controls, between full
+ * opacity (controls showing) and the chosen faded opacity (controls hidden). A white bolt shows while charging. Hidden
  * on devices without a battery and whenever TV mode shortcuts are on.
  *
  * Kept in its own package so upstream Xtra updates can be merged without conflicts.
@@ -107,6 +107,11 @@ object BatteryIndicator {
         if (text.isAttachedToWindow) startListening()
         // Fullscreen / controls changes.
         container.viewTreeObserver.addOnGlobalLayoutListener { update(indicator) }
+        // Every frame the controls fade in or out, match their opacity.
+        container.viewTreeObserver.addOnPreDrawListener {
+            if (text.isVisible) applyAlpha(indicator)
+            true
+        }
     }
 
     private fun updateBattery(indicator: Indicator, intent: Intent) {
@@ -173,20 +178,15 @@ object BatteryIndicator {
                 }
             }
         }
-        // Opacity follows the controls: full while showing, faded 4 s after they were last shown.
-        // The controls fade in from alpha 0 when they appear, so only their visibility counts.
-        val controlsVisible = indicator.controls.isVisible
-        if (controlsVisible != indicator.lastControlsVisible) {
-            indicator.lastControlsVisible = controlsVisible
-            text.removeCallbacks(indicator.fade)
-            if (controlsVisible) {
-                indicator.controlsShownAt = System.currentTimeMillis()
-                text.animate().cancel()
-                text.animate().alpha(1f).setDuration(250L).start() // together with the controls' fade-in
-            } else {
-                val elapsed = System.currentTimeMillis() - indicator.controlsShownAt
-                text.postDelayed(indicator.fade, (FADE_AFTER_MS - elapsed).coerceAtLeast(0L))
-            }
-        }
+        applyAlpha(indicator)
+    }
+
+    /** Opacity follows the controls' own fade, frame by frame: full while shown, faded when hidden. */
+    private fun applyAlpha(indicator: Indicator) {
+        val controls = indicator.controls
+        val shown = if (controls.isVisible) controls.alpha.coerceIn(0f, 1f) else 0f
+        val faded = indicator.fadedAlpha()
+        val alpha = faded + (1f - faded) * shown
+        if (indicator.text.alpha != alpha) indicator.text.alpha = alpha
     }
 }

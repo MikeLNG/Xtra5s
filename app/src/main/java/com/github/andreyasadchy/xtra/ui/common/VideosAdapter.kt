@@ -82,6 +82,7 @@ class VideosAdapter(
     ) : RecyclerView.ViewHolder(binding.root) {
         fun bind(item: Video?) {
             com.github.andreyasadchy.xtra.custom.NarrowCards.videoCard(binding) // Xtra5 custom
+            com.github.andreyasadchy.xtra.custom.VodChapters.bind(binding, item, fragment) // Xtra5 custom
             with(binding) {
                 if (item != null) {
                     val context = fragment.requireContext()

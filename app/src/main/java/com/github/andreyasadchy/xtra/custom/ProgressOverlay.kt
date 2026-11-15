@@ -9,6 +9,7 @@ import android.os.Looper
 import android.view.MotionEvent
 import android.view.View
 import android.widget.FrameLayout
+import android.widget.TextView
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
@@ -23,9 +24,9 @@ import com.github.andreyasadchy.xtra.util.prefs
  * Xtra5 custom: VOD / clip timeline extras.
  *  - Chapter markers: on VODs with chapters, a marker for each chapter start on the seek bar.
  *  - Persistent progress bar (Settings > Player): on VODs, downloads and clips in fullscreen
- *    (landscape), a copy of the seek bar stays in exactly the same place when the controls
- *    hide: full opacity, then faded to the chosen opacity 4 seconds after the controls were last
- *    shown (same timing as the battery percentage). Display only: touches pass through.
+ *    (landscape), a copy of the seek bar and its start / end times stays in exactly the same
+ *    place when the controls hide. It fades with the controls, frame by frame: as they fade out
+ *    it fades in to the chosen opacity, and back out as they return. Touches pass through.
  *
  * Kept in its own package so upstream Xtra updates can be merged without conflicts.
  * Started from UpstreamUpdates.onMainActivityCreate; player info from PlayerFragment.xtra5PlayerState.
@@ -52,13 +53,14 @@ object ProgressOverlay {
         override fun dispatchKeyEvent(event: android.view.KeyEvent): Boolean = false
     }
 
-    private class State(val player: PlayerFragment, val container: FrameLayout, val controls: View, val realBar: DefaultTimeBar, val bar: DisplayTimeBar) {
+    private class State(
+        val player: PlayerFragment, val container: FrameLayout, val controls: View, val realBar: DefaultTimeBar, val bar: DisplayTimeBar,
+        val realPosition: TextView?, val realDuration: TextView?, val position: TextView, val duration: TextView,
+    ) {
+        var shown = false
         val handler = Handler(Looper.getMainLooper())
         var chapters: List<Long> = emptyList()
-        var lastControlsVisible: Boolean? = null
-        var controlsShownAt = 0L
         var attached = false
-        val fade = Runnable { bar.animate().alpha(fadedAlpha()).setDuration(400L).start() }
         val tick = object : Runnable {
             override fun run() {
                 if (!attached) return
@@ -83,20 +85,41 @@ object ProgressOverlay {
             visibility = View.GONE
         }
         container.addView(bar, FrameLayout.LayoutParams(0, FrameLayout.LayoutParams.WRAP_CONTENT))
-        val state = State(player, container, controls, realBar, bar)
-        // Same place as the real seek bar: copy its position whenever it is laid out.
+        val realPosition = view.findViewById<TextView>(R.id.position)
+        val realDuration = view.findViewById<TextView>(R.id.duration)
+        fun timeText(like: TextView?) = TextView(view.context).apply {
+            visibility = View.GONE
+            importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+            if (like != null) {
+                setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, like.textSize)
+                setTextColor(like.textColors)
+                typeface = like.typeface
+                setShadowLayer(like.shadowRadius, like.shadowDx, like.shadowDy, like.shadowColor)
+                setPadding(like.paddingLeft, like.paddingTop, like.paddingRight, like.paddingBottom)
+                gravity = like.gravity
+            }
+            container.addView(this, FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT))
+        }
+        val state = State(player, container, controls, realBar, bar, realPosition, realDuration, timeText(realPosition), timeText(realDuration))
+        // Same place as the real seek bar and times: copy their positions whenever laid out.
         realBar.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> matchPosition(state) }
+        realPosition?.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> matchPosition(state) }
+        realDuration?.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> matchPosition(state) }
         container.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
             override fun onViewAttachedToWindow(v: View) = start(state)
             override fun onViewDetachedFromWindow(v: View) {
                 state.attached = false
                 state.handler.removeCallbacksAndMessages(null)
-                bar.removeCallbacks(state.fade)
             }
         })
         if (container.isAttachedToWindow) start(state)
         // Controls shown / hidden, fullscreen changes.
         container.viewTreeObserver.addOnGlobalLayoutListener { if (state.attached) update(state) }
+        // Every frame the controls fade in or out, cross-fade with the real seek bar.
+        container.viewTreeObserver.addOnPreDrawListener {
+            if (state.shown) applyAlpha(state)
+            true
+        }
     }
 
     private fun start(state: State) {
@@ -107,21 +130,37 @@ object ProgressOverlay {
     }
 
     private fun matchPosition(state: State) {
-        val real = state.realBar
+        copyPlace(state, state.realBar, state.bar, matchWidth = true)
+        state.realPosition?.let { copyPlace(state, it, state.position, matchWidth = false) }
+        state.realDuration?.let { copyPlace(state, it, state.duration, matchWidth = false) }
+    }
+
+    /** Puts [copy] exactly where [real] is (relative to the video area). */
+    private fun copyPlace(state: State, real: View, copy: View, matchWidth: Boolean) {
         if (!real.isShown || real.width == 0) return
         val realLoc = IntArray(2).also { real.getLocationInWindow(it) }
         val boxLoc = IntArray(2).also { state.container.getLocationInWindow(it) }
-        val params = state.bar.layoutParams as FrameLayout.LayoutParams
+        val params = copy.layoutParams as FrameLayout.LayoutParams
         val left = realLoc[0] - boxLoc[0]
         val top = realLoc[1] - boxLoc[1]
-        if (params.width != real.width || params.height != real.height || params.leftMargin != left || params.topMargin != top) {
-            params.width = real.width
-            params.height = real.height
+        val width = if (matchWidth) real.width else FrameLayout.LayoutParams.WRAP_CONTENT
+        val height = if (matchWidth) real.height else FrameLayout.LayoutParams.WRAP_CONTENT
+        if (params.width != width || params.height != height || params.leftMargin != left || params.topMargin != top) {
+            params.width = width
+            params.height = height
             params.leftMargin = left
             params.topMargin = top
             params.gravity = android.view.Gravity.TOP or android.view.Gravity.START
-            state.bar.layoutParams = params
+            copy.layoutParams = params
         }
+    }
+
+    /** Hidden while the controls show (the real bar is there), the faded opacity once they're gone. */
+    private fun applyAlpha(state: State) {
+        val controls = state.controls
+        val shown = if (controls.isVisible) controls.alpha.coerceIn(0f, 1f) else 0f
+        val alpha = state.fadedAlpha() * (1f - shown)
+        listOf(state.bar, state.position, state.duration).forEach { if (it.alpha != alpha) it.alpha = alpha }
     }
 
     private fun update(state: State) {
@@ -145,30 +184,24 @@ object ProgressOverlay {
             context.resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE &&
             (state.bar.layoutParams.width > 0)
         val duration = player.getTotalDuration()?.takeIf { it > 0 }
-        val controlsVisible = state.controls.isVisible
-        if (!show || duration == null || controlsVisible) {
-            // The real seek bar is showing (or nothing should be).
-            if (bar.isVisible) {
-                bar.visibility = View.GONE
-                bar.removeCallbacks(state.fade)
-                bar.animate().cancel()
+        val views = listOf(bar, state.position, state.duration)
+        if (!show || duration == null) {
+            if (state.shown) {
+                state.shown = false
+                views.forEach { it.visibility = View.GONE }
             }
-            if (controlsVisible && state.lastControlsVisible != true) state.controlsShownAt = System.currentTimeMillis()
-            state.lastControlsVisible = controlsVisible
-            if (controlsVisible) matchPosition(state)
             return
         }
+        if (state.controls.isVisible) matchPosition(state)
+        val position = player.getCurrentPosition() ?: 0L
         bar.setDuration(duration)
-        bar.setPosition(player.getCurrentPosition() ?: 0L)
-        if (!bar.isVisible || state.lastControlsVisible != false) {
-            // Controls just hid (or the bar just turned on): full opacity, then fade.
-            bar.animate().cancel()
-            bar.alpha = 1f
-            bar.visibility = View.VISIBLE
-            bar.removeCallbacks(state.fade)
-            val elapsed = System.currentTimeMillis() - state.controlsShownAt
-            bar.postDelayed(state.fade, (FADE_AFTER_MS - elapsed).coerceAtLeast(0L))
+        bar.setPosition(position)
+        state.position.text = android.text.format.DateUtils.formatElapsedTime(position / 1000)
+        state.duration.text = android.text.format.DateUtils.formatElapsedTime(duration / 1000)
+        if (!state.shown) {
+            state.shown = true
+            views.forEach { it.visibility = View.VISIBLE }
+            applyAlpha(state)
         }
-        state.lastControlsVisible = false
     }
 }
