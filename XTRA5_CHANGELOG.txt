@@ -1,6 +1,21 @@
 Xtra5 changelog (newest first)
 
 ========================================
+Xtra5 1.44.0 (2026-11-15)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+New
+- Fullscreen chat: when your message is too long for the input box, the whole message is
+  shown at the bottom-left of the video area while you type.
+
+Changed
+- TV: while holding the seek bar, Up lets go (jumping there if the marker was moved) and
+  selects the right-most player button above the seek bar; from there all directions move
+  around the controls as usual. Selecting the seek bar again (Down) takes hold of it again,
+  so Left / Right move the marker by the percentage.
+- TV: Up after a seek also selects the right-most button above the seek bar (it was the
+  left-most).
+========================================
 Xtra5 1.43.0 (2026-11-15)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 

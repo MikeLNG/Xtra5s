@@ -17,6 +17,8 @@ import com.github.andreyasadchy.xtra.model.chat.Emote
  *  - The suggestion popup always has the same shape: the full width of the input row, one row
  *    per suggestion up to 4 (then it scrolls), so it is never squeezed into a sliver.
  *  - Picking a suggestion in the middle of a sentence doesn't leave a double space.
+ *  - Fullscreen (landscape, chat beside the video): a message too long for the input box is
+ *    shown in full at the bottom-left of the video area while typing.
  *
  * Kept in its own package so upstream Xtra updates can be merged without conflicts.
  * Upstream hooks: ChatFragment (after the input's tokenizer is set) and the start of
@@ -57,6 +59,19 @@ object ChatSuggestions {
         adapter.registerDataSetObserver(object : DataSetObserver() {
             override fun onChanged() = resize()
         })
+        // Long message in fullscreen: show all of it under the video.
+        fun mirror() = updateMirror(input)
+        input.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) = mirror()
+        })
+        val previousFocus = input.onFocusChangeListener
+        input.setOnFocusChangeListener { v, hasFocus ->
+            previousFocus?.onFocusChange(v, hasFocus)
+            mirror()
+        }
+        input.addOnLayoutChangeListener { _, l, _, r, _, ol, _, or, _ -> if (r - l != or - ol) mirror() }
         // A picked suggestion ends with a space; drop it if a space already follows.
         input.addTextChangedListener(object : TextWatcher {
             private var removeAt = -1
@@ -74,5 +89,47 @@ object ChatSuggestions {
                 s.delete(at, at + 1)
             }
         })
+    }
+
+    private fun updateMirror(input: MultiAutoCompleteTextView) {
+        val activity = generateSequence(input.context) { (it as? android.content.ContextWrapper)?.baseContext }
+            .firstNotNullOfOrNull { it as? com.github.andreyasadchy.xtra.ui.main.MainActivity } ?: return
+        val player = activity.playerFragment as? com.github.andreyasadchy.xtra.ui.player.PlayerFragment
+        val root = player?.view
+        val video = root?.findViewById<FrameLayout>(com.github.andreyasadchy.xtra.R.id.playerLayout)
+        val existing = video?.findViewById<android.widget.TextView>(com.github.andreyasadchy.xtra.R.id.xtra5_input_mirror)
+        val text = input.text?.toString().orEmpty()
+        val visibleWidth = input.width - input.totalPaddingLeft - input.totalPaddingRight
+        val show = video != null && player.isResumed &&
+            input.resources.configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE &&
+            player.xtra5PlayerState().isMaximized &&
+            generateSequence(input as View) { it.parent as? View }.any { it === root } &&
+            input.hasFocus() && text.isNotBlank() && visibleWidth > 0 && input.paint.measureText(text) > visibleWidth
+        if (!show) {
+            existing?.visibility = View.GONE
+            return
+        }
+        val density = input.resources.displayMetrics.density
+        val mirror = existing ?: android.widget.TextView(input.context).apply {
+            id = com.github.andreyasadchy.xtra.R.id.xtra5_input_mirror
+            setTextColor(android.graphics.Color.WHITE)
+            setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 15f)
+            setPadding((10 * density).toInt(), (6 * density).toInt(), (10 * density).toInt(), (6 * density).toInt())
+            background = android.graphics.drawable.GradientDrawable().apply {
+                cornerRadius = 6 * density
+                setColor(0xCC000000.toInt())
+            }
+            isClickable = false
+            isFocusable = false
+            video.addView(this, FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT,
+                android.view.Gravity.BOTTOM or android.view.Gravity.START).apply {
+                val margin = (12 * density).toInt()
+                setMargins(margin, margin, margin, margin)
+            })
+        }
+        mirror.maxWidth = (video.width - 24 * density).toInt().coerceAtLeast((100 * density).toInt())
+        mirror.text = text
+        mirror.visibility = View.VISIBLE
+        mirror.bringToFront()
     }
 }

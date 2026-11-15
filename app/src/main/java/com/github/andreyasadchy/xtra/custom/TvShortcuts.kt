@@ -186,7 +186,14 @@ object TvShortcuts {
                             backHidControls = true
                         }
                     }
-                    // Up / Down: ignored while the seek bar is held
+                    // Up: let go (jumping there if the marker was moved) and select the player
+                    // button just above the seek bar, on the right; normal navigation from there.
+                    KeyEvent.KEYCODE_DPAD_UP -> {
+                        val moved = current.position != current.start
+                        endScrub(commit = moved)
+                        current.player.get()?.let { p -> focusButtons(p, current.showController) }
+                    }
+                    // Down: ignored while the seek bar is held
                 }
                 consumed.add(keyCode)
                 return true
@@ -210,7 +217,7 @@ object TvShortcuts {
                         true
                     }
                     // Up: on to the player buttons; Left / Right then move between them as usual.
-                    KeyEvent.KEYCODE_DPAD_UP -> focusButtons(player, state)
+                    KeyEvent.KEYCODE_DPAD_UP -> focusButtons(player, state.showController)
                     else -> false
                 }
                 if (handled) consumed.add(keyCode)
@@ -309,10 +316,10 @@ object TvShortcuts {
         bar.isPressed = true
         // Make the held marker obvious: gold, at its larger "dragging" size (shown while focused).
         bar.setScrubberColor(HELD_SCRUBBER)
-        bar.requestFocus()
         state.showController()
         val current = Scrub(WeakReference(player), state.showController, state.hideController, duration, position)
         scrub = current
+        bar.requestFocus() // after scrub is set, so the focus listener doesn't start a second hold
         showScrubPosition(current)
         handler.removeCallbacks(timeout)
         handler.postDelayed(timeout, SCRUB_TIMEOUT_MS)
@@ -349,16 +356,31 @@ object TvShortcuts {
     }
 
     /** Ends seek mode and selects the buttons just above the seek bar. */
-    private fun focusButtons(player: PlayerFragment, state: PlayerState): Boolean {
+    private fun focusButtons(player: PlayerFragment, showController: () -> Unit): Boolean {
         val view = player.view ?: return false
-        val rows = listOf(R.id.bottomLeftLayout, R.id.bottomRightLayout).mapNotNull { view.findViewById<android.view.ViewGroup>(it) }
+        // The right-most button just above the seek bar (bottom-right row, else bottom-left row).
+        val rows = listOf(R.id.bottomRightLayout, R.id.bottomLeftLayout).mapNotNull { view.findViewById<android.view.ViewGroup>(it) }
         val target = rows.firstNotNullOfOrNull { row ->
-            (0 until row.childCount).map { row.getChildAt(it) }.firstOrNull { it.isShown && it.isFocusable && it.isEnabled }
+            (0 until row.childCount).map { row.getChildAt(it) }.lastOrNull { it.isShown && it.isFocusable && it.isEnabled }
         } ?: view.findViewById<View>(R.id.playPause)?.takeIf { it.isShown }
         afterSeek = null
         target?.requestFocus()
-        state.showController() // restarts the auto-hide timer
+        showController() // restarts the auto-hide timer
         return true
+    }
+
+    /**
+     * The seek bar was selected with the remote (e.g. Down from the player buttons): take hold
+     * of it, so Left / Right move the marker by the percentage again.
+     */
+    fun onSeekBarFocused(player: PlayerFragment) {
+        if (scrub != null || !player.isResumed) return
+        if (!player.requireContext().prefs().getBoolean(PREF_ENABLED, false)) return
+        val state = player.xtra5PlayerState()
+        if (!state.isMaximized || state.isLiveStream) return
+        if (player.view?.findViewById<View>(R.id.playerControls)?.isVisible != true) return
+        afterSeek = null
+        startScrub(player, state)
     }
 
     /** Marks [player]'s controls as up because of a seek, until they hide. */

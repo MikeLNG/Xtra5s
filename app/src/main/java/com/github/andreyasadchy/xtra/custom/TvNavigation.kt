@@ -40,7 +40,7 @@ object TvNavigation {
         activity.supportFragmentManager.registerFragmentLifecycleCallbacks(object : FragmentManager.FragmentLifecycleCallbacks() {
             override fun onFragmentViewCreated(fm: FragmentManager, f: Fragment, v: View, savedInstanceState: android.os.Bundle?) {
                 outlineCards(v)
-                if (f is com.github.andreyasadchy.xtra.ui.player.PlayerFragment) outlinePlayerButtons(v)
+                if (f is com.github.andreyasadchy.xtra.ui.player.PlayerFragment) outlinePlayerButtons(f, v)
                 if (f is ChannelPagerFragment || f is GamePagerFragment || f is GameMediaFragment) watchHeader(f, v)
             }
 
@@ -155,7 +155,7 @@ object TvNavigation {
     // ---- Player buttons ----
 
     /** The selected player button (remote / D-pad) gets a clear white box around it. */
-    private fun outlinePlayerButtons(root: View) {
+    private fun outlinePlayerButtons(player: com.github.andreyasadchy.xtra.ui.player.PlayerFragment, root: View) {
         val controls = root.findViewById<ViewGroup>(R.id.playerControls) ?: return
         val density = root.resources.displayMetrics.density
         fun outline(view: View) {
@@ -172,6 +172,10 @@ object TvNavigation {
             if (view is ViewGroup) for (i in 0 until view.childCount) outline(view.getChildAt(i))
         }
         outline(controls)
+        // Selecting the seek bar with the remote takes hold of it (TV mode shortcuts).
+        root.findViewById<View>(R.id.progressBar)?.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus && player.view === root) TvShortcuts.onSeekBarFocused(player)
+        }
     }
 
     private fun findLists(view: View): List<RecyclerView> {
