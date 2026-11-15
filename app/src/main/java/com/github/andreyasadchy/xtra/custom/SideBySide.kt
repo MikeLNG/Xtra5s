@@ -11,6 +11,7 @@ import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.widget.ArrayAdapter
 import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.Spinner
 import android.widget.TextView
@@ -27,6 +28,12 @@ import com.github.andreyasadchy.xtra.util.C
 import com.github.andreyasadchy.xtra.util.TwitchApiHelper
 import com.github.andreyasadchy.xtra.util.getAlertDialogBuilder
 import com.github.andreyasadchy.xtra.util.prefs
+import coil3.imageLoader
+import coil3.request.ImageRequest
+import coil3.request.crossfade
+import coil3.request.target
+import coil3.request.transformations
+import coil3.transform.CircleCropTransformation
 import com.google.android.material.slider.Slider
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import com.google.android.material.textfield.TextInputLayout
@@ -98,6 +105,11 @@ object SideBySide {
         context.prefs().edit { putString(PREF_RECENT, list.joinToString("\n") { "${it.first},${it.second}" }) }
     }
 
+    // ---- Chat input per side (hidden by default; only for Side-By-Side) ----
+
+    fun inputShown(context: Context, side: String) = context.prefs().getBoolean("xtra5s_sbs_input_$side", false)
+    fun setInputShown(context: Context, side: String, shown: Boolean) = context.prefs().edit { putBoolean("xtra5s_sbs_input_$side", shown) }
+
     // ---- Launching ----
 
     fun start(activity: FragmentActivity, left: Side, right: Side) {
@@ -147,24 +159,133 @@ object SideBySide {
         val names = LinkedHashSet<String>()
         recentPairs(context).forEach { names.add(it.first); names.add(it.second) }
         val module = (context.applicationContext as XtraApp).xtraModule
+        val found = HashMap<String, String>()
         try {
-            module.localChannelFollowsRepository.getAll().forEach { follow -> follow.userLogin?.let { names.add(it.lowercase()) } }
+            module.localChannelFollowsRepository.getAll().forEach { follow ->
+                follow.userLogin?.lowercase()?.let { login ->
+                    names.add(login)
+                    follow.channelLogo?.takeIf { it.isNotBlank() }?.let { found[login] = it }
+                }
+            }
         } catch (_: Exception) {}
+        try {
+            followedNames(context, names, found)
+        } finally {
+            saveAvatars(context, found)
+        }
+        // Recent channels that aren't followed: look their pictures up once.
+        ensureAvatars(context, recentPairs(context).flatMap { listOf(it.first, it.second) })
+        names.toList()
+    }
+
+    private suspend fun followedNames(context: Context, names: LinkedHashSet<String>, found: HashMap<String, String>) {
+        val module = (context.applicationContext as XtraApp).xtraModule
         val headers = TwitchApiHelper.getGQLHeaders(context, true)
         if (!headers[C.HEADER_TOKEN].isNullOrBlank()) {
             val networkLibrary = context.prefs().getString(C.NETWORK_LIBRARY, C.OKHTTP)
             var cursor: String? = null
             try {
                 repeat(10) {
-                    val follows = module.graphQLRepository.loadQueryUserFollowedUsers(networkLibrary, headers, 100, cursor).data?.user?.follows ?: return@withContext names.toList()
+                    val follows = module.graphQLRepository.loadQueryUserFollowedUsers(networkLibrary, headers, 100, cursor).data?.user?.follows ?: return
                     val edges = follows.edges.orEmpty()
-                    edges.forEach { edge -> edge?.node?.login?.let { names.add(it.lowercase()) } }
+                    edges.forEach { edge ->
+                        edge?.node?.let { node ->
+                            node.login?.lowercase()?.let { login ->
+                                names.add(login)
+                                TwitchApiHelper.getProfileImage(node.profileImageURL)?.let { found[login] = it }
+                            }
+                        }
+                    }
                     cursor = edges.lastOrNull()?.cursor?.toString()
-                    if (follows.pageInfo?.hasNextPage == false || cursor.isNullOrBlank()) return@withContext names.toList()
+                    if (follows.pageInfo?.hasNextPage == false || cursor.isNullOrBlank()) return
                 }
             } catch (_: Exception) {}
         }
-        names.toList()
+    }
+
+    // ---- Profile pictures (recent pairs and name suggestions) ----
+
+    private const val PREF_AVATARS = "xtra5s_sbs_avatars"
+    @Volatile private var avatarCache: MutableMap<String, String>? = null
+
+    /** Saved profile picture links by login, so they show straight away. */
+    fun avatars(context: Context): Map<String, String> = synchronized(this) {
+        avatarCache ?: HashMap<String, String>().also { map ->
+            try {
+                val json = org.json.JSONObject(context.prefs().getString(PREF_AVATARS, null) ?: "{}")
+                json.keys().forEach { key -> json.optString(key).takeIf { it.isNotBlank() }?.let { map[key] = it } }
+            } catch (_: Exception) {}
+            avatarCache = map
+        }
+    }
+
+    private fun saveAvatars(context: Context, found: Map<String, String>) {
+        if (found.isEmpty()) return
+        synchronized(this) {
+            val map = HashMap(avatars(context))
+            if (found.all { map[it.key] == it.value }) return
+            map.putAll(found)
+            avatarCache = map
+            context.prefs().edit { putString(PREF_AVATARS, org.json.JSONObject(map as Map<*, *>).toString()) }
+        }
+    }
+
+    /** Looks up the profile pictures of [logins] that have none saved yet. */
+    suspend fun ensureAvatars(context: Context, logins: List<String>) = withContext(Dispatchers.IO) {
+        val missing = logins.distinct().filter { it.isNotBlank() && avatars(context)[it] == null }
+        if (missing.isEmpty()) return@withContext
+        val module = (context.applicationContext as XtraApp).xtraModule
+        val networkLibrary = context.prefs().getString(C.NETWORK_LIBRARY, C.OKHTTP)
+        val found = HashMap<String, String>()
+        missing.chunked(100).forEach { chunk ->
+            try {
+                module.graphQLRepository.loadQueryUsersStream(networkLibrary, TwitchApiHelper.getGQLHeaders(context), logins = chunk).data?.users?.forEach { user ->
+                    val login = user?.login?.lowercase() ?: return@forEach
+                    TwitchApiHelper.getProfileImage(user.profileImageURL)?.let { found[login] = it }
+                }
+            } catch (_: Exception) {}
+        }
+        saveAvatars(context, found)
+    }
+
+    /** Shows [login]'s round profile picture in [view] (blank if not known yet). */
+    fun loadAvatar(view: ImageView, login: String) {
+        val url = avatars(view.context)[login]
+        if (url == null) {
+            view.setImageDrawable(null)
+            return
+        }
+        view.context.imageLoader.enqueue(
+            ImageRequest.Builder(view.context).apply {
+                data(url)
+                transformations(CircleCropTransformation())
+                crossfade(true)
+                target(view)
+            }.build()
+        )
+    }
+
+    /** Name suggestions with each channel's profile picture. */
+    class SuggestionAdapter(context: Context, names: List<String>) : ArrayAdapter<String>(context, 0, names) {
+        override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+            val dp = context.resources.displayMetrics.density
+            val row = convertView as? LinearLayout ?: LinearLayout(context).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                val pad = (12 * dp).toInt()
+                setPadding(pad, (6 * dp).toInt(), pad, (6 * dp).toInt())
+                addView(ImageView(context), LinearLayout.LayoutParams((32 * dp).toInt(), (32 * dp).toInt()))
+                addView(TextView(context).apply {
+                    setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
+                    setPadding((12 * dp).toInt(), 0, 0, 0)
+                    setSingleLine()
+                }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+            }
+            val login = getItem(position).orEmpty()
+            (row.getChildAt(1) as TextView).text = login
+            loadAvatar(row.getChildAt(0) as ImageView, login)
+            return row
+        }
     }
 
     // ---- The "+" popup ----
@@ -227,7 +348,7 @@ object SideBySide {
             val names = suggestions(context)
             if (names.isEmpty() || !dialog.isShowing) return@launch
             listOf(leftInputs, rightInputs).forEach {
-                it.name.setAdapter(ArrayAdapter(context, android.R.layout.simple_dropdown_item_1line, names))
+                it.name.setAdapter(SuggestionAdapter(context, names))
             }
         }
     }
@@ -272,7 +393,7 @@ object SideBySide {
         activity.lifecycleScope.launch {
             val names = suggestions(context)
             if (names.isEmpty() || !dialog.isShowing) return@launch
-            inputs.name.setAdapter(ArrayAdapter(context, android.R.layout.simple_dropdown_item_1line, names))
+            inputs.name.setAdapter(SuggestionAdapter(context, names))
         }
     }
 

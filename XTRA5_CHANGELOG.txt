@@ -1,6 +1,24 @@
 Xtra5s changelog (newest first)
 
 ========================================
+Xtra5s 1.2.0 (2026-11-15)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+New
+- Side-By-Side: big pause / play button in the middle of each video (shown with the controls,
+  and always while paused). Pauses that side only; the chat keeps going. Playing again jumps
+  to live.
+- Side-By-Side: message box button in each video's controls shows or hides that side's chat
+  input (logged in). Hidden by default; each side remembers its choice. The normal player's
+  chat bar setting is not affected.
+- Side-By-Side: profile pictures on the recent pairs and next to each name suggestion in the
+  "+" and Replace popups. Saved, so they show straight away next time.
+
+Fixed
+- Side-By-Side volume: the slider now matches what you hear (30% sounds about 30% as loud,
+  50% about half). Before, low settings were much louder than their number and the bottom of
+  the slider jumped up quickly.
+========================================
 Xtra5s 1.1.1 (2026-11-15)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 

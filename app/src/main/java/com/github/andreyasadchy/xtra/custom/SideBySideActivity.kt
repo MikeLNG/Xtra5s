@@ -64,8 +64,10 @@ import kotlinx.coroutines.launch
  * Xtra5s custom: the Side-By-Side screen. Two live streams next to each other, each with its own
  * video on top and its own chat (the normal Xtra5 chat, so highlights and colors apply) underneath.
  *
- * Tap (or OK on) a video to show its controls: mute, volume, quality, replace (another channel
- * on this side), reload, watch only this (in the normal player) and fullscreen.
+ * Tap (or OK on) a video to show its controls: a big pause / play in the middle (playing again
+ * jumps to live; the chat keeps going while paused), and mute, volume, quality, message box
+ * (show / hide that side's chat input; hidden by default), replace (another channel on this
+ * side), reload, watch only this (in the normal player) and fullscreen.
  * Swipe down on a video = replace it; swipe up = keep only that stream, in the normal player.
  * Quality and volume here only apply to this screen.
  */
@@ -107,6 +109,13 @@ class SideBySideActivity : AppCompatActivity() {
         var playing = false
         /** The live stream on this side, for handing it to the normal player (null while offline). */
         var stream: Stream? = null
+        lateinit var center: ImageButton
+        /** Paused by the user (the big button). Playing again jumps to live. */
+        var paused = false
+        /** This side's chat input is shown (Side-By-Side only setting, hidden by default). */
+        var inputShown = false
+        /** The chat turned its input on (logged in), so it can be shown. */
+        var inputAvailable = false
 
         fun showStatus(text: String?) {
             status.text = text
@@ -114,7 +123,10 @@ class SideBySideActivity : AppCompatActivity() {
         }
 
         fun applyVolume() {
-            player?.volume = if (muted) 0f else volume / 100f
+            // Ears hear loudness as roughly (signal level)^0.6, so a straight slider made 30%
+            // sound about half as loud. Level = slider^(5/3) makes the number match what you
+            // hear: 30% sounds about 30% as loud, 50% about half, 10% about a tenth.
+            player?.volume = if (muted) 0f else Math.pow(volume / 100.0, 5.0 / 3.0).toFloat()
             mute.setImageResource(if (muted || volume == 0) R.drawable.xtra5s_volume_off else R.drawable.xtra5s_volume_up)
             mute.contentDescription = if (muted) "Unmute" else "Mute"
             slider.alpha = if (muted) 0.5f else 1f
@@ -158,6 +170,9 @@ class SideBySideActivity : AppCompatActivity() {
             pane.applyVolume()
             // A restored chat (after the app was in the background) is reused.
             pane.chatAdded = supportFragmentManager.findFragmentById(pane.chatId) != null
+            pane.inputShown = SideBySide.inputShown(this, pane.prefix)
+            // The chat shows its input by itself (when logged in): keep it hidden unless turned on.
+            pane.chat.viewTreeObserver.addOnGlobalLayoutListener { applyInput(pane) }
             load(pane)
         }
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
@@ -256,6 +271,19 @@ class SideBySideActivity : AppCompatActivity() {
             gravity = Gravity.CENTER
         }
         pane.videoFrame.addView(pane.status, FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER))
+        pane.center = ImageButton(this).apply {
+            setImageResource(R.drawable.xtra5s_pause)
+            imageTintList = SideBySide.WHITE
+            scaleType = android.widget.ImageView.ScaleType.FIT_CENTER
+            val pad = (14 * dp).toInt()
+            setPadding(pad, pad, pad, pad)
+            background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(0x80000000.toInt()) }
+            contentDescription = "Pause"
+            isVisible = false
+            setOnClickListener { togglePause(pane); keepControls(pane) }
+            setOnFocusChangeListener { v, hasFocus -> (v as ImageButton).imageTintList = if (hasFocus) android.content.res.ColorStateList.valueOf(SideBySide.GOLD) else SideBySide.WHITE }
+        }
+        pane.videoFrame.addView(pane.center, FrameLayout.LayoutParams((72 * dp).toInt(), (72 * dp).toInt(), Gravity.CENTER))
         pane.videoFrame.addView(buildControls(pane), FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM))
         pane.root.addView(pane.videoFrame, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
 
@@ -324,14 +352,16 @@ class SideBySideActivity : AppCompatActivity() {
                 override fun onNothingSelected(parent: AdapterView<*>?) {}
             }
         }
+        val input = button(R.drawable.xtra5s_keyboard, "Show / hide message box") { toggleInput(pane) }
         val replace = button(R.drawable.xtra5s_swap, "Replace this channel") { replace(pane) }
-        val reload = button(R.drawable.xtra5s_refresh, "Reload") { load(pane) }
+        val reload = button(R.drawable.xtra5s_refresh, "Reload") { pane.paused = false; load(pane) }
         val only = button(R.drawable.xtra5s_open, "Watch only this stream") { watchOnly(pane) }
         pane.expand = button(R.drawable.xtra5s_fullscreen, "Fullscreen") { setExpanded(pane, expanded != pane) }
         val wrap = ViewGroup.LayoutParams.WRAP_CONTENT
         pane.controls.addView(pane.mute, LinearLayout.LayoutParams(wrap, wrap))
         pane.controls.addView(pane.slider, LinearLayout.LayoutParams(0, wrap, 1f))
         pane.controls.addView(pane.qualitySpinner, LinearLayout.LayoutParams(wrap, wrap))
+        pane.controls.addView(input, LinearLayout.LayoutParams(wrap, wrap))
         pane.controls.addView(replace, LinearLayout.LayoutParams(wrap, wrap))
         pane.controls.addView(reload, LinearLayout.LayoutParams(wrap, wrap))
         pane.controls.addView(only, LinearLayout.LayoutParams(wrap, wrap))
@@ -350,7 +380,65 @@ class SideBySideActivity : AppCompatActivity() {
     private fun toggleControls(pane: Pane) {
         if (pane.controls.isVisible) hideControls(pane) else {
             pane.controls.isVisible = true
+            updateCenter(pane)
             keepControls(pane)
+        }
+    }
+
+    /** The big middle button: shown with the controls, and always while paused. */
+    private fun updateCenter(pane: Pane) {
+        pane.center.isVisible = pane.playing && (pane.paused || pane.controls.isVisible)
+        pane.center.setImageResource(if (pane.paused) R.drawable.xtra5s_play else R.drawable.xtra5s_pause)
+        pane.center.contentDescription = if (pane.paused) "Play" else "Pause"
+    }
+
+    /** Pauses this side only; playing again jumps to live. The chat keeps going either way. */
+    private fun togglePause(pane: Pane) {
+        val player = pane.player ?: return
+        if (pane.paused) {
+            pane.paused = false
+            if (player.playbackState == Player.STATE_IDLE) {
+                load(pane)
+            } else {
+                player.seekToDefaultPosition()
+                player.play()
+            }
+        } else {
+            pane.paused = true
+            player.pause()
+        }
+        updateCenter(pane)
+    }
+
+    // ---- Chat input per side ----
+
+    private fun toggleInput(pane: Pane) {
+        if (!pane.inputShown && !pane.inputAvailable) {
+            Toast.makeText(this, "Log in to chat", Toast.LENGTH_SHORT).show()
+            return
+        }
+        pane.inputShown = !pane.inputShown
+        SideBySide.setInputShown(this, pane.prefix, pane.inputShown)
+        applyInput(pane)
+    }
+
+    /** Shows or hides [pane]'s chat input. The chat turns it on by itself when logged in. */
+    private fun applyInput(pane: Pane) {
+        val messageView = pane.chat.findViewById<View>(R.id.messageView) ?: return
+        if (messageView.isVisible && !pane.inputShown) {
+            pane.inputAvailable = true
+            messageView.findFocus()?.let { focused ->
+                focused.clearFocus()
+                (getSystemService(INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager).hideSoftInputFromWindow(focused.windowToken, 0)
+            }
+            messageView.isVisible = false
+            (supportFragmentManager.findFragmentById(pane.chatId) as? ChatFragment)?.let { chat ->
+                if (chat.emoteMenuIsVisible()) chat.toggleEmoteMenu(false)
+            }
+        } else if (messageView.isVisible) {
+            pane.inputAvailable = true
+        } else if (pane.inputShown && pane.inputAvailable) {
+            messageView.isVisible = true
         }
     }
 
@@ -365,15 +453,16 @@ class SideBySideActivity : AppCompatActivity() {
     private fun hideControls(pane: Pane) {
         pane.hideJob?.cancel()
         // Keep the controls while one of them is being used with the remote.
-        if (pane.controls.hasFocus()) {
+        if (pane.controls.hasFocus() || pane.center.hasFocus()) {
             keepControls(pane)
             return
         }
         pane.controls.isVisible = false
+        updateCenter(pane)
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        panes.forEach { if (it.controls.isVisible && it.controls.hasFocus()) keepControls(it) }
+        panes.forEach { if (it.controls.isVisible && (it.controls.hasFocus() || it.center.hasFocus())) keepControls(it) }
         return super.dispatchKeyEvent(event)
     }
 
@@ -466,6 +555,7 @@ class SideBySideActivity : AppCompatActivity() {
         pane.job = lifecycleScope.launch {
             if (after > 0) delay(after)
             pane.playing = false
+            updateCenter(pane)
             pane.qualityApplied = false
             if (pane.player?.isPlaying != true) pane.showStatus("Loading…")
             val user = try {
@@ -557,9 +647,10 @@ class SideBySideActivity : AppCompatActivity() {
         }.build()
         player.setMediaSource(source)
         player.prepare()
-        player.playWhenReady = !stopped
+        player.playWhenReady = !stopped && !pane.paused
         pane.playing = true
         pane.applyVolume()
+        updateCenter(pane)
     }
 
     /** Picks the stream's variant closest to (not above) the chosen quality. */
@@ -596,6 +687,8 @@ class SideBySideActivity : AppCompatActivity() {
             pane.volume = side.volume
             pane.muted = side.muted
             pane.stream = null
+            pane.paused = false
+            pane.inputAvailable = false
             pane.errors = 0
             pane.label.text = side.login
             pane.slider.value = side.volume.toFloat()
