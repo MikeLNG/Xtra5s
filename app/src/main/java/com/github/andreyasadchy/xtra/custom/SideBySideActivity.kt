@@ -341,7 +341,8 @@ class SideBySideActivity : AppCompatActivity() {
                 if (adjusting) {
                     when (event.actionMasked) {
                         MotionEvent.ACTION_MOVE -> {
-                            val change = ((event.x - startX) / v.width.coerceAtLeast(1) * 100).toInt()
+                            // Half the video's width = 0 to 100%.
+                            val change = ((event.x - startX) / (v.width / 2f).coerceAtLeast(1f) * 100).toInt()
                             val volume = (startVolume + change).coerceIn(0, 100)
                             if (volume != pane.volume || (pane.muted && volume > 0)) {
                                 pane.volume = volume

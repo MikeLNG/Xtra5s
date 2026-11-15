@@ -133,7 +133,7 @@
         <item>- Tap a recent pair: opens the popup with it filled in. Long-press it: removes it.</item>
         <item>- Tap a video (or OK on it): shows its controls: pause / play in the middle, then mute, volume, quality, message box, replace, reload, watch only this and fullscreen. They hide after 4 seconds.</item>
         <item>- Pause / play (big button in the middle): pauses that side only; the chat keeps going. Playing again jumps to live.</item>
-        <item>- Touch and hold a video, then slide left / right: changes that video\'s volume (the video\'s width is 0 to 100%), with a volume bar while you slide.</item>
+        <item>- Touch and hold a video, then slide left / right: changes that video\'s volume (half the video\'s width is 0 to 100%), with a volume bar while you slide.</item>
         <item>- Swipe down on a video (or the Replace button): puts another channel on that side.</item>
         <item>- Swipe up on a video (or the Watch only this button): closes the other side and plays this stream on its own in the normal player.</item>
         <item>- Message box button: shows or hides that side\'s chat input (hidden by default, remembered per side). Long-pressing an emote shows it.</item>

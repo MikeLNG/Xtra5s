@@ -274,9 +274,9 @@ object SideBySide {
                 gravity = Gravity.CENTER_VERTICAL
                 val pad = (12 * dp).toInt()
                 setPadding(pad, (6 * dp).toInt(), pad, (6 * dp).toInt())
-                addView(ImageView(context), LinearLayout.LayoutParams((32 * dp).toInt(), (32 * dp).toInt()))
+                addView(ImageView(context), LinearLayout.LayoutParams((40 * dp).toInt(), (40 * dp).toInt()))
                 addView(TextView(context).apply {
-                    setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
+                    setTextSize(TypedValue.COMPLEX_UNIT_SP, 18f)
                     setPadding((12 * dp).toInt(), 0, 0, 0)
                     setSingleLine()
                 }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
@@ -343,6 +343,7 @@ object SideBySide {
             if (prefill != null) dialog.getButton(AlertDialog.BUTTON_POSITIVE).requestFocus() else leftInputs.name.requestFocus()
         }
         dialog.show()
+        widen(dialog, 820)
 
         activity.lifecycleScope.launch {
             val names = suggestions(context)
@@ -390,11 +391,19 @@ object SideBySide {
             inputs.name.requestFocus()
         }
         dialog.show()
+        widen(dialog, 480)
         activity.lifecycleScope.launch {
             val names = suggestions(context)
             if (names.isEmpty() || !dialog.isShowing) return@launch
             inputs.name.setAdapter(SuggestionAdapter(context, names))
         }
+    }
+
+    /** Popups get most of the screen width (up to [maxDp]), so the boxes aren't cramped. */
+    private fun widen(dialog: AlertDialog, maxDp: Int) {
+        val metrics = dialog.context.resources.displayMetrics
+        val width = minOf((metrics.widthPixels * 0.92f).toInt(), (maxDp * metrics.density).toInt())
+        dialog.window?.setLayout(width, ViewGroup.LayoutParams.WRAP_CONTENT)
     }
 
     private fun sideOf(login: String, inputs: SideInputs) = Side(
@@ -409,14 +418,16 @@ object SideBySide {
         val column = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL }
         column.addView(TextView(context).apply {
             text = title
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
-            setPadding(0, 0, 0, (4 * dp).toInt())
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 17f)
+            setPadding(0, 0, 0, (6 * dp).toInt())
         })
         val layout = TextInputLayout(context).apply { hint = "Channel" }
         val name = MaterialAutoCompleteTextView(layout.context).apply {
             setSingleLine()
             inputType = EditorInfo.TYPE_CLASS_TEXT or EditorInfo.TYPE_TEXT_FLAG_NO_SUGGESTIONS
             threshold = 1
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f)
+            minHeight = (60 * dp).toInt()
             prefill?.let { setText(it) }
         }
         layout.addView(name, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
@@ -424,11 +435,18 @@ object SideBySide {
 
         column.addView(TextView(context).apply {
             text = "Quality"
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
-            setPadding(0, (10 * dp).toInt(), 0, 0)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
+            setPadding(0, (14 * dp).toInt(), 0, 0)
         })
         val quality = Spinner(context).apply {
-            adapter = ArrayAdapter(context, android.R.layout.simple_spinner_dropdown_item, QUALITIES)
+            adapter = object : ArrayAdapter<String>(context, android.R.layout.simple_spinner_dropdown_item, QUALITIES) {
+                private fun big(view: View) = (view as TextView).apply {
+                    setTextSize(TypedValue.COMPLEX_UNIT_SP, 18f)
+                    minHeight = (48 * dp).toInt()
+                }
+                override fun getView(position: Int, convertView: View?, parent: ViewGroup) = big(super.getView(position, convertView, parent))
+                override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup) = big(super.getDropDownView(position, convertView, parent))
+            }
             setSelection(QUALITIES.indexOf(start?.quality ?: DEFAULT_QUALITY).coerceAtLeast(0))
         }
         column.addView(quality, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))

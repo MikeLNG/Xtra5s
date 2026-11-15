@@ -71,6 +71,30 @@ object ChatLive {
         }
     }
 
+    /**
+     * Xtra5s: [login]'s highlight changed from [before]: recolours only their rows on screen (in
+     * every open chat) instead of re-drawing the whole chat, which made it jump. Rows with their own
+     * special background keep it. Rows kept aside for quick re-use are dropped so they're drawn
+     * afresh; the rest pick the new colour up when they scroll into view.
+     */
+    fun recolorUser(context: Context, login: String, before: Int?) {
+        val after = UserHighlights.colorForLogin(context, login)
+        alive().forEach { list ->
+            for (i in 0 until list.childCount) {
+                val row = list.getChildAt(i)
+                if (row.getTag(R.id.xtra5_row_login) != login) continue
+                val current = (row.background as? ColorDrawable)?.color
+                val previewed = row.getTag(R.id.xtra5_row_preview) as? Int
+                val eligible = row.background == null || current == before || (previewed != null && current == previewed)
+                if (!eligible) continue
+                row.setTag(R.id.xtra5_row_preview, null)
+                if (after != null) row.setBackgroundColor(after) else row.background = null
+            }
+            list.setItemViewCacheSize(0)
+            list.setItemViewCacheSize(2)
+        }
+    }
+
     /** The chat's background color, for an accurate preview. */
     fun chatBackground(): Int? {
         var view: View? = visibleChat()

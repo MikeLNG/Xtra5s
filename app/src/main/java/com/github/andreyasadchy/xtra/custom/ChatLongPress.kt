@@ -60,8 +60,10 @@ object ChatLongPress {
         }
         val login = textView.getTag(R.id.xtra5_row_login) as? String ?: return false
         val name = (textView.getTag(R.id.xtra5_row_name) as? String)?.takeIf { it.equals(login, true) } ?: login
+        val before = UserHighlights.colorForLogin(textView.context, login)
         Toast.makeText(textView.context, UserHighlights.toggleInDefaultGroup(textView.context, name), Toast.LENGTH_SHORT).show()
-        ChatLive.refreshChat()
+        // Xtra5s: recolour just that chatter's rows on screen, so the chat doesn't jump.
+        ChatLive.recolorUser(textView.context, login, before)
         return true
     }
 

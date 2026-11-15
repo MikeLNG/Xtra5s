@@ -86,7 +86,7 @@ class SideBySideFragment : Fragment() {
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
             setPadding(0, 0, 0, (8 * dp).toInt())
         })
-        pairs.forEach { pair -> list.addView(pairRow(context, pair), LinearLayout.LayoutParams((420 * dp).toInt().coerceAtMost(resources.displayMetrics.widthPixels - (32 * dp).toInt()), ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+        pairs.forEach { pair -> list.addView(pairRow(context, pair), LinearLayout.LayoutParams((520 * dp).toInt().coerceAtMost(resources.displayMetrics.widthPixels - (32 * dp).toInt()), ViewGroup.LayoutParams.WRAP_CONTENT).apply {
             bottomMargin = (6 * dp).toInt()
         }) }
         // Pictures for recent channels that have none saved yet.
@@ -113,7 +113,7 @@ class SideBySideFragment : Fragment() {
         val dp = resources.displayMetrics.density
         val outline = TypedValue().also { context.theme.resolveAttribute(com.google.android.material.R.attr.colorOutline, it, true) }.data
         fun border(color: Int, width: Float) = GradientDrawable().apply {
-            cornerRadius = 24 * dp
+            cornerRadius = 36 * dp
             setStroke((width * dp).toInt(), color)
         }
         val row = LinearLayout(context).apply {
@@ -124,7 +124,7 @@ class SideBySideFragment : Fragment() {
             background = border(outline, 1f)
             foreground = SideBySide.selectableBackground(context)
             val pad = (10 * dp).toInt()
-            setPadding(pad, (6 * dp).toInt(), pad, (6 * dp).toInt())
+            setPadding(pad, (12 * dp).toInt(), pad, (12 * dp).toInt())
             setOnFocusChangeListener { v, hasFocus -> v.background = if (hasFocus) border(SideBySide.GOLD, 2f) else border(outline, 1f) }
             setOnClickListener { SideBySide.showAddDialog(requireActivity(), pair) }
             setOnLongClickListener {
@@ -142,19 +142,19 @@ class SideBySideFragment : Fragment() {
             addView(ImageView(context).apply {
                 tag = login
                 SideBySide.loadAvatar(this, login)
-            }, LinearLayout.LayoutParams((32 * dp).toInt(), (32 * dp).toInt()))
+            }, LinearLayout.LayoutParams((48 * dp).toInt(), (48 * dp).toInt()))
             addView(TextView(context).apply {
                 text = login
                 setSingleLine()
                 ellipsize = android.text.TextUtils.TruncateAt.END
-                setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
-                setPadding((8 * dp).toInt(), 0, 0, 0)
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 17f)
+                setPadding((10 * dp).toInt(), 0, 0, 0)
             }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
         }
         row.addView(channel(pair.first), LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
         row.addView(TextView(context).apply {
             text = "|"
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 17f)
             setPadding((8 * dp).toInt(), 0, (8 * dp).toInt(), 0)
         })
         row.addView(channel(pair.second), LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))

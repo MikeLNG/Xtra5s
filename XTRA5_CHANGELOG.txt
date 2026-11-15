@@ -1,6 +1,20 @@
 Xtra5s changelog (newest first)
 
 ========================================
+Xtra5s 1.4.1 (2026-11-15)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+Changed
+- Side-By-Side: hold-and-slide volume is twice as fast: half the video's width is 0 to 100%.
+- Side-By-Side tab: recent pairs are taller, with bigger profile pictures and names.
+- Side-By-Side "+" and Replace popups: wider, with bigger channel boxes, quality dropdowns and
+  name suggestions.
+
+Fixed
+- Long-pressing a chatter to highlight them (or take them out) no longer makes the chat jump:
+  only their messages on screen change colour. At the bottom the chat keeps following new
+  messages; scrolled up, it stays where you are. (Normal player and Side-By-Side.)
+========================================
 Xtra5s 1.4.0 (2026-11-15)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
