@@ -1,6 +1,19 @@
 Xtra5 changelog (newest first)
 
 ========================================
+Xtra5 1.43.0 (2026-11-15)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+New
+- Chat input suggests emotes while you type normally, without ":" - from the 2nd letter of a
+  word, emotes whose names start with it (anywhere in the message, not just at the end).
+  ":" (looser matching) and "@" (users) work as before.
+
+Fixed
+- The suggestion popup could be a thin sliver. It now always spans the whole input row and
+  shows one row per suggestion, up to 4 (then it scrolls).
+- Picking a suggestion in the middle of a sentence no longer leaves a double space.
+========================================
 Xtra5 1.42.2 (2026-11-15)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 

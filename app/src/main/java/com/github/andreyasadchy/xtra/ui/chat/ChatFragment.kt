@@ -270,6 +270,7 @@ class ChatFragment : BaseNetworkFragment(), MessageClickedDialog.OnButtonClickLi
                             }
                         })
                         editText.setTokenizer(SpaceTokenizer())
+                        com.github.andreyasadchy.xtra.custom.ChatSuggestions.attach(editText, messageView, autoCompleteAdapter) // Xtra5 custom
                         editText.setOnKeyListener { _, keyCode, event ->
                             if (event.action == KeyEvent.ACTION_DOWN && keyCode == KeyEvent.KEYCODE_ENTER) {
                                 sendMessage()

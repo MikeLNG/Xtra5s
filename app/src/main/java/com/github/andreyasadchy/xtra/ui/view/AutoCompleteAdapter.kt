@@ -99,6 +99,7 @@ class AutoCompleteAdapter<T>(
                 val list = synchronized(originalValues) {
                     originalValues
                 }
+                com.github.andreyasadchy.xtra.custom.ChatSuggestions.plainMatches(constraint, list)?.let { found -> return FilterResults().apply { values = found.toMutableList(); count = found.size } } // Xtra5 custom
                 val regex = constraint.map {
                     "${Pattern.quote(it.lowercase())}\\S*?"
                 }.joinToString("").toRegex()
