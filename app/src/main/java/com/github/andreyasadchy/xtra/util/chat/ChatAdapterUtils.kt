@@ -83,7 +83,7 @@ object ChatAdapterUtils {
                 builder.append(string)
                 builder.setSpan(ForegroundColorSpan(getSavedColor("#999999", savedColors, useReadableColors, isLightTheme)), 0, string.length, SPAN_EXCLUSIVE_EXCLUSIVE)
                 builderIndex += string.length
-                val message = chatMessage.reply?.message
+                val message = com.github.andreyasadchy.xtra.custom.SpecialMessages.withoutReplierMention(chatMessage.reply?.message, chatMessage.replyParent?.userLogin, chatMessage.replyParent?.userName) // Xtra5 custom (was: chatMessage.reply?.message)
                 if (message != null) {
                     builder.append(message)
                     builder.setSpan(ForegroundColorSpan(getSavedColor("#999999", savedColors, useReadableColors, isLightTheme)), builderIndex, builderIndex + message.length, SPAN_EXCLUSIVE_EXCLUSIVE)

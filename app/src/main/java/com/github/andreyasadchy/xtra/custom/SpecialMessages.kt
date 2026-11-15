@@ -94,6 +94,20 @@ object SpecialMessages {
         }
     }
 
+    /**
+     * The grey quoted message of a reply, without "@name" mentions of the person replying (they
+     * are the one writing the reply, so it only takes up room). Null if nothing is left.
+     */
+    fun withoutReplierMention(message: String?, replierLogin: String?, replierName: String?): String? {
+        if (message == null) return null
+        val names = listOfNotNull(replierLogin, replierName).filter { it.isNotBlank() }.distinctBy { it.lowercase() }
+        if (names.isEmpty()) return message
+        val pattern = Regex("(^|\\s)@(" + names.joinToString("|") { Regex.escape(it) } + ")(?=$|[\\s,.:;!?])", RegexOption.IGNORE_CASE)
+        if (!pattern.containsMatchIn(message)) return message
+        val trimmed = pattern.replace(message, "$1").replace(Regex(" {2,}"), " ").trim()
+        return trimmed.ifEmpty { null }
+    }
+
     /** "Replying to name: " with a small reply icon in place of "Replying to". */
     fun replyPrefix(context: Context, replyMessage: String, userName: String?): CharSequence {
         val full = replyMessage.format(userName, "")

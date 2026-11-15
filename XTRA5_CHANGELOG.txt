@@ -1,6 +1,14 @@
 Xtra5 changelog (newest first)
 
 ========================================
+Xtra5 1.47.1 (2026-11-15)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+Changed
+- Chat replies: if the grey quoted message mentions the person replying ("@name"), that
+  mention is left out of the grey line to save space. Whole names only, any letter case;
+  the reply itself and the original message are unchanged.
+========================================
 Xtra5 1.47.0 (2026-11-15)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
