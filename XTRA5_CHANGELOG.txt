@@ -1,6 +1,15 @@
 Xtra5s changelog (newest first)
 
 ========================================
+Xtra5s 1.4.2 (2026-11-15)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+Fixed
+- Persistent progress bar (VODs, controls hidden): the end time no longer wraps onto two lines
+  when the chapter countdown gains a digit; it stays on one line, lined up on the right.
+- Channel pages: scrolling a tab whose list loaded later (e.g. Videos) no longer hides the
+  tabs along with the banner; the top bar and tabs always stay.
+========================================
 Xtra5s 1.4.1 (2026-11-15)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
