@@ -23,14 +23,17 @@ import java.lang.ref.WeakReference
  * Xtra5 custom: remote / D-pad shortcuts in the full-screen player.
  *
  * Only active when enabled in Settings, the player is maximized and its on-screen controls are hidden:
- *   Left / Right  rewind / fast-forward by a fixed step (VODs, clips and downloads; not live streams)
+ *   Left / Right  rewind / fast-forward by a fixed step and show the controls (VODs, clips and
+ *                 downloads; not live streams)
  *   Up            show the controls and "hold" the seek bar (live streams: just show the controls)
- *   Down          open the Chapters menu, if the VOD has chapters
+ *   Down          open the Chapters menu, if the VOD has chapters (live streams: show / hide chat)
  * While the seek bar is held (like a finger on the marker):
  *   Left / Right  move the marker by a percentage of the video length; hold to keep moving
  *   OK            let go: seek to the marker
- *   Back          cancel; also cancels by itself after 6 seconds without input
- * After letting go, while the controls are still showing, Left / Right hold the seek bar again.
+ *                 (cancels by itself after 6 seconds without input)
+ *   Back          cancel; if the marker hasn't moved, also hide the controls
+ * While the controls are up because of a seek (step or letting go of the seek bar): Left / Right
+ * skip by the step, Up holds the seek bar again, Back hides the controls.
  * Holding a button counts as one press.
  * Long-press Back (player full-size or minimized): close the player, like swiping it away.
  * Back with the player minimized: close the player, like swiping it away.
@@ -59,16 +62,26 @@ object TvShortcuts {
         val hasChapters: Boolean,
         val showController: () -> Unit,
         val showChapters: () -> Unit,
+        val hideController: () -> Unit = {},
+        /** Shows / hides the chat beside the video; false if chat is off. */
+        val toggleChat: () -> Boolean = { false },
     )
 
     /** Keys whose ACTION_DOWN we consumed, so their ACTION_UP is consumed too. */
     private val consumed = HashSet<Int>()
 
     // Seek bar "held" state (only while scrubbing).
-    private class Scrub(val player: WeakReference<PlayerFragment>, val showController: () -> Unit, val duration: Long, var position: Long)
+    private class Scrub(val player: WeakReference<PlayerFragment>, val showController: () -> Unit, val hideController: () -> Unit, val duration: Long, var position: Long) {
+        val start = position
+    }
     private var scrub: Scrub? = null
-    /** Player whose seek bar was just let go of, while its controls are still showing. */
-    private var afterScrub: WeakReference<PlayerFragment>? = null
+    /**
+     * Player whose controls are showing because of a seek (Left / Right, or letting go of the seek
+     * bar). Until they hide: Left / Right skip by the seek step, Up holds the seek bar again and
+     * Back hides the controls.
+     */
+    private var afterSeek: WeakReference<PlayerFragment>? = null
+    private var backHidControls = false
     private val handler = Handler(Looper.getMainLooper())
     private val timeout = Runnable { endScrub(commit = false) }
 
@@ -91,9 +104,23 @@ object TvShortcuts {
         if (event.action != KeyEvent.ACTION_DOWN) return false
 
         // Long-press Back: close the player completely, like swiping it away.
-        if (isBack && !scrubbing && event.repeatCount > 0 && !consumed.contains(keyCode) &&
+        if (isBack && !scrubbing && event.repeatCount > 0 && (!consumed.contains(keyCode) || backHidControls) &&
             (event.isLongPress || event.repeatCount >= LONG_PRESS_REPEATS)) {
             if (closePlayer(activity, playerFragment)) {
+                backHidControls = false
+                consumed.add(keyCode)
+                return true
+            }
+        }
+        if (isBack && event.repeatCount == 0) backHidControls = false
+        // Back while the controls are up because of a seek: hide them straight away.
+        if (isBack && !scrubbing && event.repeatCount == 0 && activity.prefs().getBoolean(PREF_ENABLED, false)) {
+            val player = playerFragment as? PlayerFragment
+            val controls = player?.view?.findViewById<View>(R.id.playerControls)
+            if (player != null && afterSeek?.get() === player && controls?.isVisible == true) {
+                afterSeek = null
+                player.xtra5PlayerState().hideController()
+                backHidControls = true
                 consumed.add(keyCode)
                 return true
             }
@@ -147,7 +174,16 @@ object TvShortcuts {
                         startHold(activity, keyCode, direction)
                     }
                     in okKeys -> endScrub(commit = true)
-                    KeyEvent.KEYCODE_BACK -> endScrub(commit = false)
+                    KeyEvent.KEYCODE_BACK -> {
+                        // Not moved yet: hide the controls. Moved: cancel the move (controls stay).
+                        val moved = current.position != current.start
+                        endScrub(commit = false)
+                        if (!moved) {
+                            afterSeek = null
+                            current.hideController()
+                            backHidControls = true
+                        }
+                    }
                     // Up / Down: ignored while the seek bar is held
                 }
                 consumed.add(keyCode)
@@ -163,24 +199,31 @@ object TvShortcuts {
         if (activity.currentFocus is EditText) return false // typing in chat
         val controls = player.view?.findViewById<View>(R.id.playerControls)
         if (controls?.isVisible == true) {
-            // Right after letting go of the seek bar (controls still up): Left / Right hold it again.
-            if (afterScrub?.get() === player && !state.isLiveStream &&
-                (keyCode == KeyEvent.KEYCODE_DPAD_LEFT || keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) &&
-                startScrub(player, state)) {
-                val direction = if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) -1 else 1
-                scrub?.let { moveScrub(activity, it, direction) }
-                startHold(activity, keyCode, direction)
-                consumed.add(keyCode)
-                return true
+            // Controls up because of a seek: Left / Right skip by the seek step, Up holds the bar.
+            if (afterSeek?.get() === player && !state.isLiveStream) {
+                val handled = when (keyCode) {
+                    KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT -> {
+                        seek(activity, player, if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) -1 else 1)
+                        state.showController() // keeps the controls up a little longer
+                        true
+                    }
+                    KeyEvent.KEYCODE_DPAD_UP -> startScrub(player, state)
+                    else -> false
+                }
+                if (handled) consumed.add(keyCode)
+                return handled
             }
             return false // normal D-pad navigation of the controls
         }
-        afterScrub = null
+        afterSeek = null
 
         val handled = when (keyCode) {
             KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT -> {
                 if (state.isLiveStream) false else {
                     seek(activity, player, if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) -1 else 1)
+                    // Show the seek bar and time; Left / Right keep skipping while it's up.
+                    state.showController()
+                    watchAfterSeek(player)
                     true
                 }
             }
@@ -189,10 +232,15 @@ object TvShortcuts {
                 true
             }
             KeyEvent.KEYCODE_DPAD_DOWN -> {
-                if (state.hasChapters) {
-                    state.showChapters()
-                    true
-                } else false
+                when {
+                    state.hasChapters -> {
+                        state.showChapters()
+                        true
+                    }
+                    // Live stream: show / hide the chat beside the video.
+                    state.isLiveStream && activity.resources.configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE -> state.toggleChat()
+                    else -> false
+                }
             }
             else -> false
         }
@@ -257,7 +305,7 @@ object TvShortcuts {
         // A pressed seek bar stops the player from moving the marker and from auto-hiding the controls.
         bar.isPressed = true
         state.showController()
-        val current = Scrub(WeakReference(player), state.showController, duration, position)
+        val current = Scrub(WeakReference(player), state.showController, state.hideController, duration, position)
         scrub = current
         showScrubPosition(current)
         handler.removeCallbacks(timeout)
@@ -289,14 +337,24 @@ object TvShortcuts {
             view.findViewById<TextView>(R.id.position)?.text = DateUtils.formatElapsedTime(position / 1000)
         }
         current.showController() // restarts the normal auto-hide timer
-        // Until the controls hide, Left / Right hold the seek bar again (see handle()).
-        afterScrub = WeakReference(player)
-        view.findViewById<View>(R.id.playerControls)?.let { controls ->
+        // Until the controls hide, Left / Right skip by the seek step (see handle()).
+        watchAfterSeek(player)
+    }
+
+    /** Marks [player]'s controls as up because of a seek, until they hide. */
+    private fun watchAfterSeek(player: PlayerFragment) {
+        if (afterSeek?.get() === player) return
+        afterSeek = WeakReference(player)
+        player.view?.findViewById<View>(R.id.playerControls)?.let { controls ->
             controls.viewTreeObserver.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
+                var seenVisible = controls.isVisible // the controls may still be fading in
                 override fun onGlobalLayout() {
-                    if (!controls.isVisible || scrub != null) {
+                    if (controls.isVisible) seenVisible = true
+                    if (afterSeek?.get() !== player) {
                         controls.viewTreeObserver.removeOnGlobalLayoutListener(this)
-                        if (!controls.isVisible && afterScrub?.get() === player) afterScrub = null
+                    } else if (seenVisible && !controls.isVisible && scrub == null) {
+                        controls.viewTreeObserver.removeOnGlobalLayoutListener(this)
+                        afterSeek = null
                     }
                 }
             })

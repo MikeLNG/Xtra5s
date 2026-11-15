@@ -1,6 +1,27 @@
 Xtra5 changelog (newest first)
 
 ========================================
+Xtra5 1.42.0 (2026-11-15)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+New
+- TV: on a live stream with the controls hidden, Down shows or hides the chat (it did nothing).
+- TV / remote: channel and game pages slide their banner away once you move down past the
+  first row of a list, keeping the top bar and tabs; moving back to the first row (or the
+  tabs) brings it back. Touch is unchanged.
+- TV / remote: stream, video, clip, channel and game cards get a clear outline while selected.
+
+Changed
+- TV: Left / Right seeking now also shows the controls, so the seek bar and time are visible.
+  While they're up, Left / Right keep skipping by the seek step, Up takes hold of the seek bar
+  and Back hides the controls straight away.
+- TV: after jumping with the seek bar, Left / Right now skip by the seek step (they used to
+  move the seek bar by the percentage again), Up takes hold of the seek bar again and Back
+  hides the controls.
+- TV: while holding the seek bar, Back hides the controls if the marker hasn't moved yet;
+  if it has moved, Back cancels the move as before.
+- Settings > Shortcuts updated to match.
+========================================
 Xtra5 1.41.1 (2026-11-14)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 

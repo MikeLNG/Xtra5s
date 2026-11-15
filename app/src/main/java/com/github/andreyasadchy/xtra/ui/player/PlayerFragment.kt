@@ -1586,7 +1586,7 @@ abstract class PlayerFragment : BaseNetworkFragment(), RadioButtonDialogFragment
         }
     }
 
-    fun xtra5PlayerState() = com.github.andreyasadchy.xtra.custom.TvShortcuts.PlayerState(isMaximized, playbackService?.type == BasePlaybackService.STREAM, !viewModel.gamesList.value.isNullOrEmpty(), { showController() }, { showVodGames() }) // Xtra5 custom
+    fun xtra5PlayerState() = com.github.andreyasadchy.xtra.custom.TvShortcuts.PlayerState(isMaximized, playbackService?.type == BasePlaybackService.STREAM, !viewModel.gamesList.value.isNullOrEmpty(), { showController() }, { showVodGames() }, { hideController(force = true) }, { if (requireContext().prefs().getBoolean(C.CHAT_DISABLE, false)) false else { if (isChatOpen) hideChat() else showChat(); true } }) // Xtra5 custom
 
     fun showVodGames() {
         viewModel.gamesList.value?.let {

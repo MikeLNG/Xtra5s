@@ -1,4 +1,4 @@
-Xtra5 - feature list (version 1.41.0)
+Xtra5 - feature list (version 1.42.0)
 Everything official Xtra does, plus the features below.
 
 ========================================
@@ -33,9 +33,13 @@ Chat
 ========================================
 Watching
 - Built for TV remotes (also keyboards and game controllers):
-  - Left / Right to skip back or forward by your chosen amount, with an on-screen indicator.
-  - Up to scrub through the video, by tapping or holding Left / Right, then OK to jump.
-  - Down for chapters, hold OK to reload a stream, Back to close a minimized video.
+  - Left / Right to skip back or forward by your chosen amount, with the seek bar showing.
+  - Up to scrub through the video, by tapping or holding Left / Right, then OK to jump and
+    fine-tune with Left / Right.
+  - Down for chapters (or to show / hide chat on live streams), hold OK to reload a stream,
+    Back to close a minimized video.
+  - Clear outlines on the selected card, and channel / game banners that move out of the way
+    as you browse down.
 - Settings button right in the player, and playback picks up where it left off when you return.
 - Battery percentage in fullscreen that fades out of the way.
 - Live streams keep playing when your earbuds disconnect or go in their case, and resuming a
