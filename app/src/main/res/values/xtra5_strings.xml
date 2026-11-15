@@ -41,6 +41,7 @@
     <item name="xtra5_battery" type="id" />
     <item name="xtra5_progress_bar" type="id" />
     <item name="xtra5_vod_chapters" type="id" />
+    <item name="xtra5_keep_scrolling" type="id" />
     <item name="xtra5_row_login" type="id" />
     <item name="xtra5_row_name" type="id" />
     <item name="xtra5_row_preview" type="id" />

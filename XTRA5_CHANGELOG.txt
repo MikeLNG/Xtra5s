@@ -1,6 +1,22 @@
 Xtra5 changelog (newest first)
 
 ========================================
+Xtra5 1.48.0 (2026-11-15)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+New
+- Red clear button above the top-right of the chat input whenever it has text: tap it to
+  empty the input straight away (no prompt); the keyboard stays up.
+- Expanding chat input (landscape, chat beside the video): once your message is longer than
+  the input box, the input itself grows leftwards across the video from the same spot as you
+  type, wrapping upwards at the video's left edge. Cursor, selection, emote suggestions and
+  Send all work; it goes back to the normal input when the message fits, is sent or cleared.
+  Replaces the separate long-message box.
+
+Fixed
+- Channel and game pages: with the persistent top bar on, the banner now slides away when
+  scrolling (the top bar and tabs stay put).
+========================================
 Xtra5 1.47.3 (2026-11-15)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 

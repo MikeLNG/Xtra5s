@@ -31,9 +31,18 @@ object FixedTopBar {
                 if (!activity.prefs().getBoolean(PREF_ENABLED, true)) return
                 // Tab pages adjust their parent screen's bar after it was set up, so fix this
                 // fragment's bars and its parents' bars, now and again once setup has finished.
-                val views = generateSequence(f) { it.parentFragment }.mapNotNull { it.view }.toList()
-                views.forEach { view -> findAppBars(view).forEach { fix(it) } }
-                v.post { views.forEach { view -> findAppBars(view).forEach { fix(it) } } }
+                val fragments = generateSequence(f) { it.parentFragment }.toList()
+                fun apply() = fragments.forEach { fragment ->
+                    val view = fragment.view ?: return@forEach
+                    // Channel and game pages keep their banner sliding away (TvNavigation);
+                    // their top bar and tabs stay put anyway. Only the plain colour applies.
+                    val keepScrolling = fragment is com.github.andreyasadchy.xtra.ui.channel.ChannelPagerFragment ||
+                        fragment is com.github.andreyasadchy.xtra.ui.game.GamePagerFragment ||
+                        fragment is com.github.andreyasadchy.xtra.ui.game.GameMediaFragment
+                    findAppBars(view).forEach { fix(it, keepScrolling) }
+                }
+                apply()
+                v.post { apply() }
             }
         }, true)
     }
@@ -44,8 +53,10 @@ object FixedTopBar {
         return out
     }
 
-    private fun fix(appBar: AppBarLayout) {
-        clearScrollFlags(appBar)
+    private fun fix(appBar: AppBarLayout, keepScrolling: Boolean = false) {
+        if (keepScrolling) appBar.setTag(R.id.xtra5_keep_scrolling, true)
+        val scrolls = appBar.getTag(R.id.xtra5_keep_scrolling) == true
+        if (!scrolls) clearScrollFlags(appBar)
         // A fixed bar shouldn't change color while the list scrolls: no lift on scroll, no
         // elevation change, and a plain background in the theme's normal (un-lifted) color.
         appBar.isLiftOnScroll = false
@@ -59,7 +70,7 @@ object FixedTopBar {
             appBar.setTag(R.id.xtra5_fixed_top_bar, true)
             // Some screens (a channel's pages) turn scrolling back on when switching tabs.
             appBar.addOnOffsetChangedListener { bar, offset ->
-                if (offset != 0) {
+                if (offset != 0 && bar.getTag(R.id.xtra5_keep_scrolling) != true) {
                     clearScrollFlags(bar)
                     bar.setExpanded(true, false)
                 }
