@@ -33,7 +33,8 @@ import java.lang.ref.WeakReference
  *                 (cancels by itself after 6 seconds without input)
  *   Back          cancel; if the marker hasn't moved, also hide the controls
  * While the controls are up because of a seek (step or letting go of the seek bar): Left / Right
- * skip by the step, Up holds the seek bar again, Back hides the controls.
+ * skip by the step, Up moves to the player buttons (normal navigation from there), Back hides
+ * the controls. The held seek bar's marker is gold and larger.
  * Holding a button counts as one press.
  * Long-press Back (player full-size or minimized): close the player, like swiping it away.
  * Back with the player minimized: close the player, like swiping it away.
@@ -54,6 +55,7 @@ object TvShortcuts {
     private const val HOLD_DELAY_MS = 400L // holding Left / Right in held mode: start repeating after
     private const val HOLD_REPEAT_MS = 150L // then one step every
     private const val LONG_PRESS_REPEATS = 8 // fallback if a remote never flags the long press
+    private const val HELD_SCRUBBER = 0xFFFFC107.toInt() // gold
 
     /** Player state the shortcuts need; built by PlayerFragment.xtra5PlayerState(). */
     class PlayerState(
@@ -207,7 +209,8 @@ object TvShortcuts {
                         state.showController() // keeps the controls up a little longer
                         true
                     }
-                    KeyEvent.KEYCODE_DPAD_UP -> startScrub(player, state)
+                    // Up: on to the player buttons; Left / Right then move between them as usual.
+                    KeyEvent.KEYCODE_DPAD_UP -> focusButtons(player, state)
                     else -> false
                 }
                 if (handled) consumed.add(keyCode)
@@ -304,6 +307,9 @@ object TvShortcuts {
         val position = (player.getCurrentPosition() ?: return false).coerceIn(0L, duration)
         // A pressed seek bar stops the player from moving the marker and from auto-hiding the controls.
         bar.isPressed = true
+        // Make the held marker obvious: gold, at its larger "dragging" size (shown while focused).
+        bar.setScrubberColor(HELD_SCRUBBER)
+        bar.requestFocus()
         state.showController()
         val current = Scrub(WeakReference(player), state.showController, state.hideController, duration, position)
         scrub = current
@@ -329,6 +335,7 @@ object TvShortcuts {
         val view = player.view ?: return
         val bar = view.findViewById<DefaultTimeBar>(R.id.progressBar)
         bar?.isPressed = false
+        bar?.setScrubberColor(DefaultTimeBar.DEFAULT_SCRUBBER_COLOR)
         if (commit) {
             player.seek(current.position)
         } else {
@@ -339,6 +346,19 @@ object TvShortcuts {
         current.showController() // restarts the normal auto-hide timer
         // Until the controls hide, Left / Right skip by the seek step (see handle()).
         watchAfterSeek(player)
+    }
+
+    /** Ends seek mode and selects the buttons just above the seek bar. */
+    private fun focusButtons(player: PlayerFragment, state: PlayerState): Boolean {
+        val view = player.view ?: return false
+        val rows = listOf(R.id.bottomLeftLayout, R.id.bottomRightLayout).mapNotNull { view.findViewById<android.view.ViewGroup>(it) }
+        val target = rows.firstNotNullOfOrNull { row ->
+            (0 until row.childCount).map { row.getChildAt(it) }.firstOrNull { it.isShown && it.isFocusable && it.isEnabled }
+        } ?: view.findViewById<View>(R.id.playPause)?.takeIf { it.isShown }
+        afterSeek = null
+        target?.requestFocus()
+        state.showController() // restarts the auto-hide timer
+        return true
     }
 
     /** Marks [player]'s controls as up because of a seek, until they hide. */

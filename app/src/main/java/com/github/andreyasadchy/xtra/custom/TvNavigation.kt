@@ -40,6 +40,7 @@ object TvNavigation {
         activity.supportFragmentManager.registerFragmentLifecycleCallbacks(object : FragmentManager.FragmentLifecycleCallbacks() {
             override fun onFragmentViewCreated(fm: FragmentManager, f: Fragment, v: View, savedInstanceState: android.os.Bundle?) {
                 outlineCards(v)
+                if (f is com.github.andreyasadchy.xtra.ui.player.PlayerFragment) outlinePlayerButtons(v)
                 if (f is ChannelPagerFragment || f is GamePagerFragment || f is GameMediaFragment) watchHeader(f, v)
             }
 
@@ -149,6 +150,28 @@ object TvNavigation {
                 override fun onChildViewDetachedFromWindow(view: View) {}
             })
         }
+    }
+
+    // ---- Player buttons ----
+
+    /** The selected player button (remote / D-pad) gets a clear white box around it. */
+    private fun outlinePlayerButtons(root: View) {
+        val controls = root.findViewById<ViewGroup>(R.id.playerControls) ?: return
+        val density = root.resources.displayMetrics.density
+        fun outline(view: View) {
+            if (view is androidx.media3.ui.DefaultTimeBar) return // has its own (gold, larger marker)
+            if (view.isFocusable && view.isClickable && view.foreground == null) {
+                view.foreground = android.graphics.drawable.StateListDrawable().apply {
+                    addState(intArrayOf(android.R.attr.state_focused), android.graphics.drawable.GradientDrawable().apply {
+                        cornerRadius = 8 * density
+                        setColor(0x33FFFFFF)
+                        setStroke((2 * density).toInt(), android.graphics.Color.WHITE)
+                    })
+                }
+            }
+            if (view is ViewGroup) for (i in 0 until view.childCount) outline(view.getChildAt(i))
+        }
+        outline(controls)
     }
 
     private fun findLists(view: View): List<RecyclerView> {

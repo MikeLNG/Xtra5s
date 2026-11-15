@@ -1,6 +1,16 @@
 Xtra5 changelog (newest first)
 
 ========================================
+Xtra5 1.42.1 (2026-11-15)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+Changed
+- TV: after jumping with the seek bar (or skipping with Left / Right), Up now moves onto the
+  player buttons just above the seek bar, and Left / Right then move between them as usual.
+  (Up used to take hold of the seek bar again; with the controls hidden, Up still does.)
+- TV: the selected player button has a clear white outline, and while you hold the seek bar
+  its marker is gold and larger.
+========================================
 Xtra5 1.42.0 (2026-11-15)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
