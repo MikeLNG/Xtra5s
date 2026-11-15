@@ -1,6 +1,31 @@
 Xtra5s changelog (newest first)
 
 ========================================
+Xtra5s 1.1.0 (2026-11-15)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+New
+- Side-By-Side: Replace button in each video's controls (and swipe down on a video): put
+  another channel on that side. The popup has the channel box, quality and volume, starting
+  from what that side has now; the side's chat switches to the new channel.
+- Side-By-Side: Watch only this button in each video's controls (and swipe up on a video):
+  closes the other side and plays this stream on its own in the normal player, with all of
+  its usual controls, gestures and mini player.
+
+Changed
+- Side-By-Side: Audio only is no longer in the quality list.
+- Synced animated emotes: up to 200 different animated emotes are kept in sync (was 100),
+  and an emote still on screen is never dropped, so emotes no longer freeze in busy chats
+  (one chat or two).
+
+Fixed
+- Opening Side-By-Side now fully closes the normal player (before, an empty player could be
+  left on the main screen).
+- Closing one chat (Replace in Side-By-Side, or Watch only this) no longer freezes the
+  animated emotes of the chat that stays open; each chat only releases its own animations.
+- Side-By-Side chats always disconnect in the background, even with "Keep chat open" on (that
+  setting is for the normal player).
+========================================
 Xtra5s 1.0.0 (2026-11-15)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 

@@ -4,6 +4,7 @@ import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.util.TypedValue
+import android.view.GestureDetector
 import android.view.Gravity
 import android.view.KeyEvent
 import android.view.MotionEvent
@@ -18,6 +19,7 @@ import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.Spinner
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.annotation.OptIn
 import androidx.appcompat.app.AppCompatActivity
@@ -44,6 +46,8 @@ import androidx.media3.exoplayer.upstream.DefaultLoadErrorHandlingPolicy
 import androidx.media3.ui.AspectRatioFrameLayout
 import com.github.andreyasadchy.xtra.R
 import com.github.andreyasadchy.xtra.XtraApp
+import com.github.andreyasadchy.xtra.model.ui.Stream
+import com.github.andreyasadchy.xtra.ui.main.MainActivity
 import com.github.andreyasadchy.xtra.player.lowlatency.OkHttpDataSource
 import com.github.andreyasadchy.xtra.ui.chat.ChatFragment
 import com.github.andreyasadchy.xtra.ui.player.ExoPlayerService
@@ -60,7 +64,9 @@ import kotlinx.coroutines.launch
  * Xtra5s custom: the Side-By-Side screen. Two live streams next to each other, each with its own
  * video on top and its own chat (the normal Xtra5 chat, so highlights and colors apply) underneath.
  *
- * Tap (or OK on) a video to show its controls: mute, volume, quality, reload and fullscreen.
+ * Tap (or OK on) a video to show its controls: mute, volume, quality, replace (another channel
+ * on this side), reload, watch only this (in the normal player) and fullscreen.
+ * Swipe down on a video = replace it; swipe up = keep only that stream, in the normal player.
  * Quality and volume here only apply to this screen.
  */
 @OptIn(UnstableApi::class)
@@ -99,6 +105,8 @@ class SideBySideActivity : AppCompatActivity() {
         var chatAdded = false
         var errors = 0
         var playing = false
+        /** The live stream on this side, for handing it to the normal player (null while offline). */
+        var stream: Stream? = null
 
         fun showStatus(text: String?) {
             status.text = text
@@ -201,6 +209,23 @@ class SideBySideActivity : AppCompatActivity() {
             isClickable = true
             foreground = SideBySide.selectableBackground(context)
             setOnClickListener { toggleControls(pane) }
+            val swipes = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
+                override fun onFling(e1: MotionEvent?, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
+                    val start = e1 ?: return false
+                    val dy = e2.y - start.y
+                    val dx = e2.x - start.x
+                    if (kotlin.math.abs(dy) < 60 * dp || kotlin.math.abs(dy) < kotlin.math.abs(dx) * 1.5f) return false
+                    if (dy > 0) replace(pane) else watchOnly(pane)
+                    return true
+                }
+            })
+            var swiped = false
+            setOnTouchListener { _, event ->
+                if (event.actionMasked == MotionEvent.ACTION_DOWN) swiped = false
+                if (swipes.onTouchEvent(event)) swiped = true
+                // A swipe is not a tap: don't toggle the controls for it.
+                swiped && event.actionMasked == MotionEvent.ACTION_UP
+            }
             setOnFocusChangeListener { _, hasFocus -> outline(pane, hasFocus) }
         }
         pane.aspect = AspectRatioFrameLayout(this).apply {
@@ -299,13 +324,17 @@ class SideBySideActivity : AppCompatActivity() {
                 override fun onNothingSelected(parent: AdapterView<*>?) {}
             }
         }
+        val replace = button(R.drawable.xtra5s_swap, "Replace this channel") { replace(pane) }
         val reload = button(R.drawable.xtra5s_refresh, "Reload") { load(pane) }
+        val only = button(R.drawable.xtra5s_open, "Watch only this stream") { watchOnly(pane) }
         pane.expand = button(R.drawable.xtra5s_fullscreen, "Fullscreen") { setExpanded(pane, expanded != pane) }
         val wrap = ViewGroup.LayoutParams.WRAP_CONTENT
         pane.controls.addView(pane.mute, LinearLayout.LayoutParams(wrap, wrap))
         pane.controls.addView(pane.slider, LinearLayout.LayoutParams(0, wrap, 1f))
         pane.controls.addView(pane.qualitySpinner, LinearLayout.LayoutParams(wrap, wrap))
+        pane.controls.addView(replace, LinearLayout.LayoutParams(wrap, wrap))
         pane.controls.addView(reload, LinearLayout.LayoutParams(wrap, wrap))
+        pane.controls.addView(only, LinearLayout.LayoutParams(wrap, wrap))
         pane.controls.addView(pane.expand, LinearLayout.LayoutParams(wrap, wrap))
         return pane.controls
     }
@@ -406,7 +435,7 @@ class SideBySideActivity : AppCompatActivity() {
                 when (playbackState) {
                     Player.STATE_READY -> {
                         pane.errors = 0
-                        pane.showStatus(if (pane.quality == SideBySide.AUDIO_ONLY) "Audio only" else null)
+                        pane.showStatus(null)
                     }
                     Player.STATE_ENDED -> {
                         pane.showStatus("Stream ended")
@@ -456,6 +485,22 @@ class SideBySideActivity : AppCompatActivity() {
                     .replace(pane.chatId, ChatFragment.newInstance(user.id, user.login, user.displayName, user.stream?.id))
                     .commit()
                 pane.chatAdded = true
+            }
+            pane.stream = user.stream?.let { stream ->
+                Stream(
+                    id = stream.id,
+                    channelId = user.id,
+                    channelLogin = user.login,
+                    channelName = user.displayName,
+                    channelImageURL = user.profileImageURL,
+                    gameId = stream.game?.id,
+                    gameSlug = stream.game?.slug,
+                    gameName = stream.game?.displayName,
+                    title = stream.broadcaster?.broadcastSettings?.title,
+                    thumbnailURL = stream.previewImageURL,
+                    createdAt = stream.createdAt?.toString(),
+                    viewerCount = stream.viewersCount,
+                )
             }
             if (user.stream == null) {
                 pane.player?.stop()
@@ -508,9 +553,7 @@ class SideBySideActivity : AppCompatActivity() {
         // Start near the chosen quality straight away; the exact track is picked once it's known.
         player.trackSelectionParameters = player.trackSelectionParameters.buildUpon().apply {
             clearOverridesOfType(androidx.media3.common.C.TRACK_TYPE_VIDEO)
-            val height = SideBySide.targetHeight(pane.quality)
-            setTrackTypeDisabled(androidx.media3.common.C.TRACK_TYPE_VIDEO, height == null)
-            setMaxVideoSize(Int.MAX_VALUE, height ?: Int.MAX_VALUE)
+            setMaxVideoSize(Int.MAX_VALUE, SideBySide.targetHeight(pane.quality))
         }.build()
         player.setMediaSource(source)
         player.prepare()
@@ -524,14 +567,8 @@ class SideBySideActivity : AppCompatActivity() {
         val player = pane.player ?: return
         val height = SideBySide.targetHeight(pane.quality)
         val params = player.trackSelectionParameters.buildUpon()
-        if (height == null) {
-            params.clearOverridesOfType(androidx.media3.common.C.TRACK_TYPE_VIDEO)
-            params.setTrackTypeDisabled(androidx.media3.common.C.TRACK_TYPE_VIDEO, true)
-            pane.showStatus("Audio only")
-        } else {
-            params.setTrackTypeDisabled(androidx.media3.common.C.TRACK_TYPE_VIDEO, false)
+        run {
             params.setMaxVideoSize(Int.MAX_VALUE, height)
-            if (pane.status.text == "Audio only") pane.showStatus(null)
             val group = player.currentTracks.groups.firstOrNull { it.type == androidx.media3.common.C.TRACK_TYPE_VIDEO }
             if (group != null) {
                 val formats = (0 until group.length).filter { group.isTrackSupported(it) }.map { it to group.getTrackFormat(it) }
@@ -544,6 +581,50 @@ class SideBySideActivity : AppCompatActivity() {
             }
         }
         player.trackSelectionParameters = params.build()
+    }
+
+    // ---- Replace / watch only ----
+
+    /** Puts another channel on [pane]'s side (popup with channel, quality and volume). */
+    private fun replace(pane: Pane) {
+        val current = SideBySide.Side(pane.side.login, pane.quality, pane.volume, pane.muted)
+        SideBySide.showReplaceDialog(this, if (pane.prefix == LEFT) "Left" else "Right", current) { side ->
+            pane.job?.cancel()
+            pane.player?.stop()
+            pane.side = side
+            pane.quality = side.quality
+            pane.volume = side.volume
+            pane.muted = side.muted
+            pane.stream = null
+            pane.errors = 0
+            pane.label.text = side.login
+            pane.slider.value = side.volume.toFloat()
+            pane.qualitySpinner.setSelection(SideBySide.QUALITIES.indexOf(side.quality).coerceAtLeast(0), false)
+            pane.applyVolume()
+            // The old channel's chat goes; the new one's is added once the channel is found.
+            supportFragmentManager.findFragmentById(pane.chatId)?.let {
+                supportFragmentManager.beginTransaction().remove(it).commitNow()
+            }
+            pane.chatAdded = false
+            SideBySide.addRecent(this, panes[0].side.login, panes[1].side.login)
+            load(pane)
+        }
+    }
+
+    /** Closes the other side and plays [pane]'s stream on its own, in the normal player. */
+    private fun watchOnly(pane: Pane) {
+        val stream = pane.stream
+        if (stream == null) {
+            Toast.makeText(this, "${pane.label.text} is offline", Toast.LENGTH_SHORT).show()
+            return
+        }
+        panes.forEach { it.job?.cancel(); it.player?.stop() }
+        startActivity(android.content.Intent(this, MainActivity::class.java).apply {
+            flags = android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP
+            action = MainActivity.INTENT_LIVE_NOTIFICATION
+            putExtra(MainActivity.KEY_VIDEO, stream)
+        })
+        finish()
     }
 
     override fun onStart() {

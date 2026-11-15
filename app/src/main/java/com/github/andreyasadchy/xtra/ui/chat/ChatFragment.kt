@@ -1238,7 +1238,7 @@ class ChatFragment : BaseNetworkFragment(), MessageClickedDialog.OnButtonClickLi
 
     override fun onStop() {
         super.onStop()
-        if (!requireArguments().getBoolean(KEY_IS_LIVE) || !requireContext().prefs().getBoolean(C.PLAYER_KEEP_CHAT_OPEN, false)) {
+        if (!requireArguments().getBoolean(KEY_IS_LIVE) || !requireContext().prefs().getBoolean(C.PLAYER_KEEP_CHAT_OPEN, false) || com.github.andreyasadchy.xtra.custom.SideBySide.isSideBySide(context)) { // Xtra5s custom: Side-By-Side always stops its chats in the background
             viewModel.stopLiveChat()
             viewModel.stopReplayChat()
         }

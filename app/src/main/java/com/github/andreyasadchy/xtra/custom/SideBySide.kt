@@ -39,7 +39,8 @@ import kotlinx.coroutines.withContext
  *
  * - [SideBySideFragment] is the "Side-By-Side" tab on the Following page (tab key [TAB_KEY]).
  * - [showAddDialog] is the "+" popup: a channel box, a quality dropdown (720p by default) and a
- *   mute button with a volume slider for each side.
+ *   mute button with a volume slider for each side. [showReplaceDialog] is the same for one side,
+ *   to put another channel there.
  * - [SideBySideActivity] plays both streams.
  *
  * Quality and volume chosen here only apply to this mode; the normal player's settings are never
@@ -54,10 +55,9 @@ object SideBySide {
     const val TAB_KEY = "4"
     const val TAB_TITLE = "Side-By-Side"
 
-    const val AUDIO_ONLY = "Audio only"
     const val SOURCE = "Source"
     const val DEFAULT_QUALITY = "720p"
-    val QUALITIES = listOf(SOURCE, "1080p", "720p", "480p", "360p", "160p", AUDIO_ONLY)
+    val QUALITIES = listOf(SOURCE, "1080p", "720p", "480p", "360p", "160p")
 
     private const val PREF_RECENT = "xtra5s_sbs_recent"
     private const val MAX_RECENT = 8
@@ -65,9 +65,8 @@ object SideBySide {
     /** What one side plays: the channel and this mode's own quality and volume. */
     data class Side(val login: String, val quality: String = DEFAULT_QUALITY, val volume: Int = 100, val muted: Boolean = false)
 
-    /** The height a quality name asks for (Int.MAX_VALUE for Source, null for audio only). */
-    fun targetHeight(quality: String): Int? = when (quality) {
-        AUDIO_ONLY -> null
+    /** The height a quality name asks for (Int.MAX_VALUE for Source). */
+    fun targetHeight(quality: String): Int = when (quality) {
         SOURCE -> Int.MAX_VALUE
         else -> quality.removeSuffix("p").toIntOrNull() ?: 720
     }
@@ -106,7 +105,12 @@ object SideBySide {
         // Don't play a third stream underneath: close the normal player first.
         (activity as? MainActivity)?.let { main ->
             (main.playerFragment as? PlayerFragment)?.let { player ->
-                try { player.close() } catch (_: Exception) {}
+                // Same as the player's own close: stop it and remove it from the screen.
+                try {
+                    player.minimize()
+                    player.close()
+                    main.closePlayer()
+                } catch (_: Exception) {}
             }
         }
         activity.startActivity(Intent(activity, SideBySideActivity::class.java).apply {
@@ -228,6 +232,50 @@ object SideBySide {
         }
     }
 
+    /**
+     * Puts another channel on one side: the same channel box, quality and volume as the "+"
+     * popup, for one side only, starting from what that side has now.
+     */
+    fun showReplaceDialog(activity: FragmentActivity, title: String, current: Side, onPicked: (Side) -> Unit) {
+        val context = material(activity)
+        val dp = context.resources.displayMetrics.density
+        val (column, inputs) = buildColumn(context, title, null, current)
+        val frame = android.widget.FrameLayout(context).apply {
+            setPadding((20 * dp).toInt(), (8 * dp).toInt(), (20 * dp).toInt(), 0)
+            addView(column)
+        }
+        inputs.name.imeOptions = EditorInfo.IME_ACTION_DONE
+        val dialog = activity.getAlertDialogBuilder()
+            .setTitle("Replace ${current.login}")
+            .setView(frame)
+            .setPositiveButton("Watch", null)
+            .setNegativeButton(android.R.string.cancel, null)
+            .create()
+        fun submit() {
+            val login = cleanLogin(inputs.name.text.toString())
+            if (login.isBlank()) {
+                inputs.name.requestFocus()
+                Toast.makeText(context, "Type a channel", Toast.LENGTH_SHORT).show()
+                return
+            }
+            dialog.dismiss()
+            onPicked(sideOf(login, inputs))
+        }
+        inputs.name.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_DONE) { submit(); true } else false
+        }
+        dialog.setOnShowListener {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener { submit() }
+            inputs.name.requestFocus()
+        }
+        dialog.show()
+        activity.lifecycleScope.launch {
+            val names = suggestions(context)
+            if (names.isEmpty() || !dialog.isShowing) return@launch
+            inputs.name.setAdapter(ArrayAdapter(context, android.R.layout.simple_dropdown_item_1line, names))
+        }
+    }
+
     private fun sideOf(login: String, inputs: SideInputs) = Side(
         login = login,
         quality = QUALITIES.getOrNull(inputs.quality.selectedItemPosition) ?: DEFAULT_QUALITY,
@@ -235,7 +283,7 @@ object SideBySide {
         muted = inputs.muted,
     )
 
-    private fun buildColumn(context: Context, title: String, prefill: String?): Pair<View, SideInputs> {
+    private fun buildColumn(context: Context, title: String, prefill: String?, start: Side? = null): Pair<View, SideInputs> {
         val dp = context.resources.displayMetrics.density
         val column = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL }
         column.addView(TextView(context).apply {
@@ -260,7 +308,7 @@ object SideBySide {
         })
         val quality = Spinner(context).apply {
             adapter = ArrayAdapter(context, android.R.layout.simple_spinner_dropdown_item, QUALITIES)
-            setSelection(QUALITIES.indexOf(DEFAULT_QUALITY))
+            setSelection(QUALITIES.indexOf(start?.quality ?: DEFAULT_QUALITY).coerceAtLeast(0))
         }
         column.addView(quality, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
 
@@ -280,7 +328,7 @@ object SideBySide {
             valueFrom = 0f
             valueTo = 100f
             stepSize = 1f
-            value = 100f
+            value = (start?.volume ?: 100).toFloat()
             setLabelFormatter { "${it.toInt()}%" }
         }
         volumeRow.addView(mute, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
@@ -288,6 +336,7 @@ object SideBySide {
         column.addView(volumeRow, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
 
         val inputs = SideInputs(name, quality, mute, volume)
+        inputs.muted = start?.muted ?: false
         fun refreshMute() {
             val off = inputs.muted || volume.value == 0f
             mute.setImageResource(if (off) R.drawable.xtra5s_volume_off else R.drawable.xtra5s_volume_up)
@@ -295,6 +344,7 @@ object SideBySide {
             volume.alpha = if (inputs.muted) 0.5f else 1f
         }
         mute.setOnClickListener { inputs.muted = !inputs.muted; refreshMute() }
+        refreshMute()
         volume.addOnChangeListener { _, _, fromUser -> if (fromUser && inputs.muted) inputs.muted = false; refreshMute() }
         return column to inputs
     }

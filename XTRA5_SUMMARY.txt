@@ -1,4 +1,4 @@
-Xtra5s - feature list (version 1.0.0)
+Xtra5s - feature list (version 1.1.0)
 Everything official Xtra does, plus the features below.
 
 ========================================
@@ -16,6 +16,8 @@ Side-By-Side
   - Tap + and type a channel on each side (suggestions from the channels you follow), each
     with its own quality (720p by default) and its own mute and volume.
   - Tap a video to mute it, change its volume or quality, reload it, or make it fullscreen.
+  - Swap one side for another channel (Replace, or swipe down on it), or keep just one
+    stream in the normal player (Watch only this, or swipe up on it).
   - Offline channels start playing by themselves when they go live; dropped streams
     reconnect on their own.
   - Recent pairs are one tap away.

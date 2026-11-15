@@ -20,9 +20,12 @@ import java.lang.ref.WeakReference
  *
  * The first loaded animation for an emote becomes the shared one; later copies get a lightweight
  * wrapper that draws it. Wrappers are not Animatable, so official Xtra skips its per-message
- * animation setup for them. Up to MAX_SHARED emotes are kept; the least recently used are released.
- * 7TV overlay (zero-width) emotes are drawn through another path and are not synced. Only the
- * main chat list is synced; the shared animations are released when that chat closes.
+ * animation setup for them. Up to MAX_SHARED emotes are kept; past that the least recently used
+ * one that is not on screen is released (Xtra5s: one still on screen would freeze, so it stays).
+ * 7TV overlay (zero-width) emotes are drawn through another path and are not synced. Only chat
+ * lists (see attachTo) are synced. Each shared animation belongs to the chat that loaded it and is
+ * released when that chat closes (Xtra5s: only that chat's; with two chats on screen the other one
+ * keeps its own and re-loads any it was borrowing).
  *
  * Kept in its own package so upstream Xtra updates can be merged without conflicts.
  * Upstream hook: ChatAdapterUtils.loadImages (after an emote is loaded and sized).
@@ -30,14 +33,18 @@ import java.lang.ref.WeakReference
 object EmoteSync {
 
     const val PREF_ENABLED = "xtra5_sync_emotes"
-    private const val MAX_SHARED = 100
+    private const val MAX_SHARED = 200 // Xtra5s: was 100; Side-By-Side shows two chats
 
     private val handler = Handler(Looper.getMainLooper())
     private var anyPaused = false
 
     /** One shared animation and every chat row currently showing it. */
-    private class Shared(val drawable: Drawable) : Drawable.Callback {
+    private class Shared(val drawable: Drawable, owner: View?) : Drawable.Callback {
         val views = ArrayList<WeakReference<View>>()
+        /** The chat list whose image loader loaded [drawable]; it frees it when that chat closes. */
+        val owner = WeakReference(owner)
+        /** Released: its chat closed, so its frames may be freed. Never drawn again. */
+        var released = false
         /** Stopped because no row showing it is on screen (battery). */
         var paused = false
 
@@ -77,15 +84,22 @@ object EmoteSync {
         }
     }
 
-    private val shared = object : LinkedHashMap<String, Shared>(16, 0.75f, true) {
-        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Shared>): Boolean {
-            if (size > MAX_SHARED) {
-                (eldest.value.drawable as? Animatable)?.stop()
-                eldest.value.drawable.callback = null
-                handler.removeCallbacksAndMessages(eldest.value.drawable)
-                return true
-            }
-            return false
+    /** Access-ordered: least recently used first. Trimmed by [trim]. */
+    private val shared = LinkedHashMap<String, Shared>(16, 0.75f, true)
+
+    /**
+     * Keeps at most MAX_SHARED animations: releases the least recently used ones that no row on
+     * screen shows. Ones still on screen are skipped, so a visible emote never freezes; if every
+     * one is on screen the limit is exceeded until some scroll away.
+     */
+    private fun trim() {
+        if (shared.size <= MAX_SHARED) return
+        val iterator = shared.entries.iterator()
+        while (shared.size > MAX_SHARED && iterator.hasNext()) {
+            val entry = iterator.next().value
+            if (entry.anyVisible()) continue
+            releaseEntry(entry)
+            iterator.remove()
         }
     }
 
@@ -99,7 +113,7 @@ object EmoteSync {
         }
 
         override fun draw(canvas: Canvas) {
-            target.drawable.draw(canvas)
+            if (!target.released) target.drawable.draw(canvas)
         }
 
         override fun getIntrinsicWidth() = target.drawable.intrinsicWidth
@@ -120,7 +134,7 @@ object EmoteSync {
         chatList.viewTreeObserver.addOnGlobalLayoutListener { resumeVisible() }
         chatList.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
             override fun onViewAttachedToWindow(v: View) {}
-            override fun onViewDetachedFromWindow(v: View) = reset()
+            override fun onViewDetachedFromWindow(v: View) = release(v)
         })
     }
 
@@ -137,14 +151,30 @@ object EmoteSync {
         anyPaused = shared.values.any { it.paused }
     }
 
-    fun reset() {
-        anyPaused = false
-        shared.values.forEach {
-            (it.drawable as? Animatable)?.stop()
-            it.drawable.callback = null
-            handler.removeCallbacksAndMessages(it.drawable)
+    private fun releaseEntry(entry: Shared) {
+        entry.released = true
+        (entry.drawable as? Animatable)?.stop()
+        entry.drawable.callback = null
+        handler.removeCallbacksAndMessages(entry.drawable)
+    }
+
+    /**
+     * [chatList] closed: release the animations it loaded (its image loader frees them). Another
+     * chat still on screen that showed some of them re-draws its messages, loading its own copies.
+     */
+    private fun release(chatList: View) {
+        var borrowed = false
+        val iterator = shared.values.iterator()
+        while (iterator.hasNext()) {
+            val entry = iterator.next()
+            val owner = entry.owner.get()
+            if (owner != null && owner !== chatList) continue
+            if (entry.views.any { ref -> ref.get()?.let { it.isAttachedToWindow && it.parent !== chatList } == true }) borrowed = true
+            releaseEntry(entry)
+            iterator.remove()
         }
-        shared.clear()
+        anyPaused = shared.values.any { it.paused }
+        if (borrowed) handler.post { ChatLive.refreshChat() }
     }
 
     /**
@@ -158,13 +188,14 @@ object EmoteSync {
         if ((itemView.parent as? View)?.getTag(R.id.xtra5_sync_emotes) != true) return loaded
         val source = image.localData?.let { "local:" + it.contentHashCode() } ?: image.url1x ?: return loaded
         val key = "$source@${loaded.bounds.width()}x${loaded.bounds.height()}"
-        val entry = shared[key] ?: Shared(loaded).also { entry ->
+        val entry = shared[key] ?: Shared(loaded, itemView.parent as? View).also { entry ->
             shared[key] = entry
             loaded.callback = entry
             loaded.setVisible(true, false)
         }
         entry.addView(itemView)
         entry.start()
+        trim()
         return SyncedDrawable(entry)
     }
 }
