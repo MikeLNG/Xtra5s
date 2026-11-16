@@ -40,48 +40,11 @@ object ChatLongPress {
         }
     }
 
-    // Xtra5s: where the chat was when the long-press fired, put back when the finger lifts.
-    private var heldList: java.lang.ref.WeakReference<androidx.recyclerview.widget.RecyclerView>? = null
-    private var heldAtBottom = false
-    private var heldAnchor: java.lang.ref.WeakReference<android.view.View>? = null
-    private var heldAnchorTop = 0
-
+    /** After the buzz the finger is still down: don't let a small move drag the chat. */
     private fun holdPosition(textView: TextView) {
         val list = textView.parent as? androidx.recyclerview.widget.RecyclerView ?: return
-        // After the buzz the finger is still down: don't let a small move drag the chat.
         list.requestDisallowInterceptTouchEvent(true)
         list.stopScroll()
-        heldList = java.lang.ref.WeakReference(list)
-        heldAtBottom = ChatLive.isFollowing(list)
-        val anchor = list.getChildAt(0)
-        heldAnchor = anchor?.let { java.lang.ref.WeakReference(it) }
-        heldAnchorTop = anchor?.top ?: 0
-    }
-
-    /**
-     * Xtra5s: the finger lifted after a long-press. At the bottom: back to the newest message and
-     * following again. Scrolled up: exactly where it was.
-     */
-    fun afterLongPress() {
-        val list = heldList?.get() ?: return
-        heldList = null
-        list.post {
-            if (heldAtBottom) {
-                val count = list.adapter?.itemCount ?: 0
-                if (count > 0) list.scrollToPosition(count - 1)
-                // The chat follows new messages only while its "down" button is hidden.
-                generateSequence(list.parent as? android.view.ViewGroup) { it.parent as? android.view.ViewGroup }
-                    .firstNotNullOfOrNull { it.findViewById<android.view.View>(R.id.btnDown) }
-                    ?.visibility = android.view.View.GONE
-            } else {
-                val anchor = heldAnchor?.get()
-                if (anchor != null && anchor.parent === list) {
-                    val moved = anchor.top - heldAnchorTop
-                    if (moved != 0) list.scrollBy(0, moved)
-                }
-            }
-            heldAnchor = null
-        }
     }
 
     /** Returns true when the long-press was used (so the release doesn't also count as a tap). */

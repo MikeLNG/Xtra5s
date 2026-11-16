@@ -43,46 +43,8 @@ object ChatLive {
 
     /** Re-draws every message of the open chat(s), so highlight changes show at once. */
     fun refreshChat() {
-        alive().forEach { list -> keepPlace(list) { list.adapter?.let { it.notifyItemRangeChanged(0, it.itemCount) } } }
-    }
-
-    /**
-     * Runs [redraw] (re-drawing the chat's messages) without moving the chat: if it was following
-     * new messages it stays at the newest; if you'd scrolled up, the same message stays at the
-     * same spot. Uses the chat's own "following" state (its jump-to-bottom button is hidden) and
-     * remembers the message on screen itself, not its number, since old messages keep dropping
-     * off the top of a busy chat.
-     */
-    fun keepPlace(list: RecyclerView, redraw: () -> Unit) {
-        val manager = list.layoutManager as? androidx.recyclerview.widget.LinearLayoutManager
-        if (manager == null) {
-            redraw()
-            return
-        }
-        val following = isFollowing(list)
-        val anchor = if (following) null else list.getChildAt(0)
-        val offset = (anchor?.top ?: 0) - list.paddingTop
-        redraw()
-        val restore = Runnable {
-            val count = list.adapter?.itemCount ?: 0
-            if (count == 0 || list.scrollState != RecyclerView.SCROLL_STATE_IDLE) return@Runnable // you're scrolling: leave it
-            if (following) {
-                if (list.canScrollVertically(1)) list.scrollToPosition(count - 1)
-            } else if (anchor != null && anchor.parent === list) {
-                val position = list.getChildAdapterPosition(anchor)
-                if (position != RecyclerView.NO_POSITION) manager.scrollToPositionWithOffset(position, offset)
-            }
-        }
-        list.post(restore)
-        // Once the re-drawn emotes have their sizes.
-        list.postDelayed(restore, 300)
-    }
-
-    /** The chat is following new messages: its jump-to-bottom button is hidden (or it's at the bottom). */
-    fun isFollowing(list: RecyclerView): Boolean {
-        val down = generateSequence(list.parent as? ViewGroup) { it.parent as? ViewGroup }
-            .firstNotNullOfOrNull { it.findViewById<View>(R.id.btnDown) }
-        return if (down != null) !down.isShown else !list.canScrollVertically(1)
+        // Xtra5s: plain re-draw, as official Xtra; the chat's own scrolling decides its position.
+        alive().forEach { list -> list.adapter?.let { it.notifyItemRangeChanged(0, it.itemCount) } }
     }
 
     /**

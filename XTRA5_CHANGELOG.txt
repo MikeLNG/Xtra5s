@@ -1,6 +1,16 @@
 Xtra5s changelog (newest first)
 
 ========================================
+Xtra5s 1.7.3 (2026-11-16)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+Changed
+- Chat scrolling is back to official Xtra's own behaviour: the extra code that tried to keep
+  the chat's position when it re-draws (1.4.4, 1.7.1) and after a long-press (1.4.3) is gone,
+  as it could make the chat jump back to earlier messages. Kept: long-press highlighting
+  recolours only that chatter's messages (no full re-draw), and a long-press can't drag the
+  chat after the buzz.
+========================================
 Xtra5s 1.7.2 (2026-11-16)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
