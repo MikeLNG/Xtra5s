@@ -272,6 +272,80 @@ object SideBySide {
         saveAvatars(context, found)
     }
 
+    /** Who was live at the last check (login -> live), shown on the recent pairs straight away. */
+    private val liveNow = java.util.concurrent.ConcurrentHashMap<String, Boolean>()
+
+    fun isLive(login: String): Boolean = liveNow[login] == true
+
+    /**
+     * Checks who of [logins] is live right now (one request per 100), saving any profile
+     * pictures it gets too. Returns false if the check failed (the last known status stays).
+     */
+    suspend fun refreshLive(context: Context, logins: List<String>): Boolean = withContext(Dispatchers.IO) {
+        val wanted = logins.distinct().filter { it.isNotBlank() }
+        if (wanted.isEmpty()) return@withContext true
+        val module = (context.applicationContext as XtraApp).xtraModule
+        val networkLibrary = context.prefs().getString(C.NETWORK_LIBRARY, C.OKHTTP)
+        val avatarsFound = HashMap<String, String>()
+        var ok = true
+        wanted.chunked(100).forEach { chunk ->
+            try {
+                val users = module.graphQLRepository.loadQueryUsersStream(networkLibrary, TwitchApiHelper.getGQLHeaders(context), logins = chunk).data?.users
+                if (users == null) {
+                    ok = false
+                    return@forEach
+                }
+                val live = HashSet<String>()
+                users.forEach { user ->
+                    val login = user?.login?.lowercase() ?: return@forEach
+                    if (user.stream != null) live.add(login)
+                    TwitchApiHelper.getProfileImage(user.profileImageURL)?.let { avatarsFound[login] = it }
+                }
+                chunk.forEach { liveNow[it] = it in live }
+            } catch (_: Exception) {
+                ok = false
+            }
+        }
+        saveAvatars(context, avatarsFound)
+        ok
+    }
+
+    /**
+     * "LIVE" in red with a white outline, for the bottom-right corner of a profile picture.
+     * Shown only while that channel is live.
+     */
+    class LiveBadge(context: Context) : TextView(context) {
+        private val outline = (2.2f * context.resources.displayMetrics.density)
+
+        init {
+            text = "LIVE"
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f)
+            typeface = android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD)
+            includeFontPadding = false
+            val pad = outline.toInt() + 1
+            setPadding(pad, pad, pad, pad)
+            visibility = View.GONE
+        }
+
+        override fun onDraw(canvas: android.graphics.Canvas) {
+            // White outline first, then the red letters on top. Drawn straight from the text
+            // layout (changing the text colour here would make the view redraw itself forever).
+            val layout = layout ?: return
+            val paint = paint
+            canvas.save()
+            canvas.translate(totalPaddingLeft.toFloat(), totalPaddingTop.toFloat())
+            paint.style = android.graphics.Paint.Style.STROKE
+            paint.strokeWidth = outline
+            paint.strokeJoin = android.graphics.Paint.Join.ROUND
+            paint.color = 0xFFFFFFFF.toInt()
+            layout.draw(canvas)
+            paint.style = android.graphics.Paint.Style.FILL
+            paint.color = 0xFFE91916.toInt()
+            layout.draw(canvas)
+            canvas.restore()
+        }
+    }
+
     /** Shows [login]'s round profile picture in [view] (blank if not known yet). */
     fun loadAvatar(view: ImageView, login: String) {
         val url = avatars(view.context)[login]

@@ -1,6 +1,14 @@
 Xtra5s changelog (newest first)
 
 ========================================
+Xtra5s 1.8.0 (2026-11-16)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+New
+- Dual Stream tab: recent pairs show who's live: a red "LIVE" with a white outline on the
+  bottom-right corner of that channel's profile picture. Offline channels look as before. It
+  is checked every time you open the tab (the last known status shows until the check is back).
+========================================
 Xtra5s 1.7.6 (2026-11-16)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 

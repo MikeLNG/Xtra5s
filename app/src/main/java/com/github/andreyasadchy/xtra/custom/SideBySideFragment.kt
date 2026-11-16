@@ -89,13 +89,25 @@ class SideBySideFragment : Fragment() {
         pairs.forEach { pair -> list.addView(pairRow(context, pair), LinearLayout.LayoutParams((520 * dp).toInt().coerceAtMost(resources.displayMetrics.widthPixels - (32 * dp).toInt()), ViewGroup.LayoutParams.WRAP_CONTENT).apply {
             bottomMargin = (6 * dp).toInt()
         }) }
-        // Pictures for recent channels that have none saved yet.
+        // Who's live now (and pictures for channels that have none saved yet), each time the
+        // tab is shown. The last known status shows until the answer arrives.
         viewLifecycleOwner.lifecycleScope.launch {
             val logins = pairs.flatMap { listOf(it.first, it.second) }
-            if (logins.all { SideBySide.avatars(context)[it] != null }) return@launch
-            SideBySide.ensureAvatars(context, logins)
-            if (recentList === list) list.avatarViews().forEach { (view, login) -> SideBySide.loadAvatar(view, login) }
+            if (!SideBySide.refreshLive(context, logins) || recentList !== list) return@launch
+            list.avatarViews().forEach { (view, login) -> SideBySide.loadAvatar(view, login) }
+            list.liveBadges().forEach { (badge, login) -> badge.visibility = if (SideBySide.isLive(login)) View.VISIBLE else View.GONE }
         }
+    }
+
+    private fun LinearLayout.liveBadges(): List<Pair<View, String>> {
+        val result = ArrayList<Pair<View, String>>()
+        fun walk(view: View) {
+            val tag = view.tag
+            if (view is SideBySide.LiveBadge && tag is String) result.add(view to tag.removePrefix("live:"))
+            if (view is ViewGroup) for (i in 0 until view.childCount) walk(view.getChildAt(i))
+        }
+        walk(this)
+        return result
     }
 
     private fun LinearLayout.avatarViews(): List<Pair<ImageView, String>> {
@@ -118,6 +130,7 @@ class SideBySideFragment : Fragment() {
         }
         val row = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
+            clipChildren = false // the LIVE badges stick out of the profile pictures
             gravity = Gravity.CENTER_VERTICAL
             isFocusable = true
             isClickable = true
@@ -139,16 +152,26 @@ class SideBySideFragment : Fragment() {
         fun channel(login: String) = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            addView(ImageView(context).apply {
+            clipChildren = false
+            // Profile picture with "LIVE" on its bottom-right corner, sticking out to the right.
+            val picture = android.widget.FrameLayout(context).apply { clipChildren = false }
+            picture.addView(ImageView(context).apply {
                 tag = login
                 SideBySide.loadAvatar(this, login)
-            }, LinearLayout.LayoutParams((48 * dp).toInt(), (48 * dp).toInt()))
+            }, android.widget.FrameLayout.LayoutParams((48 * dp).toInt(), (48 * dp).toInt()))
+            picture.addView(SideBySide.LiveBadge(context).apply {
+                tag = "live:$login"
+                visibility = if (SideBySide.isLive(login)) View.VISIBLE else View.GONE
+                translationX = 12 * dp
+                translationY = 3 * dp
+            }, android.widget.FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM or Gravity.END))
+            addView(picture, LinearLayout.LayoutParams((48 * dp).toInt(), (48 * dp).toInt()))
             addView(TextView(context).apply {
                 text = login
                 setSingleLine()
                 ellipsize = android.text.TextUtils.TruncateAt.END
                 setTextSize(TypedValue.COMPLEX_UNIT_SP, 17f)
-                setPadding((10 * dp).toInt(), 0, 0, 0)
+                setPadding((16 * dp).toInt(), 0, 0, 0) // room for the LIVE badge sticking out
             }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
         }
         row.addView(channel(pair.first), LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
