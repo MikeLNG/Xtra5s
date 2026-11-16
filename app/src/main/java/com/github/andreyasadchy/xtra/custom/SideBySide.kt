@@ -42,9 +42,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * Xtra5s custom: Side-By-Side, two live streams at once, each with its own chat underneath.
+ * Xtra5s custom: Dual Stream (was Side-By-Side), two live streams at once, each with its own chat.
  *
- * - [SideBySideFragment] is the "Side-By-Side" tab on the Following page (tab key [TAB_KEY]).
+ * - [SideBySideFragment] is the "Dual Stream" tab on the Following page (tab key [TAB_KEY]).
  * - [showAddDialog] is the "+" popup: a channel box, a quality dropdown (720p by default) and a
  *   mute button with a volume slider for each side. [showReplaceDialog] is the same for one side,
  *   to put another channel there.
@@ -60,7 +60,7 @@ import kotlinx.coroutines.withContext
 object SideBySide {
 
     const val TAB_KEY = "4"
-    const val TAB_TITLE = "Side-By-Side"
+    const val TAB_TITLE = "Dual Stream"
 
     const val SOURCE = "Source"
     const val DEFAULT_QUALITY = "720p"
@@ -129,6 +129,12 @@ object SideBySide {
             putSide(this, SideBySideActivity.LEFT, left)
             putSide(this, SideBySideActivity.RIGHT, right)
         })
+    }
+
+    /** Stores both sides on [intent] (Stream 1 first), e.g. after they were swapped. */
+    fun writeSides(intent: Intent, first: Side, second: Side) {
+        putSide(intent, SideBySideActivity.LEFT, first)
+        putSide(intent, SideBySideActivity.RIGHT, second)
     }
 
     private fun putSide(intent: Intent, prefix: String, side: Side) {
@@ -311,8 +317,8 @@ object SideBySide {
             orientation = if (sideBySide) LinearLayout.HORIZONTAL else LinearLayout.VERTICAL
             setPadding((20 * dp).toInt(), (8 * dp).toInt(), (20 * dp).toInt(), (8 * dp).toInt())
         }
-        val left = buildColumn(context, "Left", prefill?.first)
-        val right = buildColumn(context, "Right", prefill?.second)
+        val left = buildColumn(context, 1, prefill?.first)
+        val right = buildColumn(context, 2, prefill?.second)
         if (sideBySide) {
             row.addView(left.first, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { marginEnd = (8 * dp).toInt() })
             row.addView(right.first, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { marginStart = (8 * dp).toInt() })
@@ -336,8 +342,8 @@ object SideBySide {
             val l = cleanLogin(leftInputs.name.text.toString())
             val r = cleanLogin(rightInputs.name.text.toString())
             when {
-                l.isBlank() -> { leftInputs.name.requestFocus(); Toast.makeText(context, "Type a channel on the left", Toast.LENGTH_SHORT).show() }
-                r.isBlank() -> { rightInputs.name.requestFocus(); Toast.makeText(context, "Type a channel on the right", Toast.LENGTH_SHORT).show() }
+                l.isBlank() -> { leftInputs.name.requestFocus(); Toast.makeText(context, "Type a channel for Stream 1", Toast.LENGTH_SHORT).show() }
+                r.isBlank() -> { rightInputs.name.requestFocus(); Toast.makeText(context, "Type a channel for Stream 2", Toast.LENGTH_SHORT).show() }
                 else -> {
                     dialog.dismiss()
                     start(activity, sideOf(l, leftInputs), sideOf(r, rightInputs))
@@ -367,10 +373,11 @@ object SideBySide {
      * Puts another channel on one side: the same channel box, quality and volume as the "+"
      * popup, for one side only, starting from what that side has now.
      */
-    fun showReplaceDialog(activity: FragmentActivity, title: String, current: Side, onPicked: (Side) -> Unit) {
+    /** [stream] is 1 or 2: where the side being replaced is (first / second). */
+    fun showReplaceDialog(activity: FragmentActivity, stream: Int, current: Side, onPicked: (Side) -> Unit) {
         val context = material(activity)
         val dp = context.resources.displayMetrics.density
-        val (column, inputs) = buildColumn(context, title, null, current)
+        val (column, inputs) = buildColumn(context, stream, null, current)
         val frame = android.widget.FrameLayout(context).apply {
             setPadding((20 * dp).toInt(), (8 * dp).toInt(), (20 * dp).toInt(), 0)
             addView(column)
@@ -422,14 +429,46 @@ object SideBySide {
         muted = inputs.muted,
     )
 
-    private fun buildColumn(context: Context, title: String, prefill: String?, start: Side? = null): Pair<View, SideInputs> {
+    /**
+     * "Stream 1" / "Stream 2" with an arrow showing where that stream plays: left / right in
+     * landscape (and on TV), up / down in portrait. Follows rotation while the popup is open.
+     */
+    private class StreamLabel(context: Context, private val stream: Int) : LinearLayout(context) {
+        private val arrow = ImageView(context)
+
+        init {
+            orientation = HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            val dp = context.resources.displayMetrics.density
+            addView(TextView(context).apply {
+                text = "Stream $stream"
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 17f)
+            })
+            addView(arrow, LayoutParams((22 * dp).toInt(), (22 * dp).toInt()).apply { marginStart = (6 * dp).toInt() })
+            update()
+        }
+
+        private fun update() {
+            val portrait = resources.configuration.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT
+            arrow.setImageResource(when {
+                portrait && stream == 1 -> R.drawable.xtra5s_arrow_up
+                portrait -> R.drawable.xtra5s_arrow_down
+                stream == 1 -> R.drawable.xtra5s_arrow_left
+                else -> R.drawable.xtra5s_arrow_right
+            })
+            arrow.contentDescription = if (portrait) (if (stream == 1) "top" else "bottom") else (if (stream == 1) "left" else "right")
+        }
+
+        override fun onConfigurationChanged(newConfig: android.content.res.Configuration?) {
+            super.onConfigurationChanged(newConfig)
+            update()
+        }
+    }
+
+    private fun buildColumn(context: Context, stream: Int, prefill: String?, start: Side? = null): Pair<View, SideInputs> {
         val dp = context.resources.displayMetrics.density
         val column = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL }
-        column.addView(TextView(context).apply {
-            text = title
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 17f)
-            setPadding(0, 0, 0, (6 * dp).toInt())
-        })
+        column.addView(StreamLabel(context, stream).apply { setPadding(0, 0, 0, (6 * dp).toInt()) })
         val layout = TextInputLayout(context).apply { hint = "Channel" }
         val name = MaterialAutoCompleteTextView(layout.context).apply {
             setSingleLine()

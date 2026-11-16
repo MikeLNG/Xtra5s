@@ -19,7 +19,7 @@ import com.github.andreyasadchy.xtra.util.getAlertDialogBuilder
 import com.google.android.material.button.MaterialButton
 
 /**
- * Xtra5s custom: the "Side-By-Side" tab on the Following page. A big "+" opens the popup where
+ * Xtra5s custom: the "Dual Stream" tab on the Following page. A big "+" opens the popup where
  * two channels are typed in (see [SideBySide.showAddDialog]); recent pairs are listed below it.
  * Tap a pair to open the popup with it filled in, long-press to remove it. Each pair shows both
  * channels' profile pictures.
@@ -52,7 +52,7 @@ class SideBySideFragment : Fragment() {
         }
         column.addView(add, LinearLayout.LayoutParams((88 * dp).toInt(), (88 * dp).toInt()))
         column.addView(TextView(context).apply {
-            text = "Watch two streams side by side"
+            text = "Watch two streams at once"
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
             gravity = Gravity.CENTER
             setPadding(0, (12 * dp).toInt(), 0, (24 * dp).toInt())

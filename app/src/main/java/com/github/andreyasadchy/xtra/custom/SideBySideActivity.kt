@@ -61,7 +61,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
- * Xtra5s custom: the Side-By-Side screen. Two live streams, each with its own video and its own
+ * Xtra5s custom: the Dual Stream (was Side-By-Side) screen. Two live streams, each with its own video and its own
  * chat (the normal Xtra5 chat, so highlights and colors apply).
  *  - Landscape (and TV): side by side, each side's video on top and its chat underneath.
  *  - Portrait: both videos stacked at full width on top (left stream first), the two chats
@@ -86,7 +86,8 @@ class SideBySideActivity : AppCompatActivity() {
         private const val OFFLINE_RECHECK = 60_000L
     }
 
-    private inner class Pane(val prefix: String, val chatId: Int) {
+    /** [prefix] is the stream's position: LEFT = Stream 1 (left / top), RIGHT = Stream 2. */
+    private inner class Pane(var prefix: String, val chatId: Int) {
         lateinit var side: SideBySide.Side
         var quality = SideBySide.DEFAULT_QUALITY
         var volume = 100
@@ -103,6 +104,7 @@ class SideBySideActivity : AppCompatActivity() {
         lateinit var slider: Slider
         lateinit var qualitySpinner: Spinner
         lateinit var expand: ImageButton
+        lateinit var swap: ImageButton
         lateinit var chat: FrameLayout
 
         var player: ExoPlayer? = null
@@ -145,7 +147,8 @@ class SideBySideActivity : AppCompatActivity() {
         }
     }
 
-    private val panes = listOf(Pane(LEFT, R.id.xtra5s_sbs_chat_left), Pane(RIGHT, R.id.xtra5s_sbs_chat_right))
+    /** In screen order: Stream 1 first. Swapping the streams swaps them here. */
+    private val panes = mutableListOf(Pane(LEFT, R.id.xtra5s_sbs_chat_left), Pane(RIGHT, R.id.xtra5s_sbs_chat_right))
     private var expanded: Pane? = null
     private var stopped = false
     private lateinit var row: LinearLayout
@@ -237,13 +240,16 @@ class SideBySideActivity : AppCompatActivity() {
      * re-creates its rows), then applies fullscreen by hiding everything but that video.
      * Views are moved, not rebuilt, so the players and chats keep going.
      */
-    private fun arrange() {
+    private fun arrange(force: Boolean = false) {
         val dp = resources.displayMetrics.density
         val line = (2 * dp).toInt()
         val match = ViewGroup.LayoutParams.MATCH_PARENT
         val wrap = ViewGroup.LayoutParams.WRAP_CONTENT
         val portrait = isPortrait()
-        if (arrangedPortrait != portrait) {
+        panes.forEach { pane ->
+            pane.swap.setImageResource(if (portrait) R.drawable.xtra5s_swap_vert else R.drawable.xtra5s_swap)
+        }
+        if (force || arrangedPortrait != portrait) {
             val moved = arrangedPortrait != null
             arrangedPortrait = portrait
             arrangedExtras.clear()
@@ -510,7 +516,8 @@ class SideBySideActivity : AppCompatActivity() {
             }
         }
         val input = button(R.drawable.xtra5s_keyboard, "Show / hide message box") { toggleInput(pane) }
-        val replace = button(R.drawable.xtra5s_swap, "Replace this channel") { replace(pane) }
+        pane.swap = button(R.drawable.xtra5s_swap, "Swap the two streams") { swapStreams() }
+        val replace = button(R.drawable.xtra5s_tv, "Replace this channel") { replace(pane) }
         val reload = button(R.drawable.xtra5s_refresh, "Reload") { pane.paused = false; load(pane) }
         val only = button(R.drawable.xtra5s_open, "Watch only this stream") { watchOnly(pane) }
         pane.expand = button(R.drawable.xtra5s_fullscreen, "Fullscreen") { setExpanded(pane, expanded != pane) }
@@ -518,7 +525,7 @@ class SideBySideActivity : AppCompatActivity() {
         val bottom = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL or Gravity.END }
         pane.controls.addView(top, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
         pane.controls.addView(bottom, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
-        val buttons = listOf(pane.qualitySpinner, input, replace, reload, only, pane.expand)
+        val buttons = listOf(pane.qualitySpinner, input, pane.swap, replace, reload, only, pane.expand)
         // One row when the video is wide enough, else volume on one row and the buttons below it.
         var twoRows: Boolean? = null
         fun place(narrow: Boolean) {
@@ -867,7 +874,7 @@ class SideBySideActivity : AppCompatActivity() {
     /** Puts another channel on [pane]'s side (popup with channel, quality and volume). */
     private fun replace(pane: Pane) {
         val current = SideBySide.Side(pane.side.login, pane.quality, pane.volume, pane.muted)
-        SideBySide.showReplaceDialog(this, if (pane.prefix == LEFT) "Left" else "Right", current) { side ->
+        SideBySide.showReplaceDialog(this, panes.indexOf(pane) + 1, current) { side ->
             pane.job?.cancel()
             pane.player?.stop()
             pane.side = side
@@ -888,8 +895,31 @@ class SideBySideActivity : AppCompatActivity() {
             }
             pane.chatAdded = false
             SideBySide.addRecent(this, panes[0].side.login, panes[1].side.login)
+            SideBySide.writeSides(intent,
+                panes[0].let { SideBySide.Side(it.side.login, it.quality, it.volume, it.muted) },
+                panes[1].let { SideBySide.Side(it.side.login, it.quality, it.volume, it.muted) })
             load(pane)
         }
+    }
+
+    /**
+     * Swaps the two streams' places (video, chat and their settings move together). Stream 1
+     * is then the other channel; the recent pair and a restored screen follow the new order.
+     */
+    private fun swapStreams() {
+        val first = panes[1]
+        val second = panes[0]
+        panes[0] = first
+        panes[1] = second
+        first.prefix = LEFT
+        second.prefix = RIGHT
+        // Each stream keeps its own message box choice.
+        SideBySide.setInputShown(this, LEFT, first.inputShown)
+        SideBySide.setInputShown(this, RIGHT, second.inputShown)
+        fun current(pane: Pane) = SideBySide.Side(pane.side.login, pane.quality, pane.volume, pane.muted)
+        SideBySide.writeSides(intent, current(first), current(second))
+        SideBySide.addRecent(this, first.side.login, second.side.login)
+        arrange(force = true)
     }
 
     /** Closes the other side and plays [pane]'s stream on its own, in the normal player. */

@@ -1,6 +1,21 @@
 Xtra5s changelog (newest first)
 
 ========================================
+Xtra5s 1.6.0 (2026-11-16)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+New
+- Dual Stream: Swap button in each video's controls: the two streams change places (video,
+  chat and their volume, quality and message box move together). Its arrows point up / down
+  in portrait.
+
+Changed
+- Side-By-Side is now called Dual Stream (the tab, popups and Settings > Shortcuts).
+- The "+" popup's Left / Right are now Stream 1 and Stream 2, each with an arrow showing
+  where it plays: left / right in landscape and on TV, top / bottom in portrait (it follows
+  rotation while the popup is open). The Replace popup shows the stream it replaces.
+- The Replace button now has a TV icon (its old icon is the new Swap button).
+========================================
 Xtra5s 1.5.4 (2026-11-16)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
