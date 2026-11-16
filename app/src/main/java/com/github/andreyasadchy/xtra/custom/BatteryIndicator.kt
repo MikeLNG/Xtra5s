@@ -150,7 +150,6 @@ object BatteryIndicator {
             visibility = View.GONE
             isClickable = false
             isFocusable = false
-            elevation = dp(6).toFloat()
         }
         overlay.addView(text, FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
             gravity = Gravity.TOP or Gravity.END

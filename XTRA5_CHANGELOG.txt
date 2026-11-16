@@ -1,6 +1,15 @@
 Xtra5s changelog (newest first)
 
 ========================================
+Xtra5s 1.7.6 (2026-11-16)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+Fixed
+- Dual Stream: another attempt at the chats flickering to old, frozen pictures: the battery
+  percentage (added in 1.7.0, when the flicker started) no longer floats on its own raised
+  layer, which can confuse which parts of the screen Android redraws on some phones. It is
+  still drawn on top.
+========================================
 Xtra5s 1.7.5 (2026-11-16)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
