@@ -737,6 +737,7 @@ class SettingsActivity : AppCompatActivity() {
                             "1" -> getString(R.string.live)
                             "2" -> getString(R.string.videos)
                             "3" -> getString(R.string.channels)
+                            com.github.andreyasadchy.xtra.custom.SideBySide.TAB_KEY -> com.github.andreyasadchy.xtra.custom.SideBySide.TAB_TITLE // Dual test
                             else -> getString(R.string.live)
                         },
                         default = split[1] != "0",

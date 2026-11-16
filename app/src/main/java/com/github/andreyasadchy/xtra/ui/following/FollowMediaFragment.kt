@@ -125,6 +125,7 @@ class FollowMediaFragment : Fragment(), Scrollable, FragmentHost {
                         "1" -> getString(R.string.live)
                         "2" -> getString(R.string.videos)
                         "3" -> getString(R.string.channels)
+                        com.github.andreyasadchy.xtra.custom.SideBySide.TAB_KEY -> com.github.andreyasadchy.xtra.custom.SideBySide.TAB_TITLE // Dual test
                         else -> getString(R.string.live)
                     }
                 }.toTypedArray().ifEmpty { arrayOf(getString(R.string.live)) })
@@ -186,6 +187,7 @@ class FollowMediaFragment : Fragment(), Scrollable, FragmentHost {
             "1" -> FollowedStreamsFragment()
             "2" -> FollowedVideosFragment()
             "3" -> FollowedChannelsFragment()
+            com.github.andreyasadchy.xtra.custom.SideBySide.TAB_KEY -> com.github.andreyasadchy.xtra.custom.SideBySideFragment() // Dual test
             else -> FollowedStreamsFragment()
         }
     }

@@ -24,7 +24,7 @@ android {
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.github.andreyasadchy.xtra"
+        applicationId = "com.prime385.xtradualtest" // Dual test: its own app, next to Xtra5s
         minSdk = 24
         targetSdk = 37
         versionCode = 121

@@ -53,6 +53,11 @@
             </intent-filter>
         </activity>
         <activity android:name=".ui.settings.SettingsActivity" />
+        <!-- Dual test: Dual Stream -->
+        <activity
+            android:name=".custom.SideBySideActivity"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboard|keyboardHidden|navigation"
+            android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".ui.login.LoginActivity"
             android:configChanges="orientation|screenSize"
