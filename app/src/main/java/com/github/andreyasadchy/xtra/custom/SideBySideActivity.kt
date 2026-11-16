@@ -163,6 +163,13 @@ class SideBySideActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         applyTheme()
+        // Each chat, as it appears (also after a Replace or a restore): redraw the whole screen
+        // whenever it changes (see fullRedraw).
+        supportFragmentManager.registerFragmentLifecycleCallbacks(object : androidx.fragment.app.FragmentManager.FragmentLifecycleCallbacks() {
+            override fun onFragmentViewCreated(fm: androidx.fragment.app.FragmentManager, f: androidx.fragment.app.Fragment, v: View, savedInstanceState: Bundle?) {
+                if (f is ChatFragment) v.findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.recyclerView)?.let { watchChat(it) }
+            }
+        }, true)
         super.onCreate(savedInstanceState)
         val left = SideBySide.readSide(intent, LEFT)
         val right = SideBySide.readSide(intent, RIGHT)
@@ -223,6 +230,7 @@ class SideBySideActivity : AppCompatActivity() {
         arrange()
         // The screen: both streams, with the battery percentage over the top-right corner.
         val root = FrameLayout(this).apply { setBackgroundColor(Color.BLACK) }
+        screenRoot = root
         root.addView(row, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
         battery = BatteryIndicator.attachStandalone(root)
         ViewCompat.setOnApplyWindowInsetsListener(root) { view, windowInsets ->
@@ -235,6 +243,48 @@ class SideBySideActivity : AppCompatActivity() {
     }
 
     private var battery: BatteryIndicator.Standalone? = null
+    private var screenRoot: View? = null
+
+    /**
+     * Experiment (1.8.1): with two busy chats in one window, some devices showed old pictures of
+     * the whole screen, while one chat per window (split screen) was fine. Android normally
+     * redraws only the parts that changed; here, whenever either chat changes, the whole screen
+     * is redrawn in that frame instead, so there is only ever one changed area.
+     */
+    private fun fullRedraw() {
+        screenRoot?.invalidate()
+    }
+
+    private fun watchChat(list: androidx.recyclerview.widget.RecyclerView) {
+        list.addOnScrollListener(object : androidx.recyclerview.widget.RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: androidx.recyclerview.widget.RecyclerView, dx: Int, dy: Int) = fullRedraw()
+        })
+        list.addOnChildAttachStateChangeListener(object : androidx.recyclerview.widget.RecyclerView.OnChildAttachStateChangeListener {
+            override fun onChildViewAttachedToWindow(view: View) = fullRedraw()
+            override fun onChildViewDetachedFromWindow(view: View) = fullRedraw()
+        })
+        val observer = object : androidx.recyclerview.widget.RecyclerView.AdapterDataObserver() {
+            override fun onChanged() = fullRedraw()
+            override fun onItemRangeChanged(positionStart: Int, itemCount: Int) = fullRedraw()
+            override fun onItemRangeChanged(positionStart: Int, itemCount: Int, payload: Any?) = fullRedraw()
+            override fun onItemRangeInserted(positionStart: Int, itemCount: Int) = fullRedraw()
+            override fun onItemRangeRemoved(positionStart: Int, itemCount: Int) = fullRedraw()
+            override fun onItemRangeMoved(fromPosition: Int, toPosition: Int, itemCount: Int) = fullRedraw()
+        }
+        var watched: androidx.recyclerview.widget.RecyclerView.Adapter<*>? = null
+        fun follow() {
+            val adapter = list.adapter
+            if (adapter != null && adapter !== watched) {
+                watched?.unregisterAdapterDataObserver(observer)
+                adapter.registerAdapterDataObserver(observer)
+                watched = adapter
+            }
+        }
+        follow()
+        // The chat sets its list up after its view is made: pick the adapter up when it appears.
+        list.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> follow() }
+        list.viewTreeObserver.addOnGlobalLayoutListener { follow() }
+    }
 
     /**
      * True for touches that start in the strip along the top edge (status bar height plus a

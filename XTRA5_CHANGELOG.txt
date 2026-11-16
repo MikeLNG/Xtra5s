@@ -1,6 +1,16 @@
 Xtra5s changelog (newest first)
 
 ========================================
+Xtra5s 1.8.1 (2026-11-16)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+Fixed
+- Dual Stream (experiment): another try at the screen flickering to old, frozen pictures. It
+  only happens with two busy chats in one screen (one chat per window is fine), so whenever
+  either chat changes, the whole screen is now redrawn in that frame instead of just the parts
+  that changed. Slightly more drawing work while the chats are busy; the normal player is
+  unchanged.
+========================================
 Xtra5s 1.8.0 (2026-11-16)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
