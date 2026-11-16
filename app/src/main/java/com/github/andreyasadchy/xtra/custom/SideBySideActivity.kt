@@ -367,7 +367,31 @@ class SideBySideActivity : AppCompatActivity() {
                 }
             })
             var swiped = false
+            // Touches starting in the top-edge strip are the status bar's: the video doesn't see
+            // them (no pressed highlight, no tap). A plain tap there (no swipe) still counts.
+            var edgeTouch = false
+            var edgeX = 0f
+            var edgeY = 0f
+            var edgeMoved = false
             setOnTouchListener { v, event ->
+                if (event.actionMasked == MotionEvent.ACTION_DOWN) {
+                    edgeTouch = inTopEdge(event)
+                    edgeX = event.rawX
+                    edgeY = event.rawY
+                    edgeMoved = false
+                }
+                if (edgeTouch) {
+                    val slop = android.view.ViewConfiguration.get(v.context).scaledTouchSlop
+                    when (event.actionMasked) {
+                        MotionEvent.ACTION_MOVE -> if (kotlin.math.abs(event.rawX - edgeX) > slop || kotlin.math.abs(event.rawY - edgeY) > slop) edgeMoved = true
+                        MotionEvent.ACTION_UP -> {
+                            edgeTouch = false
+                            if (!edgeMoved) v.performClick()
+                        }
+                        MotionEvent.ACTION_CANCEL -> edgeTouch = false
+                    }
+                    return@setOnTouchListener true
+                }
                 if (event.actionMasked == MotionEvent.ACTION_DOWN) { swiped = false; adjusting = false }
                 if (adjusting) {
                     when (event.actionMasked) {

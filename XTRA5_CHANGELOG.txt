@@ -1,6 +1,14 @@
 Xtra5s changelog (newest first)
 
 ========================================
+Xtra5s 1.7.2 (2026-11-16)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+Fixed
+- Dual Stream: swiping down from the top edge for the status bar no longer counts as a tap on
+  the video (no controls popping up, no pressed highlight). A plain tap there still shows the
+  controls.
+========================================
 Xtra5s 1.7.1 (2026-11-16)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
