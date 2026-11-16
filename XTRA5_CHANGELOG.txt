@@ -1,6 +1,14 @@
 Xtra5s changelog (newest first)
 
 ========================================
+Xtra5s 1.6.1 (2026-11-16)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+Fixed
+- Dual Stream recent pairs: the same two channels the other way round (e.g. after swapping)
+  are now one entry, kept in the order you watched last and moved to the top. Duplicates
+  already in the list are merged.
+========================================
 Xtra5s 1.6.0 (2026-11-16)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 

@@ -62,6 +62,22 @@ class Xtra5sLogicTest {
         assertEquals(160, SideBySide.targetHeight("160p"))
     }
 
+    @Test
+    fun recentPairsIgnoreOrder() {
+        // The same two channels swapped round are one entry: the newest order wins, at the top.
+        var list = SideBySide.withRecent(emptyList(), "a", "b")
+        list = SideBySide.withRecent(list, "c", "d")
+        list = SideBySide.withRecent(list, "b", "a")
+        assertEquals(listOf("b" to "a", "c" to "d"), list)
+        // Older saved lists with both orders are merged (newest kept).
+        assertEquals(listOf("x" to "y", "p" to "q"), SideBySide.parseRecent("x,y\np,q\ny,x\nbroken\n,z"))
+        // At most 8 kept.
+        var many = emptyList<Pair<String, String>>()
+        for (i in 1..12) many = SideBySide.withRecent(many, "s$i", "t$i")
+        assertEquals(8, many.size)
+        assertEquals("s12" to "t12", many.first())
+    }
+
     // ---- Highlights ----
 
     @Test

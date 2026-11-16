@@ -88,21 +88,39 @@ object SideBySide {
 
     // ---- Recent pairs ----
 
-    fun recentPairs(context: Context): List<Pair<String, String>> =
-        context.prefs().getString(PREF_RECENT, null).orEmpty().lines().mapNotNull { line ->
+    /** The two channels, in either order: "a | b" and "b | a" are the same pair. */
+    private fun samePair(x: Pair<String, String>, y: Pair<String, String>) =
+        (x.first == y.first && x.second == y.second) || (x.first == y.second && x.second == y.first)
+
+    /** Saved recent pairs (newest first); one entry per pair of channels, whichever way round. */
+    fun parseRecent(source: String?): List<Pair<String, String>> {
+        val result = ArrayList<Pair<String, String>>()
+        source.orEmpty().lines().forEach { line ->
             val parts = line.split(',')
-            if (parts.size == 2 && parts[0].isNotBlank() && parts[1].isNotBlank()) parts[0] to parts[1] else null
+            if (parts.size != 2 || parts[0].isBlank() || parts[1].isBlank()) return@forEach
+            val pair = parts[0] to parts[1]
+            if (result.none { samePair(it, pair) }) result.add(pair)
         }
+        return result
+    }
+
+    /** [list] with first/second at the top, in that order, replacing the same pair either way round. */
+    fun withRecent(list: List<Pair<String, String>>, first: String, second: String): List<Pair<String, String>> {
+        val pair = first to second
+        return (listOf(pair) + list.filterNot { samePair(it, pair) }).take(MAX_RECENT)
+    }
+
+    private fun serializeRecent(list: List<Pair<String, String>>) = list.joinToString("\n") { "${it.first},${it.second}" }
+
+    fun recentPairs(context: Context): List<Pair<String, String>> = parseRecent(context.prefs().getString(PREF_RECENT, null))
 
     fun addRecent(context: Context, left: String, right: String) {
-        val list = recentPairs(context).filterNot { it.first == left && it.second == right }.toMutableList()
-        list.add(0, left to right)
-        context.prefs().edit { putString(PREF_RECENT, list.take(MAX_RECENT).joinToString("\n") { "${it.first},${it.second}" }) }
+        context.prefs().edit { putString(PREF_RECENT, serializeRecent(withRecent(recentPairs(context), left, right))) }
     }
 
     fun removeRecent(context: Context, pair: Pair<String, String>) {
-        val list = recentPairs(context).filterNot { it == pair }
-        context.prefs().edit { putString(PREF_RECENT, list.joinToString("\n") { "${it.first},${it.second}" }) }
+        val list = recentPairs(context).filterNot { samePair(it, pair) }
+        context.prefs().edit { putString(PREF_RECENT, serializeRecent(list)) }
     }
 
     // ---- Chat input per side (hidden by default; only for Side-By-Side) ----
