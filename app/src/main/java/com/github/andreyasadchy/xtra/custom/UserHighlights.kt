@@ -1,7 +1,6 @@
 package com.github.andreyasadchy.xtra.custom
 
 import android.content.Context
-import android.graphics.Color
 import com.github.andreyasadchy.xtra.model.chat.ChatMessage
 import com.github.andreyasadchy.xtra.util.prefs
 
@@ -115,7 +114,7 @@ object UserHighlights {
             6 -> hex.toLongOrNull(16)?.let { (DEFAULT_ALPHA shl 24) or it.toInt() }
             8 -> hex.toLongOrNull(16)?.toInt()
             else -> null
-        }?.let { Color.argb(Color.alpha(it), Color.red(it), Color.green(it), Color.blue(it)) }
+        } // Xtra5s: already #AARRGGBB (the old Color.argb round trip changed nothing)
     }
 
     fun defaultGroupName(context: Context): String? = context.prefs().getString(PREF_DEFAULT_GROUP, null)?.takeIf { it.isNotEmpty() }

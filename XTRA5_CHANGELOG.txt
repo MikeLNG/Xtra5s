@@ -1,6 +1,20 @@
 Xtra5s changelog (newest first)
 
 ========================================
+Xtra5s 1.5.2 (2026-11-16)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+Changed
+- Chat input clear button: now a rounded square in a darker red, with a white border and a thin
+  black outline, sitting against the right edge of the screen and a little higher than before.
+
+Behind the scenes
+- Safer automatic updates: before an official Xtra update is published, the build now also
+  checks that every place your custom features plug into the official code is still there, and
+  runs tests of the custom features' logic (volume curve, Side-By-Side channel names and
+  qualities, highlight colours, users and groups). If either fails, nothing is published and
+  you stay on the last good version.
+========================================
 Xtra5s 1.5.1 (2026-11-15)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 

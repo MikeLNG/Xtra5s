@@ -22,6 +22,16 @@ prime385/Xtra5 from here. Work happens on the `custom-xtra5` branch (the default
 - Commits must be authored as `prime385`: the build uses the newest non-prime385 commit to know
   which official Xtra version it is based on.
 
+## Safety checks (run by the release workflow before anything is pushed or published)
+
+- `.github/xtra5s-hooks.sh` checks that every hook in official files (lines marked
+  `Xtra5 custom` / `Xtra5s custom`, or calling into the custom package) is still there, using
+  the counts in `.github/xtra5s-hooks.txt`. After adding or removing hooks on purpose, run
+  `.github/xtra5s-hooks.sh --update` and commit the list.
+- `app/src/test/.../custom/Xtra5sLogicTest.kt` tests the custom features' logic
+  (`./gradlew testDebugUnitTest`). Keep custom logic that can be tested free of Android calls
+  at load time, and add tests for new logic.
+
 ## Versioning and releases
 
 - Version is `MAJOR.FEATURE.FIX`, set by `val xtra5Version` at the end of `app/build.gradle.kts`

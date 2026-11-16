@@ -47,7 +47,7 @@ object SoloVolume {
 
     // ---- Hold-and-slide ----
 
-    private val handler = Handler(Looper.getMainLooper())
+    private val handler by lazy { Handler(Looper.getMainLooper()) }
     private var pending: Runnable? = null
     private var adjusting = false
     private var passing = false

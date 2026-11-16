@@ -506,6 +506,6 @@ object SideBySide {
     }
 
     /** White icon tint for buttons over the video. */
-    val WHITE: ColorStateList = ColorStateList.valueOf(0xFFFFFFFF.toInt())
+    val WHITE: ColorStateList get() = ColorStateList.valueOf(0xFFFFFFFF.toInt())
     const val GOLD = 0xFFFFC107.toInt()
 }

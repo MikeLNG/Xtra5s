@@ -138,7 +138,7 @@ File("${project.gradle.gradleUserHomeDir.absolutePath}/daemon/${project.gradle.g
 // above (including their versionCode/versionName bumps) merge without conflicts.
 // Versioning: MAJOR.FEATURE.FIX -> versionCode = MAJOR*10000 + FEATURE*100 + FIX
 // ---------------------------------------------------------------------------
-val xtra5Version = "1.5.1"
+val xtra5Version = "1.5.2"
 // Newest official (upstream) commit this build contains: the latest commit not authored by prime385.
 // Used by the in-app "official Xtra changes" check. Keep Xtra5 commits authored as prime385.
 val xtra5UpstreamSha: String = try {
@@ -153,4 +153,14 @@ android {
         versionName = xtra5Version
         versionCode = xtra5Version.split(".").map { it.toInt() }.let { (major, feature, fix) -> major * 10000 + feature * 100 + fix }
     }
+}
+// Xtra5s custom: unit tests of the custom features' logic (app/src/test), run by the release
+// workflow before anything is published. Android calls return defaults so plain JVM tests work.
+android {
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+    }
+}
+dependencies {
+    testImplementation("junit:junit:4.13.2")
 }

@@ -52,9 +52,14 @@ object ChatInputExtras {
             setTextColor(Color.WHITE)
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
             gravity = Gravity.CENTER
-            background = GradientDrawable().apply {
-                shape = GradientDrawable.OVAL
-                setColor(0xFFE53935.toInt())
+            // Xtra5s: rounded square, darker red, 2dp white border inside a 1dp black outline.
+            background = android.graphics.drawable.LayerDrawable(arrayOf(
+                GradientDrawable().apply { cornerRadius = dp(9).toFloat(); setColor(Color.BLACK) },
+                GradientDrawable().apply { cornerRadius = dp(8).toFloat(); setColor(Color.WHITE) },
+                GradientDrawable().apply { cornerRadius = dp(6).toFloat(); setColor(0xFFC62828.toInt()) },
+            )).apply {
+                setLayerInset(1, dp(1), dp(1), dp(1), dp(1))
+                setLayerInset(2, dp(3), dp(3), dp(3), dp(3))
             }
             contentDescription = "Clear message"
             elevation = dp(4).toFloat()
@@ -155,14 +160,14 @@ object ChatInputExtras {
                     big.layoutParams = lp
                 }
             }
-            // Clear button: above the right end of the input (or the expanded input).
+            // Clear button: above the input (or the expanded input), against the screen's right edge.
             val hasText = text.isNotEmpty()
             val showClear = inputShown && hasText
             if (showClear) {
                 val boxTop = if (big.visibility == View.VISIBLE) (big.layoutParams as FrameLayout.LayoutParams).topMargin else topY
                 val lp = clear.layoutParams as FrameLayout.LayoutParams
-                val x = right - dp(32)
-                val y = boxTop - dp(32) - dp(14)
+                val x = top.width - top.paddingRight - dp(32) - dp(4)
+                val y = boxTop - dp(32) - dp(14) - dp(20)
                 if (lp.leftMargin != x || lp.topMargin != y) {
                     lp.leftMargin = x
                     lp.topMargin = y

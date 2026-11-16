@@ -74,6 +74,10 @@ jobs:
           echo "release=true" >> "$GITHUB_OUTPUT"
         fi
 
+    # Xtra5s: every place a custom feature plugs into official code must still be there.
+    - name: Check Xtra5s hooks
+      run: .github/xtra5s-hooks.sh
+
     - name: Setup Java
       if: steps.merge.outputs.release == 'true'
       uses: actions/setup-java@v6
@@ -92,6 +96,11 @@ jobs:
       run: |
         ./gradlew assembleRelease
         cp app/build/outputs/apk/release/app-release.apk "Xtra5s-${{ steps.merge.outputs.version }}.apk"
+
+    # Xtra5s: the custom features' logic tests must pass before anything is pushed or published.
+    - name: Test Xtra5s features
+      if: steps.merge.outputs.release == 'true'
+      run: ./gradlew testDebugUnitTest
 
     - name: Push merged branch
       if: steps.merge.outputs.changed == 'true'
