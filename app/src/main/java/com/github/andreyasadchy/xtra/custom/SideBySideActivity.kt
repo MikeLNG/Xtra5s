@@ -8,7 +8,7 @@ import android.view.GestureDetector
 import android.view.Gravity
 import android.view.KeyEvent
 import android.view.MotionEvent
-import android.view.SurfaceView
+import android.view.TextureView
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
@@ -96,7 +96,12 @@ class SideBySideActivity : AppCompatActivity() {
         lateinit var root: LinearLayout
         lateinit var videoFrame: FrameLayout
         lateinit var aspect: AspectRatioFrameLayout
-        lateinit var surface: SurfaceView
+        /**
+         * The video is drawn inside the app's own window (TextureView), not on a separate video
+         * surface: with two separate surfaces some phones kept putting old frames of the rest of
+         * the screen (the chats) on screen, so the chats flickered between live and minutes-old.
+         */
+        lateinit var surface: TextureView
         lateinit var label: TextView
         lateinit var status: TextView
         lateinit var controls: LinearLayout
@@ -426,7 +431,7 @@ class SideBySideActivity : AppCompatActivity() {
             setAspectRatio(16f / 9f)
             resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIXED_WIDTH
         }
-        pane.surface = SurfaceView(this)
+        pane.surface = TextureView(this)
         pane.aspect.addView(pane.surface, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
         pane.videoFrame.addView(pane.aspect, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER))
 
@@ -750,7 +755,7 @@ class SideBySideActivity : AppCompatActivity() {
             // Both players play together, so neither may take audio focus from the other.
             setAudioAttributes(AudioAttributes.DEFAULT, false)
         }.build()
-        player.setVideoSurfaceView(pane.surface)
+        player.setVideoTextureView(pane.surface)
         player.addListener(object : Player.Listener {
             override fun onTracksChanged(tracks: Tracks) {
                 if (!pane.qualityApplied && tracks.groups.any { it.type == androidx.media3.common.C.TRACK_TYPE_VIDEO }) {

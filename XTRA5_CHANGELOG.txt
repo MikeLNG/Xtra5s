@@ -1,6 +1,16 @@
 Xtra5s changelog (newest first)
 
 ========================================
+Xtra5s 1.7.5 (2026-11-16)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+Fixed
+- Dual Stream: the chats no longer flicker between the live chat and old, frozen pictures of
+  it (minutes out of date). The two videos used separate video surfaces, and with two of them
+  some phones kept showing stale frames of the rest of the screen; the videos are now drawn
+  inside the app's own window. (Slightly more GPU work per video; the normal player is
+  unchanged.)
+========================================
 Xtra5s 1.7.4 (2026-11-16)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
