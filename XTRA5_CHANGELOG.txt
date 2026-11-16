@@ -1,6 +1,17 @@
 Xtra5s changelog (newest first)
 
 ========================================
+Xtra5s 1.7.1 (2026-11-16)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+Fixed
+- Chat no longer jumps back to earlier messages and then races down again (most noticeable
+  in Dual Stream, with two busy chats). When the chat re-draws its messages (emotes or badges
+  finish loading, highlights change, a stream is swapped, replaced or rotated), it now uses
+  its own "following new messages" state to stay at the newest, and when you've scrolled up
+  it keeps the very message you were looking at in place, even as old messages drop off the
+  top. (Normal player and Dual Stream.)
+========================================
 Xtra5s 1.7.0 (2026-11-16)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 

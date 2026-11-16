@@ -388,7 +388,7 @@ class ChatFragment : BaseNetworkFragment(), MessageClickedDialog.OnButtonClickLi
                                         val size = synchronized(viewModel.chatMessages) {
                                             viewModel.chatMessages.size
                                         }
-                                        adapter.notifyItemRangeChanged(0, size)
+                                        com.github.andreyasadchy.xtra.custom.ChatLive.keepPlace(binding.recyclerView) { adapter.notifyItemRangeChanged(0, size) } // Xtra5s custom: chat stays in place
                                     }
                                     messageDialog?.adapter?.let { adapter ->
                                         val size = synchronized(adapter.messages) {

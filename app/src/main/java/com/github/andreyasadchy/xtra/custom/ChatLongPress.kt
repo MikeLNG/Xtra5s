@@ -52,7 +52,7 @@ object ChatLongPress {
         list.requestDisallowInterceptTouchEvent(true)
         list.stopScroll()
         heldList = java.lang.ref.WeakReference(list)
-        heldAtBottom = !list.canScrollVertically(1)
+        heldAtBottom = ChatLive.isFollowing(list)
         val anchor = list.getChildAt(0)
         heldAnchor = anchor?.let { java.lang.ref.WeakReference(it) }
         heldAnchorTop = anchor?.top ?: 0
