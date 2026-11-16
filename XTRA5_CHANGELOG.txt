@@ -1,6 +1,13 @@
 Xtra5s changelog (newest first)
 
 ========================================
+Xtra5s 1.5.4 (2026-11-16)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+Fixed
+- Side-By-Side "+" and Replace popups: the channel name is now centred vertically in its box
+  (it sat too low).
+========================================
 Xtra5s 1.5.3 (2026-11-16)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 

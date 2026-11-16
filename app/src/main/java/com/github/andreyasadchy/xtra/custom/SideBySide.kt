@@ -437,9 +437,11 @@ object SideBySide {
             threshold = 1
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f)
             // Made in code, so it misses the box's usual inner padding (the text would start on
-            // the box's left edge): the standard Material spacing, with room above the text for
-            // the floating "Channel" label. The box grows to fit; nothing is clipped.
-            setPaddingRelative((16 * dp).toInt(), (24 * dp).toInt(), (16 * dp).toInt(), (10 * dp).toInt())
+            // the box's left edge). The app uses the outlined box, whose "Channel" label sits on
+            // the outline, so the text gets equal space above and below and is centred. The box
+            // grows to fit; nothing is clipped.
+            setPaddingRelative((16 * dp).toInt(), (16 * dp).toInt(), (16 * dp).toInt(), (16 * dp).toInt())
+            gravity = Gravity.CENTER_VERTICAL or Gravity.START
             minHeight = (64 * dp).toInt()
             prefill?.let { setText(it) }
         }
