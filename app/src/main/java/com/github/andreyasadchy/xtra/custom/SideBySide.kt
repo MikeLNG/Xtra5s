@@ -303,14 +303,23 @@ object SideBySide {
     fun showAddDialog(activity: FragmentActivity, prefill: Pair<String, String>? = null) {
         val context = material(activity)
         val dp = context.resources.displayMetrics.density
+        // Side by side when each box has room for a full-length name (25 characters at this text
+        // size, about 300dp); otherwise Left above Right, each the popup's full width.
+        val popupWidthDp = minOf(context.resources.displayMetrics.widthPixels * 0.92f, 820 * dp) / dp
+        val sideBySide = (popupWidthDp - 40 - 16) / 2 >= 300
         val row = LinearLayout(context).apply {
-            orientation = LinearLayout.HORIZONTAL
-            setPadding((20 * dp).toInt(), (8 * dp).toInt(), (20 * dp).toInt(), 0)
+            orientation = if (sideBySide) LinearLayout.HORIZONTAL else LinearLayout.VERTICAL
+            setPadding((20 * dp).toInt(), (8 * dp).toInt(), (20 * dp).toInt(), (8 * dp).toInt())
         }
         val left = buildColumn(context, "Left", prefill?.first)
         val right = buildColumn(context, "Right", prefill?.second)
-        row.addView(left.first, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { marginEnd = (8 * dp).toInt() })
-        row.addView(right.first, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { marginStart = (8 * dp).toInt() })
+        if (sideBySide) {
+            row.addView(left.first, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { marginEnd = (8 * dp).toInt() })
+            row.addView(right.first, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { marginStart = (8 * dp).toInt() })
+        } else {
+            row.addView(left.first, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+            row.addView(right.first, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = (20 * dp).toInt() })
+        }
         val leftInputs = left.second
         val rightInputs = right.second
         leftInputs.name.imeOptions = EditorInfo.IME_ACTION_NEXT
@@ -318,7 +327,7 @@ object SideBySide {
 
         val dialog = activity.getAlertDialogBuilder()
             .setTitle(TAB_TITLE)
-            .setView(row)
+            .setView(android.widget.ScrollView(context).apply { addView(row) }) // stacked sides may need scrolling on short screens
             .setPositiveButton("Watch", null)
             .setNegativeButton(android.R.string.cancel, null)
             .create()
@@ -427,7 +436,11 @@ object SideBySide {
             inputType = EditorInfo.TYPE_CLASS_TEXT or EditorInfo.TYPE_TEXT_FLAG_NO_SUGGESTIONS
             threshold = 1
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f)
-            minHeight = (60 * dp).toInt()
+            // Made in code, so it misses the box's usual inner padding (the text would start on
+            // the box's left edge): the standard Material spacing, with room above the text for
+            // the floating "Channel" label. The box grows to fit; nothing is clipped.
+            setPaddingRelative((16 * dp).toInt(), (24 * dp).toInt(), (16 * dp).toInt(), (10 * dp).toInt())
+            minHeight = (64 * dp).toInt()
             prefill?.let { setText(it) }
         }
         layout.addView(name, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))

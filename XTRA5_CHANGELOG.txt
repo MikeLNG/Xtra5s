@@ -1,6 +1,16 @@
 Xtra5s changelog (newest first)
 
 ========================================
+Xtra5s 1.5.3 (2026-11-16)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+Fixed
+- Side-By-Side "+" and Replace popups: a filled-in channel name no longer touches the left edge
+  of its box; the text has the normal inner padding, the same size as before and fully
+  visible. On screens too narrow for two full-length names side by side (phones), the "+"
+  popup puts Left above Right, each box the popup's full width (it scrolls if the screen is
+  short); TVs and wide screens keep them side by side.
+========================================
 Xtra5s 1.5.2 (2026-11-16)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
