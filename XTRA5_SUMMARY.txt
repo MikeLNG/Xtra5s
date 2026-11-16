@@ -1,4 +1,4 @@
-Xtra5s - feature list (version 1.6.0)
+Xtra5s - feature list (version 1.7.0)
 Everything official Xtra does, plus the features below.
 
 ========================================
@@ -25,6 +25,7 @@ Dual Stream
     stream in the normal player (Watch only this, or swipe up on it).
   - Offline channels start playing by themselves when they go live; dropped streams
     reconnect on their own.
+  - Battery percentage in the corner, fading out of the way like in the player.
   - Recent pairs, with both profile pictures, are one tap away; name suggestions show
     profile pictures too.
 

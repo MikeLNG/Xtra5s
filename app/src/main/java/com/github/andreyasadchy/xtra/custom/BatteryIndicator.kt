@@ -114,6 +114,95 @@ object BatteryIndicator {
         }
     }
 
+    // ---- Xtra5s: Dual Stream ----
+
+    /**
+     * Battery percentage for the Dual Stream screen: top-right corner of [overlay] (the whole
+     * screen), in both orientations. Same settings as in the player: shown if Battery percentage
+     * is on (and TV mode shortcuts are off); full opacity after any touch or key press ([wake]),
+     * fading to the faded opacity after the same inactive time.
+     */
+    class Standalone(val text: TextView) {
+        val fade = Runnable { text.animate().alpha(fadedAlpha()).setDuration(400L).start() }
+        fun fadedAlpha() = text.context.prefs().getInt(PREF_FADED_OPACITY, 40).coerceIn(0, 100) / 100f
+
+        /** Any touch or key press: full opacity, then fade after the inactive time. */
+        fun wake() {
+            if (!text.isVisible) return
+            text.removeCallbacks(fade)
+            text.animate().cancel()
+            text.alpha = 1f
+            text.postDelayed(fade, FADE_AFTER_MS)
+        }
+    }
+
+    fun attachStandalone(overlay: FrameLayout): Standalone? {
+        val context = overlay.context
+        val prefs = context.prefs()
+        if (!prefs.getBoolean(PREF_ENABLED, false) || prefs.getBoolean(TvShortcuts.PREF_ENABLED, false)) return null
+        fun dp(v: Int) = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, v.toFloat(), context.resources.displayMetrics).toInt()
+        val text = TextView(context).apply {
+            setTextColor(Color.WHITE)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
+            setShadowLayer(3f, 0f, 0f, 0x99000000.toInt())
+            gravity = Gravity.CENTER_VERTICAL
+            compoundDrawablePadding = dp(2)
+            visibility = View.GONE
+            isClickable = false
+            isFocusable = false
+            elevation = dp(6).toFloat()
+        }
+        overlay.addView(text, FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+            gravity = Gravity.TOP or Gravity.END
+            topMargin = dp(4)
+            marginEnd = dp(8)
+        })
+        val standalone = Standalone(text)
+        fun apply(intent: Intent) {
+            val present = intent.getBooleanExtra(BatteryManager.EXTRA_PRESENT, true)
+            val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
+            val scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, 100)
+            val status = intent.getIntExtra(BatteryManager.EXTRA_STATUS, -1)
+            val charging = status == BatteryManager.BATTERY_STATUS_CHARGING || status == BatteryManager.BATTERY_STATUS_FULL
+            if (!present || level < 0 || scale <= 0) {
+                text.visibility = View.GONE
+                return
+            }
+            text.text = "${level * 100 / scale}%"
+            val size = (text.textSize * 1.05f).toInt()
+            val bolt = if (charging) context.getDrawable(R.drawable.xtra5_bolt)?.mutate()?.apply {
+                setTint(Color.WHITE)
+                setBounds(0, 0, size, size)
+            } else null
+            text.setCompoundDrawables(bolt, null, null, null)
+            if (!text.isVisible) {
+                text.visibility = View.VISIBLE
+                standalone.wake()
+            }
+        }
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(c: Context, intent: Intent) = apply(intent)
+        }
+        var listening = false
+        fun start() {
+            if (listening) return
+            listening = true
+            context.registerReceiver(receiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))?.let { apply(it) }
+        }
+        text.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+            override fun onViewAttachedToWindow(v: View) = start()
+            override fun onViewDetachedFromWindow(v: View) {
+                if (listening) {
+                    listening = false
+                    try { context.unregisterReceiver(receiver) } catch (_: Exception) {}
+                }
+                text.removeCallbacks(standalone.fade)
+            }
+        })
+        if (text.isAttachedToWindow) start()
+        return standalone
+    }
+
     private fun updateBattery(indicator: Indicator, intent: Intent) {
         val present = intent.getBooleanExtra(BatteryManager.EXTRA_PRESENT, true)
         val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)

@@ -1,6 +1,20 @@
 Xtra5s changelog (newest first)
 
 ========================================
+Xtra5s 1.7.0 (2026-11-16)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+New
+- Dual Stream: battery percentage in the top-right corner of the screen (both orientations),
+  when Settings > Player > Battery percentage is on. Full opacity after a touch or remote
+  press, fading to your faded opacity after 4 seconds without input (a bolt shows while
+  charging).
+
+Fixed
+- Dual Stream: swiping down from the top edge to reach the status bar / notifications no
+  longer opens Replace (and holding there doesn't start the volume slide): that strip is left
+  to Android. Android still needs a first swipe to show the bar in fullscreen, as in the player.
+========================================
 Xtra5s 1.6.1 (2026-11-16)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 

@@ -216,13 +216,29 @@ class SideBySideActivity : AppCompatActivity() {
         }
         panes.forEach { buildPane(it) }
         arrange()
-        ViewCompat.setOnApplyWindowInsetsListener(row) { view, windowInsets ->
+        // The screen: both streams, with the battery percentage over the top-right corner.
+        val root = FrameLayout(this).apply { setBackgroundColor(Color.BLACK) }
+        root.addView(row, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+        battery = BatteryIndicator.attachStandalone(root)
+        ViewCompat.setOnApplyWindowInsetsListener(root) { view, windowInsets ->
             val bars = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
             val ime = windowInsets.getInsets(WindowInsetsCompat.Type.ime())
             view.setPadding(bars.left, bars.top, bars.right, maxOf(bars.bottom, ime.bottom))
             WindowInsetsCompat.CONSUMED
         }
-        return row
+        return root
+    }
+
+    private var battery: BatteryIndicator.Standalone? = null
+
+    /**
+     * True for touches that start in the strip along the top edge (status bar height plus a
+     * little): those swipes are Android's (status bar / notifications), not Replace or volume.
+     */
+    private fun inTopEdge(e: MotionEvent): Boolean {
+        val dp = resources.displayMetrics.density
+        val bar = ViewCompat.getRootWindowInsets(window.decorView)?.getInsetsIgnoringVisibility(WindowInsetsCompat.Type.statusBars())?.top ?: 0
+        return e.rawY < maxOf(bar, (24 * dp).toInt()) + 16 * dp
     }
 
     private fun divider(): View = View(this).apply { setBackgroundColor(0xFF303030.toInt()) }
@@ -325,6 +341,7 @@ class SideBySideActivity : AppCompatActivity() {
             var startVolume = 0
             val swipes = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
                 override fun onLongPress(e: MotionEvent) {
+                    if (inTopEdge(e)) return
                     adjusting = true
                     startX = e.x
                     startVolume = if (pane.muted) 0 else pane.volume
@@ -341,6 +358,7 @@ class SideBySideActivity : AppCompatActivity() {
 
                 override fun onFling(e1: MotionEvent?, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
                     val start = e1 ?: return false
+                    if (inTopEdge(start)) return false // pulling the status bar down, not Replace
                     val dy = e2.y - start.y
                     val dx = e2.x - start.x
                     if (kotlin.math.abs(dy) < 60 * dp || kotlin.math.abs(dy) < kotlin.math.abs(dx) * 1.5f) return false
@@ -675,11 +693,13 @@ class SideBySideActivity : AppCompatActivity() {
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        battery?.wake()
         panes.forEach { if (it.controls.isVisible && (it.controls.hasFocus() || it.center.hasFocus())) keepControls(it) }
         return super.dispatchKeyEvent(event)
     }
 
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        if (ev.action == MotionEvent.ACTION_DOWN) battery?.wake()
         if (ev.action == MotionEvent.ACTION_DOWN) panes.forEach { if (it.controls.isVisible) keepControls(it) }
         return super.dispatchTouchEvent(ev)
     }
