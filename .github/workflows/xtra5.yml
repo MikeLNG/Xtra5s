@@ -41,11 +41,10 @@ jobs:
           echo "Already up to date with official Xtra"
         else
           git log --no-merges --format='- %s' HEAD..refs/official/master > upstream-changes.txt
-          if ! git merge --no-edit refs/official/master -m "Merge official Xtra changes"; then
-            git merge --abort
-            echo "::error::Official Xtra changes conflict with Xtra5s customizations. Resolve the merge manually."
-            exit 1
-          fi
+          # Xtra5s: a clean merge, or (if official changes clash with Xtra5s changes) official
+          # Xtra's code with the Xtra5s changes put back on top. Fails, publishing nothing, if
+          # an Xtra5s change can't be put back safely (see .github/xtra5s-merge.py).
+          python3 .github/xtra5s-merge.py refs/official/master
           # Bump FIX: MAJOR.FEATURE.FIX
           CUR=$(grep -oP 'val xtra5Version = "\K[0-9]+\.[0-9]+\.[0-9]+' app/build.gradle.kts)
           NEW=$(echo "$CUR" | awk -F. '{print $1"."$2"."$3+1}')
@@ -58,7 +57,15 @@ jobs:
             echo
             echo "Official Xtra changes"
             head -n 50 upstream-changes.txt
+            if [ -s reapplied.txt ]; then
+              echo
+              echo "Behind the scenes"
+              echo "- Official changes clashed with Xtra5s changes in these files; official Xtra's code"
+              echo "  was taken and the Xtra5s changes were put back on top automatically:"
+              sed 's/^/  /' reapplied.txt
+            fi
           } > entry.txt
+          rm -f reapplied.txt
           { head -n 2 XTRA5_CHANGELOG.txt; cat entry.txt; tail -n +3 XTRA5_CHANGELOG.txt; } > changelog.new
           mv changelog.new XTRA5_CHANGELOG.txt
           rm entry.txt

@@ -1,6 +1,23 @@
 Xtra5s changelog (newest first)
 
 ========================================
+Xtra5s 1.7.4 (2026-11-16)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+Fixed
+- Busy chats (especially two in Dual Stream) no longer show messages out of order, jump back
+  to earlier messages or fall behind the newest one. Official Xtra let the chat show its message
+  list while the chat connection was still adding to it in the background, so the screen and
+  the list could disagree; the chat now shows its own copy, updated only as each message is
+  handed to the screen. Scrolling itself is unchanged. (Normal player and Dual Stream.)
+
+Behind the scenes
+- Automatic updates: when official Xtra changes clash with Xtra5s changes, official Xtra's
+  code is taken and the Xtra5s changes are put back on top automatically, as long as the two
+  changed different lines. If official Xtra rewrote or removed the code an Xtra5s change plugs
+  into, nothing is published (as before) and it gets fixed by hand. Builds where this happened
+  say so in their changelog entry.
+========================================
 Xtra5s 1.7.3 (2026-11-16)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 

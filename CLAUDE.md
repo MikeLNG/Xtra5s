@@ -28,6 +28,12 @@ prime385/Xtra5 from here. Work happens on the `custom-xtra5` branch (the default
   `Xtra5 custom` / `Xtra5s custom`, or calling into the custom package) is still there, using
   the counts in `.github/xtra5s-hooks.txt`. After adding or removing hooks on purpose, run
   `.github/xtra5s-hooks.sh --update` and commit the list.
+- `.github/xtra5s-merge.py` does the daily merge: if official changes clash with Xtra5s
+  changes, it takes official Xtra's code and puts the Xtra5s change back on top, per clashing
+  spot, when the two changed different lines (or official only lightly edited / added lines
+  next to the Xtra5s change). If official rewrote, moved or deleted the code a change plugs
+  into, it aborts and nothing is published (resolve by hand). Re-applied files are noted in
+  that build's changelog entry.
 - `app/src/test/.../custom/Xtra5sLogicTest.kt` tests the custom features' logic
   (`./gradlew testDebugUnitTest`). Keep custom logic that can be tested free of Android calls
   at load time, and add tests for new logic.

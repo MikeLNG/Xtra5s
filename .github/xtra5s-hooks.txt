@@ -3,7 +3,7 @@
 1 app/src/main/java/com/github/andreyasadchy/xtra/repository/datasource/FollowedStreamsDataSource.kt
 1 app/src/main/java/com/github/andreyasadchy/xtra/ui/channel/ChannelPagerFragment.kt
 2 app/src/main/java/com/github/andreyasadchy/xtra/ui/chat/ChatAdapter.kt
-3 app/src/main/java/com/github/andreyasadchy/xtra/ui/chat/ChatFragment.kt
+19 app/src/main/java/com/github/andreyasadchy/xtra/ui/chat/ChatFragment.kt
 1 app/src/main/java/com/github/andreyasadchy/xtra/ui/common/ClipsAdapter.kt
 1 app/src/main/java/com/github/andreyasadchy/xtra/ui/common/StreamsAdapter.kt
 2 app/src/main/java/com/github/andreyasadchy/xtra/ui/common/VideosAdapter.kt
