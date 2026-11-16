@@ -255,6 +255,36 @@ class SideBySideActivity : AppCompatActivity() {
         screenRoot?.invalidate()
     }
 
+    /**
+     * Experiment (1.8.2): redrawing on chat changes (above) helped but wasn't enough, so while
+     * Dual Stream is on screen the whole screen is redrawn on every frame (at most 60 a second),
+     * whatever changed: video frames, emote animations, anything. Stopped in the background.
+     */
+    private var redrawing = false
+    private var lastFullRedraw = 0L
+    private val redrawEveryFrame = object : android.view.Choreographer.FrameCallback {
+        override fun doFrame(frameTimeNanos: Long) {
+            if (!redrawing) return
+            // At most ~60 a second, also on faster screens.
+            if (frameTimeNanos - lastFullRedraw >= 15_000_000L) {
+                lastFullRedraw = frameTimeNanos
+                fullRedraw()
+            }
+            android.view.Choreographer.getInstance().postFrameCallback(this)
+        }
+    }
+
+    private fun startFullRedraws() {
+        if (redrawing) return
+        redrawing = true
+        android.view.Choreographer.getInstance().postFrameCallback(redrawEveryFrame)
+    }
+
+    private fun stopFullRedraws() {
+        redrawing = false
+        android.view.Choreographer.getInstance().removeFrameCallback(redrawEveryFrame)
+    }
+
     private fun watchChat(list: androidx.recyclerview.widget.RecyclerView) {
         list.addOnScrollListener(object : androidx.recyclerview.widget.RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: androidx.recyclerview.widget.RecyclerView, dx: Int, dy: Int) = fullRedraw()
@@ -1039,6 +1069,7 @@ class SideBySideActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
+        startFullRedraws()
         if (stopped) {
             stopped = false
             // Back from the background: jump to live again.
@@ -1047,6 +1078,7 @@ class SideBySideActivity : AppCompatActivity() {
     }
 
     override fun onStop() {
+        stopFullRedraws()
         super.onStop()
         if (!isChangingConfigurations) {
             stopped = true
@@ -1058,6 +1090,7 @@ class SideBySideActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        stopFullRedraws()
         panes.forEach { pane ->
             pane.job?.cancel()
             pane.hideJob?.cancel()

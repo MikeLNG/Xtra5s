@@ -1,6 +1,15 @@
 Xtra5s changelog (newest first)
 
 ========================================
+Xtra5s 1.8.2 (2026-11-16)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+Fixed
+- Dual Stream (experiment): redrawing the whole screen when a chat changes (1.8.1) made the
+  flicker to old pictures less chaotic but didn't stop it, so the whole screen is now redrawn
+  on every frame (up to 60 a second) while Dual Stream is on screen. Uses more battery in Dual
+  Stream; stops in the background. The normal player is unchanged.
+========================================
 Xtra5s 1.8.1 (2026-11-16)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
