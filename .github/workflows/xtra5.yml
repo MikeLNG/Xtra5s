@@ -103,6 +103,9 @@ jobs:
       run: |
         ./gradlew assembleRelease
         cp app/build/outputs/apk/release/app-release.apk "Xtra5s-${{ steps.merge.outputs.version }}.apk"
+        # Xtra5s Companion: the same app under its own package (split-screen Dual Stream)
+        ./gradlew assembleRelease -Pxtra5sCompanion
+        cp app/build/outputs/apk/release/app-release.apk "Xtra5s-Companion-${{ steps.merge.outputs.version }}.apk"
 
     # Xtra5s: the custom features' logic tests must pass before anything is pushed or published.
     - name: Test Xtra5s features
@@ -131,5 +134,5 @@ jobs:
           echo "Xtra5s $VERSION, based on official Xtra $(git rev-parse --short=7 refs/official/master)" > "Xtra5s-$VERSION-changelog.txt"
         fi
         cp XTRA5_CHANGELOG.txt xtra5s-Custom-Changelog.txt
-        gh release create --repo "$GITHUB_REPOSITORY" "xtra5s-v$VERSION" "Xtra5s-$VERSION.apk" xtra5s-Custom-Changelog.txt \
+        gh release create --repo "$GITHUB_REPOSITORY" "xtra5s-v$VERSION" "Xtra5s-$VERSION.apk" "Xtra5s-Companion-$VERSION.apk" xtra5s-Custom-Changelog.txt \
           --target "$(git rev-parse HEAD)" --title "Xtra5s $VERSION" --notes-file "Xtra5s-$VERSION-changelog.txt" --latest=true

@@ -42,6 +42,21 @@ object SoloVolume {
     /** Slider level (0-1) to the level sent to the player. */
     fun gain(level: Float): Float = level.coerceIn(0f, 1f).toDouble().pow(5.0 / 3.0).toFloat()
 
+    /**
+     * Xtra5s (Dual Stream in split screen): a volume (0-1) for this stream instead of the saved
+     * one, without changing the saved one. Cleared when you change the volume or the stream ends.
+     */
+    @Volatile var settingsOverride: Float? = null
+
+    /** The saved volume setting (0-1) to the player's level, or this stream's own volume. */
+    fun fromSettings(level: Float): Float = gain(settingsOverride ?: level)
+
+    /** A volume you chose (Volume button, hold-and-slide): replaces this stream's own volume. */
+    fun userChange(level: Float): Float {
+        settingsOverride = null
+        return gain(level)
+    }
+
     /** The player's level back to the slider level (0-1). */
     fun level(gain: Float): Float = gain.coerceIn(0f, 1f).toDouble().pow(0.6).toFloat()
 

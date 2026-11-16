@@ -138,7 +138,7 @@ File("${project.gradle.gradleUserHomeDir.absolutePath}/daemon/${project.gradle.g
 // above (including their versionCode/versionName bumps) merge without conflicts.
 // Versioning: MAJOR.FEATURE.FIX -> versionCode = MAJOR*10000 + FEATURE*100 + FIX
 // ---------------------------------------------------------------------------
-val xtra5Version = "1.8.2"
+val xtra5Version = "1.9.0"
 // Newest official (upstream) commit this build contains: the latest commit not authored by prime385.
 // Used by the in-app "official Xtra changes" check. Keep Xtra5 commits authored as prime385.
 val xtra5UpstreamSha: String = try {
@@ -163,4 +163,15 @@ android {
 }
 dependencies {
     testImplementation("junit:junit:4.13.2")
+}
+// Xtra5s custom: Xtra5s Companion, the same app under its own package (installs next to Xtra5s)
+// for split-screen Dual Stream (see custom/CompanionApp.kt). Built with -Pxtra5sCompanion.
+if (providers.gradleProperty("xtra5sCompanion").isPresent) {
+    android {
+        defaultConfig {
+            applicationId = "com.prime385.xtra5s.companion"
+        }
+        sourceSets.getByName("release") { res.srcDir("src/companion/res") }
+        sourceSets.getByName("debug") { res.srcDir("src/companion/res") }
+    }
 }

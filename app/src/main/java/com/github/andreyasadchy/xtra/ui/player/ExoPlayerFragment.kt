@@ -377,7 +377,7 @@ class ExoPlayerFragment : PlayerFragment() {
     }
 
     override fun changeVolume(volume: Float) {
-        playbackService?.changeVolume(com.github.andreyasadchy.xtra.custom.SoloVolume.gain(volume)) // Xtra5s custom: volume curve
+        playbackService?.changeVolume(com.github.andreyasadchy.xtra.custom.SoloVolume.userChange(volume)) // Xtra5s custom: volume curve
     }
 
     override fun updateProgress() {

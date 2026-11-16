@@ -128,6 +128,7 @@ abstract class PlayerFragment : BaseNetworkFragment(), RadioButtonDialogFragment
 
     private val backPressedCallback = object : OnBackPressedCallback(true) {
         override fun handleOnBackPressed() {
+            if (com.github.andreyasadchy.xtra.custom.CompanionApp.onPlayerBack(this@PlayerFragment)) return // Xtra5s custom: split-screen Dual Stream closes its half
             minimize()
         }
     }
@@ -2025,6 +2026,7 @@ abstract class PlayerFragment : BaseNetworkFragment(), RadioButtonDialogFragment
         with(binding) {
             isMaximized = false
             com.github.andreyasadchy.xtra.custom.AutoRefresh.onMinimized(this@PlayerFragment) // Xtra5 custom
+            com.github.andreyasadchy.xtra.custom.CompanionApp.endSession() // Xtra5s custom
             if (playbackService?.type == BasePlaybackService.STREAM && chatFragment?.emoteMenuIsVisible() == true) {
                 chatFragment?.toggleBackPressedCallback(false)
             }

@@ -1076,7 +1076,8 @@ class MainViewModel(
                         }
                     }
                     response["assets"]?.jsonArray?.find {
-                        it.jsonObject.getValue("content_type").jsonPrimitive.contentOrNull == "application/vnd.android.package-archive"
+                        it.jsonObject.getValue("content_type").jsonPrimitive.contentOrNull == "application/vnd.android.package-archive" &&
+                            com.github.andreyasadchy.xtra.custom.CompanionApp.isMyUpdate(applicationContext, it.jsonObject["name"]?.jsonPrimitive?.contentOrNull) // Xtra5s custom: Xtra5s / Companion APK
                     }?.jsonObject?.let { obj ->
                         obj.getValue("updated_at").jsonPrimitive.contentOrNull?.let {
                             Instant.parseOrNull(it)?.toEpochMilliseconds()?.takeIf { ms -> ms > 0 }

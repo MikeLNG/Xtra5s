@@ -1,5 +1,5 @@
-2 app/build.gradle.kts
-1 app/src/main/AndroidManifest.xml
+3 app/build.gradle.kts
+3 app/src/main/AndroidManifest.xml
 1 app/src/main/java/com/github/andreyasadchy/xtra/repository/datasource/FollowedStreamsDataSource.kt
 1 app/src/main/java/com/github/andreyasadchy/xtra/ui/channel/ChannelPagerFragment.kt
 2 app/src/main/java/com/github/andreyasadchy/xtra/ui/chat/ChatAdapter.kt
@@ -13,13 +13,14 @@
 1 app/src/main/java/com/github/andreyasadchy/xtra/ui/following/channels/FollowedChannelsAdapter.kt
 2 app/src/main/java/com/github/andreyasadchy/xtra/ui/following/channels/FollowedChannelsViewModel.kt
 1 app/src/main/java/com/github/andreyasadchy/xtra/ui/game/GamePagerFragment.kt
-4 app/src/main/java/com/github/andreyasadchy/xtra/ui/main/MainActivity.kt
+5 app/src/main/java/com/github/andreyasadchy/xtra/ui/main/MainActivity.kt
+1 app/src/main/java/com/github/andreyasadchy/xtra/ui/main/MainViewModel.kt
 1 app/src/main/java/com/github/andreyasadchy/xtra/ui/player/BasePlaybackService.kt
 2 app/src/main/java/com/github/andreyasadchy/xtra/ui/player/ExoPlayerFragment.kt
 13 app/src/main/java/com/github/andreyasadchy/xtra/ui/player/ExoPlayerService.kt
 1 app/src/main/java/com/github/andreyasadchy/xtra/ui/player/MediaPlayerFragment.kt
 9 app/src/main/java/com/github/andreyasadchy/xtra/ui/player/MediaPlayerService.kt
-4 app/src/main/java/com/github/andreyasadchy/xtra/ui/player/PlayerFragment.kt
+6 app/src/main/java/com/github/andreyasadchy/xtra/ui/player/PlayerFragment.kt
 1 app/src/main/java/com/github/andreyasadchy/xtra/ui/player/PlayerGamesDialog.kt
 1 app/src/main/java/com/github/andreyasadchy/xtra/ui/saved/SavedPagerFragment.kt
 1 app/src/main/java/com/github/andreyasadchy/xtra/ui/saved/bookmarks/BookmarksAdapter.kt

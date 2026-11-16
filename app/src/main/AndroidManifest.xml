@@ -17,6 +17,16 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
+    <!-- Xtra5s custom: Xtra5s and Xtra5s Companion (same signing key) share settings for split-screen Dual Stream -->
+    <permission
+        android:name="com.prime385.xtra5s.permission.SYNC"
+        android:protectionLevel="signature" />
+    <uses-permission android:name="com.prime385.xtra5s.permission.SYNC" />
+    <queries>
+        <package android:name="com.prime385.xtra5s" />
+        <package android:name="com.prime385.xtra5s.companion" />
+    </queries>
+
     <application
         android:name=".XtraApp"
         android:allowBackup="true"
@@ -53,6 +63,12 @@
             </intent-filter>
         </activity>
         <activity android:name=".ui.settings.SettingsActivity" />
+        <!-- Xtra5s custom: settings for Xtra5s Companion (signature-protected) -->
+        <provider
+            android:name=".custom.CompanionApp$SyncProvider"
+            android:authorities="${applicationId}.xtra5ssync"
+            android:exported="true"
+            android:permission="com.prime385.xtra5s.permission.SYNC" />
         <!-- Xtra5s custom: Side-By-Side -->
         <activity
             android:name=".custom.SideBySideActivity"

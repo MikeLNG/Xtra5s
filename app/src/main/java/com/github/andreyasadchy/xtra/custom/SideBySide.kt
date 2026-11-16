@@ -143,6 +143,19 @@ object SideBySide {
                 } catch (_: Exception) {}
             }
         }
+        // Split screen with Xtra5s Companion where possible (one chat per window), else one screen.
+        if (activity is MainActivity && CompanionApp.useSplit(activity)) {
+            Toast.makeText(activity, "Opening in split screen…", Toast.LENGTH_SHORT).show()
+            activity.lifecycleScope.launch {
+                if (!CompanionApp.start(activity, left, right)) startOneScreen(activity, left, right)
+            }
+            return
+        }
+        startOneScreen(activity, left, right)
+    }
+
+    /** The one-screen Dual Stream (both streams and chats in one window). */
+    private fun startOneScreen(activity: FragmentActivity, left: Side, right: Side) {
         activity.startActivity(Intent(activity, SideBySideActivity::class.java).apply {
             putSide(this, SideBySideActivity.LEFT, left)
             putSide(this, SideBySideActivity.RIGHT, right)

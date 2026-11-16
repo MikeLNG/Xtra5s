@@ -57,6 +57,30 @@ class SideBySideFragment : Fragment() {
             gravity = Gravity.CENTER
             setPadding(0, (12 * dp).toInt(), 0, (24 * dp).toInt())
         })
+        // Split screen with Xtra5s Companion (tablets / phones; not on TV, not in Companion itself).
+        if (CompanionApp.canOffer(context)) {
+            if (CompanionApp.companionInstalled(context)) {
+                column.addView(com.google.android.material.materialswitch.MaterialSwitch(context).apply {
+                    text = "Split screen with ${CompanionApp.NAME}"
+                    isChecked = CompanionApp.splitEnabled(context)
+                    setOnCheckedChangeListener { _, checked -> CompanionApp.setSplitEnabled(requireContext(), checked) }
+                }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+                    bottomMargin = (16 * dp).toInt()
+                })
+            } else {
+                column.addView(MaterialButton(context, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+                    text = "Get ${CompanionApp.NAME} for split screen"
+                    isAllCaps = false
+                    setOnClickListener {
+                        try {
+                            startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("https://github.com/prime385/Xtra5s/releases/latest")))
+                        } catch (_: Exception) {}
+                    }
+                }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+                    bottomMargin = (16 * dp).toInt()
+                })
+            }
+        }
         val recent = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER_HORIZONTAL

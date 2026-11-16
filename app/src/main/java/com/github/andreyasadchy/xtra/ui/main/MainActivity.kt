@@ -679,6 +679,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun handleIntent(intent: Intent?) {
+        com.github.andreyasadchy.xtra.custom.CompanionApp.onIntent(this, intent) // Xtra5s custom: Dual Stream in split screen (Companion)
         when (intent?.action) {
             Intent.ACTION_VIEW -> {
                 val url = intent.data?.toString()

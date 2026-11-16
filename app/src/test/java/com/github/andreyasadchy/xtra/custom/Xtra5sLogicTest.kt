@@ -126,6 +126,27 @@ class Xtra5sLogicTest {
         assertEquals(2, screen.size)
     }
 
+    // ---- Split-screen Dual Stream (Companion) ----
+
+    @Test
+    fun qualityOncePicksClosest() {
+        val q = { name: String, h: Int?, fps: Float? -> com.github.andreyasadchy.xtra.model.VideoQuality(name, h, fps) }
+        val list = listOf(q("auto", null, null), q("1080p60", 1080, 60f), q("720p60", 720, 60f), q("720p", 720, 30f), q("480p", 480, 30f), q("160p", 160, 30f), q("audio_only", null, null))
+        assertEquals("720p60", AudioOnlyOnce.choose(list, "720p")?.name)
+        assertEquals("1080p60", AudioOnlyOnce.choose(list, SideBySide.SOURCE)?.name)
+        assertEquals("480p", AudioOnlyOnce.choose(list, "600p")?.name) // nothing exact: next lower
+        assertEquals("160p", AudioOnlyOnce.choose(list, "100p")?.name) // nothing lower: the lowest
+        assertEquals("audio_only", AudioOnlyOnce.choose(list, null)?.name)
+    }
+
+    @Test
+    fun eachAppUpdatesItsOwnApk() {
+        assertTrue(CompanionApp.isMyUpdate(false, "Xtra5s-1.9.0.apk"))
+        assertFalse(CompanionApp.isMyUpdate(false, "Xtra5s-Companion-1.9.0.apk"))
+        assertTrue(CompanionApp.isMyUpdate(true, "Xtra5s-Companion-1.9.0.apk"))
+        assertFalse(CompanionApp.isMyUpdate(true, "Xtra5s-1.9.0.apk"))
+    }
+
     // ---- Highlights ----
 
     @Test

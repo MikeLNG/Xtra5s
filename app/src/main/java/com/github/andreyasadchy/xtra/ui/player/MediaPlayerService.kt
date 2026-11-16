@@ -454,7 +454,7 @@ class MediaPlayerService : BasePlaybackService() {
                                     serviceListener?.changeSurfaceVisibility(quality?.name != VideoQuality.AUDIO_ONLY_QUALITY)
                                     player.reset()
                                     player.setDataSource(url)
-                                    val volume = com.github.andreyasadchy.xtra.custom.SoloVolume.gain(prefs().getInt(C.PLAYER_VOLUME, 100) / 100f) // Xtra5s custom: volume curve
+                                    val volume = com.github.andreyasadchy.xtra.custom.SoloVolume.fromSettings(prefs().getInt(C.PLAYER_VOLUME, 100) / 100f) // Xtra5s custom: volume curve
                                     player.setVolume(volume, volume)
                                     val params = PlaybackParams()
                                     params.speed = prefs().getFloat(C.PLAYER_SPEED, 1f)
@@ -500,7 +500,7 @@ class MediaPlayerService : BasePlaybackService() {
                                     serviceListener?.changeSurfaceVisibility(quality?.name != VideoQuality.AUDIO_ONLY_QUALITY)
                                     player.reset()
                                     player.setDataSource(this@MediaPlayerService, url.toUri())
-                                    val volume = com.github.andreyasadchy.xtra.custom.SoloVolume.gain(prefs().getInt(C.PLAYER_VOLUME, 100) / 100f) // Xtra5s custom: volume curve
+                                    val volume = com.github.andreyasadchy.xtra.custom.SoloVolume.fromSettings(prefs().getInt(C.PLAYER_VOLUME, 100) / 100f) // Xtra5s custom: volume curve
                                     player.setVolume(volume, volume)
                                     val params = PlaybackParams()
                                     params.speed = prefs().getFloat(C.PLAYER_SPEED, 1f)
@@ -863,7 +863,7 @@ class MediaPlayerService : BasePlaybackService() {
                             serviceListener?.changeSurfaceVisibility(quality?.name != VideoQuality.AUDIO_ONLY_QUALITY)
                             player.reset()
                             player.setDataSource(url)
-                            val volume = com.github.andreyasadchy.xtra.custom.SoloVolume.gain(prefs().getInt(C.PLAYER_VOLUME, 100) / 100f) // Xtra5s custom: volume curve
+                            val volume = com.github.andreyasadchy.xtra.custom.SoloVolume.fromSettings(prefs().getInt(C.PLAYER_VOLUME, 100) / 100f) // Xtra5s custom: volume curve
                             player.setVolume(volume, volume)
                             val params = PlaybackParams()
                             params.speed = prefs().getFloat(C.PLAYER_SPEED, 1f)
@@ -1058,7 +1058,7 @@ class MediaPlayerService : BasePlaybackService() {
                                             serviceListener?.changeSurfaceVisibility(quality?.name != VideoQuality.AUDIO_ONLY_QUALITY)
                                             player.reset()
                                             player.setDataSource(url)
-                                            val volume = com.github.andreyasadchy.xtra.custom.SoloVolume.gain(prefs().getInt(C.PLAYER_VOLUME, 100) / 100f) // Xtra5s custom: volume curve
+                                            val volume = com.github.andreyasadchy.xtra.custom.SoloVolume.fromSettings(prefs().getInt(C.PLAYER_VOLUME, 100) / 100f) // Xtra5s custom: volume curve
                                             player.setVolume(volume, volume)
                                             val params = PlaybackParams()
                                             params.speed = prefs().getFloat(C.PLAYER_SPEED, 1f)
@@ -1191,7 +1191,7 @@ class MediaPlayerService : BasePlaybackService() {
                             serviceListener?.changeSurfaceVisibility(quality?.name != VideoQuality.AUDIO_ONLY_QUALITY)
                             player.reset()
                             player.setDataSource(url)
-                            val volume = com.github.andreyasadchy.xtra.custom.SoloVolume.gain(prefs().getInt(C.PLAYER_VOLUME, 100) / 100f) // Xtra5s custom: volume curve
+                            val volume = com.github.andreyasadchy.xtra.custom.SoloVolume.fromSettings(prefs().getInt(C.PLAYER_VOLUME, 100) / 100f) // Xtra5s custom: volume curve
                             player.setVolume(volume, volume)
                             val params = PlaybackParams()
                             params.speed = prefs().getFloat(C.PLAYER_SPEED, 1f)
@@ -1329,7 +1329,7 @@ class MediaPlayerService : BasePlaybackService() {
                     serviceListener?.changeSurfaceVisibility(quality?.name != VideoQuality.AUDIO_ONLY_QUALITY)
                     player.reset()
                     player.setDataSource(url)
-                    val volume = com.github.andreyasadchy.xtra.custom.SoloVolume.gain(prefs().getInt(C.PLAYER_VOLUME, 100) / 100f) // Xtra5s custom: volume curve
+                    val volume = com.github.andreyasadchy.xtra.custom.SoloVolume.fromSettings(prefs().getInt(C.PLAYER_VOLUME, 100) / 100f) // Xtra5s custom: volume curve
                     player.setVolume(volume, volume)
                     val params = PlaybackParams()
                     params.speed = prefs().getFloat(C.PLAYER_SPEED, 1f)

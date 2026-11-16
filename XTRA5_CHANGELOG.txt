@@ -1,6 +1,23 @@
 Xtra5s changelog (newest first)
 
 ========================================
+Xtra5s 1.9.0 (2026-11-16)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+New
+- Xtra5s Companion: a second copy of Xtra5s (same features, its own app) that installs next to
+  Xtra5s. Its APK comes with every release, and it updates itself.
+- Dual Stream in split screen: with Xtra5s Companion installed (tablets and phones), Watch
+  plays Stream 1 in Xtra5s's normal player and opens Stream 2 in Xtra5s Companion's normal
+  player in the other half of the screen, so each stream has its own window and chat (two busy
+  chats in one window made some devices flicker to old pictures). Each side opens at the
+  quality and volume chosen in the "+" popup, just this once. Xtra5s Companion copies your
+  Xtra5s settings and login each time, so you only set things up in Xtra5s. Back in either
+  player closes that stream and its half of the screen. A switch on the Dual Stream tab turns
+  split screen off; TVs, and Xtra5s without Companion, keep the one-screen Dual Stream (offline
+  channels also open there, as it waits for them to go live). Without Companion, the Dual
+  Stream tab has a button to get it.
+========================================
 Xtra5s 1.8.2 (2026-11-16)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 

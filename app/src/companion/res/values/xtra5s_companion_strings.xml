@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Xtra5s custom: app name of Xtra5s Companion (built with -Pxtra5sCompanion), overrides app_name. -->
+<resources>
+    <string name="app_name" translatable="false">Xtra5s Companion</string>
+</resources>

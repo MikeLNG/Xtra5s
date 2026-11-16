@@ -38,6 +38,15 @@ prime385/Xtra5 from here. Work happens on the `custom-xtra5` branch (the default
   (`./gradlew testDebugUnitTest`). Keep custom logic that can be tested free of Android calls
   at load time, and add tests for new logic.
 
+## Xtra5s Companion
+
+- The same app under package `com.prime385.xtra5s.companion` ("Xtra5s Companion"), built with
+  `./gradlew assembleRelease -Pxtra5sCompanion` (block at the end of `app/build.gradle.kts`,
+  name in `app/src/companion/res`). The workflow builds and publishes both APKs in every release;
+  each app's updater picks its own (`CompanionApp.isMyUpdate`). Send both APKs to the owner.
+- Used for split-screen Dual Stream (`custom/CompanionApp.kt`). Companion copies Xtra5s's
+  settings and login through a signature-protected provider.
+
 ## Versioning and releases
 
 - Version is `MAJOR.FEATURE.FIX`, set by `val xtra5Version` at the end of `app/build.gradle.kts`
