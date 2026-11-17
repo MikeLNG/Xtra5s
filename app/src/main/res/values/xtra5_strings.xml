@@ -110,15 +110,15 @@
         <item>- Long-press a profile picture: adds or removes the channel as a favourite. Shared with Following &gt; Live: favouriting here shows the ring and star there and moves them to the top of Live, and vice versa.</item>
         <item>Setting: Favourites first</item>
         <item># [TV] Video player (full screen, controls hidden)</item>
-        <item>- Left / Right: skip back / forward and show the seek bar (VODs, clips, downloads). While it shows, Left / Right keep skipping, Up moves to the player buttons and Back hides the controls.</item>
+        <item>- Left / Right: skip back / forward and show the seek bar (VODs, clips, downloads). While it shows, Left / Right keep skipping and Back hides the controls.</item>
         <item>Setting: Seek step (seconds)</item>
         <item>- Up: shows the controls and takes hold of the seek bar (live streams: just shows the controls).</item>
         <item>-- Left / Right: moves the marker; hold to keep moving.</item>
         <item>Setting: Seek bar jump (% of video length)</item>
         <item>-- OK: jumps to the marker.</item>
-        <item>-- Up: lets go (jumping there if the marker moved) and selects the right-most player button above the seek bar. Selecting the seek bar again (Down) takes hold of it again.</item>
+        <item>-- Up: lets go (jumping there if the marker moved). From there, Up / Down / Left / Right move around the controls as usual.</item>
         <item>-- Back: cancels the move (also cancels by itself after 6 seconds). If the marker hasn\'t moved, hides the controls.</item>
-        <item>-- After jumping, while the controls are still showing: Left / Right skip by the seek step, Up moves to the player buttons, Back hides the controls.</item>
+        <item>-- After jumping, while the controls are still showing: Left / Right skip by the seek step, Back hides the controls.</item>
         <item>Setting: Seek step (seconds)</item>
         <item>- Down: opens Chapters, if the VOD has any. On a live stream: shows or hides the chat.</item>
         <item>Setting: Chapter columns (landscape), Chapter columns (portrait)</item>

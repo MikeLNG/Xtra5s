@@ -33,8 +33,9 @@ import java.lang.ref.WeakReference
  *                 (cancels by itself after 6 seconds without input)
  *   Back          cancel; if the marker hasn't moved, also hide the controls
  * While the controls are up because of a seek (step or letting go of the seek bar): Left / Right
- * skip by the step, Up moves to the player buttons (normal navigation from there), Back hides
- * the controls. The held seek bar's marker is gold and larger.
+ * skip by the step, Back hides the controls; Up / Down are Android's normal navigation of the
+ * controls (Xtra5s: the custom jumps onto the player buttons were removed). The held seek bar's
+ * marker is gold and larger.
  * Holding a button counts as one press.
  * Long-press Back (player full-size or minimized): close the player, like swiping it away.
  * Back with the player minimized: close the player, like swiping it away.
@@ -190,12 +191,11 @@ object TvShortcuts {
                             backHidControls = true
                         }
                     }
-                    // Up: let go (jumping there if the marker was moved) and select the player
-                    // button just above the seek bar, on the right; normal navigation from there.
+                    // Up: let go (jumping there if the marker was moved); from there Android's normal
+                    // navigation moves around the controls.
                     KeyEvent.KEYCODE_DPAD_UP -> {
                         val moved = current.position != current.start
                         endScrub(commit = moved)
-                        current.player.get()?.let { p -> focusButtons(p, current.showController) }
                     }
                     // Down: ignored while the seek bar is held
                 }
@@ -212,7 +212,7 @@ object TvShortcuts {
         if (activity.currentFocus is EditText) return false // typing in chat
         val controls = player.view?.findViewById<View>(R.id.playerControls)
         if (controls?.isVisible == true) {
-            // Controls up because of a seek: Left / Right skip by the seek step, Up holds the bar.
+            // Controls up because of a seek: Left / Right skip by the seek step.
             if (afterSeek?.get() === player && !state.isLiveStream) {
                 val handled = when (keyCode) {
                     KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT -> {
@@ -220,9 +220,10 @@ object TvShortcuts {
                         state.showController() // keeps the controls up a little longer
                         true
                     }
-                    // Up: on to the player buttons; Left / Right then move between them as usual.
-                    KeyEvent.KEYCODE_DPAD_UP -> focusButtons(player, state.showController)
-                    else -> false
+                    else -> {
+                        if (keyCode in dpadKeys || keyCode in okKeys) state.showController() // normal navigation
+                        false
+                    }
                 }
                 if (handled) consumed.add(keyCode)
                 return handled
@@ -359,34 +360,6 @@ object TvShortcuts {
         current.showController() // restarts the normal auto-hide timer
         // Until the controls hide, Left / Right skip by the seek step (see handle()).
         watchAfterSeek(player)
-    }
-
-    /** Ends seek mode and selects the buttons just above the seek bar. */
-    private fun focusButtons(player: PlayerFragment, showController: () -> Unit): Boolean {
-        val view = player.view ?: return false
-        // The right-most button just above the seek bar (bottom-right row, else bottom-left row).
-        val rows = listOf(R.id.bottomRightLayout, R.id.bottomLeftLayout).mapNotNull { view.findViewById<android.view.ViewGroup>(it) }
-        val target = rows.firstNotNullOfOrNull { row ->
-            (0 until row.childCount).map { row.getChildAt(it) }.lastOrNull { it.isShown && it.isFocusable && it.isEnabled }
-        } ?: view.findViewById<View>(R.id.playPause)?.takeIf { it.isShown }
-        afterSeek = null
-        target?.requestFocusFromTouch() // also leaves touch mode, or the selection would be refused
-        showController() // restarts the auto-hide timer
-        return true
-    }
-
-    /**
-     * The seek bar was selected with the remote (e.g. Down from the player buttons): take hold
-     * of it, so Left / Right move the marker by the percentage again.
-     */
-    fun onSeekBarFocused(player: PlayerFragment) {
-        if (scrub != null || !player.isResumed) return
-        if (!player.requireContext().prefs().getBoolean(PREF_ENABLED, false)) return
-        val state = player.xtra5PlayerState()
-        if (!state.isMaximized || state.isLiveStream) return
-        if (player.view?.findViewById<View>(R.id.playerControls)?.isVisible != true) return
-        afterSeek = null
-        startScrub(player, state)
     }
 
     /** Marks [player]'s controls as up because of a seek, until they hide. */

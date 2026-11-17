@@ -28,10 +28,13 @@ object SeekIndicator {
 
     private class Indicator(val root: LinearLayout, val label: TextView) {
         var total = 0
+        /** The player's own rewind / fast-forward buttons, hidden while this shows (Xtra5s). */
+        var officialButtons: List<View> = emptyList()
         val hide = Runnable {
             root.animate().alpha(0f).setDuration(250L).withEndAction {
                 root.visibility = View.GONE
                 total = 0
+                officialButtons.forEach { it.alpha = 1f }
             }.start()
         }
     }
@@ -53,6 +56,10 @@ object SeekIndicator {
             indicator.root.alpha = 0f
             indicator.root.visibility = View.VISIBLE
         }
+        // Xtra5s: TV skips also bring up the controls, whose own "10" rewind / fast-forward
+        // buttons sat under this; they're see-through while this shows (their state is untouched).
+        indicator.officialButtons = listOfNotNull(player.view?.findViewById(R.id.rewind), player.view?.findViewById<View>(R.id.fastForward))
+        indicator.officialButtons.forEach { it.alpha = 0f }
         indicator.root.bringToFront()
         indicator.root.animate().alpha(1f).setDuration(100L).start()
         indicator.root.postDelayed(indicator.hide, VISIBLE_MS)

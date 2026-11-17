@@ -166,10 +166,6 @@ object TvNavigation {
             if (view is ViewGroup) for (i in 0 until view.childCount) outline(view.getChildAt(i))
         }
         outline(controls)
-        // Selecting the seek bar with the remote takes hold of it (TV mode shortcuts).
-        root.findViewById<View>(R.id.progressBar)?.setOnFocusChangeListener { _, hasFocus ->
-            if (hasFocus && player.view === root) TvShortcuts.onSeekBarFocused(player)
-        }
     }
 
     private fun findLists(view: View): List<RecyclerView> {

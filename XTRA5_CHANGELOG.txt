@@ -1,6 +1,20 @@
 Xtra5s changelog (newest first)
 
 ========================================
+Xtra5s 1.9.1 (2026-11-17)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+Changed
+- TV: the custom jumps onto the player buttons are gone (they didn't work reliably). Up while
+  holding the seek bar now just lets go (jumping there if you moved the marker), and after a
+  seek Up / Down move around the controls with Android's normal navigation. Selecting the seek
+  bar no longer takes hold of it. The gold outline on the selected button, and the controls
+  staying up while you press buttons, are unchanged.
+
+Fixed
+- TV: the player's own "10" rewind / fast-forward buttons no longer show underneath the big
+  skip animation when skipping with Left / Right; they come back as it fades.
+========================================
 Xtra5s 1.9.0 (2026-11-16)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
