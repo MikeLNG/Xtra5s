@@ -123,6 +123,11 @@ object SideBySide {
         context.prefs().edit { putString(PREF_RECENT, serializeRecent(list)) }
     }
 
+    // ---- Chat input per side (hidden by default; only for Dual Stream) ----
+
+    fun inputShown(context: Context, side: String) = context.prefs().getBoolean("xtra5s_sbs_input_$side", false)
+    fun setInputShown(context: Context, side: String, shown: Boolean) = context.prefs().edit { putBoolean("xtra5s_sbs_input_$side", shown) }
+
     // ---- Launching ----
 
     fun start(activity: FragmentActivity, left: Side, right: Side) {
@@ -137,14 +142,6 @@ object SideBySide {
                     main.closePlayer()
                 } catch (_: Exception) {}
             }
-        }
-        // Split screen with Xtra5s Companion where possible (one chat per window), else one screen.
-        if (activity is MainActivity && CompanionApp.useSplit(activity)) {
-            Toast.makeText(activity, "Opening in split screen…", Toast.LENGTH_SHORT).show()
-            activity.lifecycleScope.launch {
-                if (!CompanionApp.start(activity, left, right)) startOneScreen(activity, left, right)
-            }
-            return
         }
         startOneScreen(activity, left, right)
     }

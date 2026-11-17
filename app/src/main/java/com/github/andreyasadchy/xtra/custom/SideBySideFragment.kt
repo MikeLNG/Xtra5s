@@ -35,8 +35,17 @@ class SideBySideFragment : Fragment() {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER_HORIZONTAL
             val pad = (16 * dp).toInt()
-            setPadding(pad, (32 * dp).toInt(), pad, pad)
+            setPadding(pad, (16 * dp).toInt(), pad, pad)
         }
+        // Xtra5s 1.11.0: two chats in one window don't draw properly (they flicker to old messages).
+        column.addView(TextView(context).apply {
+            text = "Chat doesn't work properly in Dual Stream."
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
+            gravity = Gravity.CENTER
+            alpha = 0.5f
+        }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+            bottomMargin = (16 * dp).toInt()
+        })
         val add = MaterialButton(context, null, com.google.android.material.R.attr.materialIconButtonFilledStyle).apply {
             setIconResource(R.drawable.xtra5s_add)
             iconSize = (40 * dp).toInt()
@@ -57,30 +66,6 @@ class SideBySideFragment : Fragment() {
             gravity = Gravity.CENTER
             setPadding(0, (12 * dp).toInt(), 0, (24 * dp).toInt())
         })
-        // Split screen with Xtra5s Companion (tablets / phones; not on TV, not in Companion itself).
-        if (CompanionApp.canOffer(context)) {
-            if (CompanionApp.companionInstalled(context)) {
-                column.addView(com.google.android.material.materialswitch.MaterialSwitch(context).apply {
-                    text = "Split screen with ${CompanionApp.NAME}"
-                    isChecked = CompanionApp.splitEnabled(context)
-                    setOnCheckedChangeListener { _, checked -> CompanionApp.setSplitEnabled(requireContext(), checked) }
-                }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
-                    bottomMargin = (16 * dp).toInt()
-                })
-            } else {
-                column.addView(MaterialButton(context, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
-                    text = "Get ${CompanionApp.NAME} for split screen"
-                    isAllCaps = false
-                    setOnClickListener {
-                        try {
-                            startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("https://github.com/prime385/Xtra5s/releases/latest")))
-                        } catch (_: Exception) {}
-                    }
-                }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
-                    bottomMargin = (16 * dp).toInt()
-                })
-            }
-        }
         val recent = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER_HORIZONTAL

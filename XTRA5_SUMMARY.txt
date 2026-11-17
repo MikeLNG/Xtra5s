@@ -11,13 +11,13 @@ Always up to date
 
 ========================================
 Dual Stream
-- Watch two live streams at once from the Dual Stream tab. On tablets and phones with Xtra5s
-  Companion (a second copy of the app), the two open side by side in split screen, each a full
-  player with its own chat and all your highlights. Otherwise, and on TV, both videos share
-  one screen (side by side, or stacked in portrait), without chats.
+- Watch two live streams at once from the Dual Stream tab, side by side on one screen (stacked
+  in portrait).
   - Tap + and type a channel for Stream 1 and Stream 2 (suggestions from the channels you
     follow), each with its own quality (720p by default) and its own mute and volume.
-  - In one screen, tap a video to pause it (playing again jumps to live), mute it or set its
+  - Show both chats with the chat button (hidden when Dual Stream opens), with your
+    highlights. Chat doesn't work properly in Dual Stream.
+  - Tap a video to pause it (playing again jumps to live), mute it or set its
     volume (the number matches how loud it sounds), change its quality, reload it, or make it
     fullscreen.
   - Touch, hold and slide left / right on a video to set its volume, with a volume bar.
@@ -26,7 +26,6 @@ Dual Stream
     stream in the normal player (Watch only this, or swipe up on it).
   - Offline channels start playing by themselves when they go live; dropped streams
     reconnect on their own.
-  - Xtra5s Companion takes its settings and login from Xtra5s automatically.
   - Battery percentage in the corner, fading out of the way like in the player.
   - Recent pairs, with both profile pictures and a LIVE badge on whoever is live, are one
     tap away; name suggestions show profile pictures too.
@@ -87,3 +86,11 @@ Browsing
 - Optional fixed top bar that stays in place while you scroll.
 - Back always takes you home to your Live list before leaving the app.
 - Press Following again from its main page to jump straight to a freshly refreshed Live list.
+
+========================================
+Extras
+- Xtra5s Companion: a second, separate copy of the app that installs next to Xtra5s, with
+  its own settings and login. Useful for running two streams as two apps (for example in
+  split screen). Each copy updates itself.
+- If the app crashes, the error is saved to a text file in your Download folder, and the next
+  time the app opens it tells you, with a Share button to send the error.

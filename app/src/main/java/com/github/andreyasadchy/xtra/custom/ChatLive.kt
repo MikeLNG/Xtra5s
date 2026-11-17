@@ -108,6 +108,7 @@ object ChatLive {
 
     /** Width available left of the chat (landscape, chat beside the video), or null. */
     fun widthLeftOfChat(context: Context): Int? {
+        if (SideBySide.isSideBySide(context)) return null // Xtra5s: two chats side by side, popups stay centred
         if (context.resources.configuration.orientation != Configuration.ORIENTATION_LANDSCAPE) return null
         val chat = visibleChat() ?: return null
         val chatPanel = generateSequence(chat as View) { it.parent as? View }.firstOrNull { it.id == R.id.chatLayout } ?: chat

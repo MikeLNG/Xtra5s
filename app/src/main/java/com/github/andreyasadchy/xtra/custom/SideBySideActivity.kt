@@ -49,6 +49,7 @@ import com.github.andreyasadchy.xtra.XtraApp
 import com.github.andreyasadchy.xtra.model.ui.Stream
 import com.github.andreyasadchy.xtra.ui.main.MainActivity
 import com.github.andreyasadchy.xtra.player.lowlatency.OkHttpDataSource
+import com.github.andreyasadchy.xtra.ui.chat.ChatFragment
 import com.github.andreyasadchy.xtra.ui.player.ExoPlayerService
 import com.github.andreyasadchy.xtra.util.C
 import com.github.andreyasadchy.xtra.util.TwitchApiHelper
@@ -60,16 +61,17 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
- * Xtra5s custom: the one-screen Dual Stream (was Side-By-Side): two live streams, videos only
- * (Xtra5s 1.10.0: no chats; two busy chats in one window made some devices flicker to old
- * pictures. With Xtra5s Companion, Dual Stream opens in split screen instead, one stream and
- * chat per app: see CompanionApp).
- *  - Landscape (and TV): the two videos side by side.
- *  - Portrait: the two videos stacked (Stream 1 on top).
+ * Xtra5s custom: Dual Stream (was Side-By-Side): two live streams on one screen.
+ * Chats are hidden when it opens (two chats in one window don't draw properly: they flicker to
+ * old messages); the chat button shows both, each stream's normal Xtra5 chat (highlights apply).
+ *  - Chats hidden: the two videos side by side (landscape, TV) or stacked (portrait).
+ *  - Chats shown, landscape: side by side, each video on top and its chat underneath.
+ *  - Chats shown, portrait: both videos stacked on top, the two chats side by side underneath.
  *
  * Tap (or OK on) a video to show its controls: a big pause / play in the middle (playing again
- * jumps to live), and mute, volume, quality, swap, replace (another channel on this side),
- * reload, watch only this (in the normal player) and fullscreen.
+ * jumps to live), and mute, volume, quality, chat, message box (while chats show; hidden by
+ * default), swap, replace (another channel on this side), reload, watch only this (in the
+ * normal player) and fullscreen.
  * Swipe down on a video = replace it; swipe up = keep only that stream, in the normal player.
  * Touch and hold a video, then slide left / right: that video's volume (its width = 0-100%),
  * with a volume bar in the middle of it while adjusting.
@@ -86,7 +88,7 @@ class SideBySideActivity : AppCompatActivity() {
     }
 
     /** [prefix] is the stream's position: LEFT = Stream 1 (left / top), RIGHT = Stream 2. */
-    private inner class Pane(var prefix: String) {
+    private inner class Pane(var prefix: String, val chatId: Int) {
         lateinit var side: SideBySide.Side
         var quality = SideBySide.DEFAULT_QUALITY
         var volume = 100
@@ -103,6 +105,17 @@ class SideBySideActivity : AppCompatActivity() {
         lateinit var qualitySpinner: Spinner
         lateinit var expand: ImageButton
         lateinit var swap: ImageButton
+        lateinit var root: LinearLayout
+        lateinit var chat: FrameLayout
+        lateinit var input: ImageButton
+        /** The found channel, for its chat: id, login, display name, stream id. */
+        var chatArgs: Array<String?>? = null
+        /** This side's chat input is shown (hidden by default). */
+        var inputShown = false
+        /** The chat turned its input on (logged in), so it can be shown. */
+        var inputAvailable = false
+        /** The message text when the input was hidden: new text (an emote put in) shows it again. */
+        var textWhenHidden = ""
 
         var player: ExoPlayer? = null
         var job: Job? = null
@@ -138,7 +151,9 @@ class SideBySideActivity : AppCompatActivity() {
     }
 
     /** In screen order: Stream 1 first. Swapping the streams swaps them here. */
-    private val panes = mutableListOf(Pane(LEFT), Pane(RIGHT))
+    private val panes = mutableListOf(Pane(LEFT, R.id.xtra5s_sbs_chat_left), Pane(RIGHT, R.id.xtra5s_sbs_chat_right))
+    /** Both chats showing (hidden when Dual Stream opens). */
+    private var chatShown = false
     private var expanded: Pane? = null
     private var stopped = false
     private lateinit var row: LinearLayout
@@ -157,6 +172,8 @@ class SideBySideActivity : AppCompatActivity() {
         }
         panes[0].side = left
         panes[1].side = right
+        // Chats that were showing before the app was in the background come back.
+        chatShown = panes.any { supportFragmentManager.findFragmentById(it.chatId) != null }
         panes.forEach { pane ->
             pane.quality = savedInstanceState?.getString("${pane.prefix}_quality") ?: pane.side.quality
             pane.volume = savedInstanceState?.getInt("${pane.prefix}_volume", pane.side.volume) ?: pane.side.volume
@@ -172,6 +189,9 @@ class SideBySideActivity : AppCompatActivity() {
         panes.forEach { pane ->
             createPlayer(pane)
             pane.applyVolume()
+            pane.inputShown = SideBySide.inputShown(this, pane.prefix)
+            // The chat shows its input by itself (when logged in): keep it hidden unless turned on.
+            pane.chat.viewTreeObserver.addOnGlobalLayoutListener { applyInput(pane) }
             load(pane)
         }
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
@@ -231,44 +251,161 @@ class SideBySideActivity : AppCompatActivity() {
 
     private fun detach(view: View) = (view.parent as? ViewGroup)?.removeView(view)
 
-    /** Dividers of the current arrangement, hidden in fullscreen. */
+    /** Containers of the current arrangement, hidden in fullscreen. */
     private val arrangedExtras = ArrayList<View>()
     private var arrangedPortrait: Boolean? = null
+    private var arrangedChat: Boolean? = null
 
     /**
-     * Puts the two videos side by side (landscape, TV) or stacked (portrait), when the orientation
-     * changed or the streams were swapped, then applies fullscreen by hiding the other video.
-     * Views are moved, not rebuilt, so the players keep going.
+     * Puts the videos (and the chats, when shown) in place for the orientation, when it changed,
+     * the chats were shown / hidden or the streams were swapped, then applies fullscreen by
+     * hiding everything but that video. Views are moved, not rebuilt, so the players keep going.
      */
     private fun arrange(force: Boolean = false) {
         val dp = resources.displayMetrics.density
         val line = (2 * dp).toInt()
         val match = ViewGroup.LayoutParams.MATCH_PARENT
+        val wrap = ViewGroup.LayoutParams.WRAP_CONTENT
         val portrait = isPortrait()
+        val chats = chatShown
         panes.forEach { pane ->
             pane.swap.setImageResource(if (portrait) R.drawable.xtra5s_swap_vert else R.drawable.xtra5s_swap)
+            pane.input.isVisible = chats
+            pane.input.alpha = if (pane.inputShown) 1f else 0.6f
         }
-        if (force || arrangedPortrait != portrait) {
+        if (force || arrangedPortrait != portrait || arrangedChat != chats) {
+            val moved = arrangedPortrait != null
             arrangedPortrait = portrait
+            arrangedChat = chats
             arrangedExtras.clear()
-            panes.forEach { detach(it.videoFrame) }
+            panes.forEach { pane ->
+                detach(pane.videoFrame)
+                detach(pane.chat)
+                detach(pane.root)
+                pane.root.removeAllViews()
+            }
             row.removeAllViews()
             row.orientation = if (portrait) LinearLayout.VERTICAL else LinearLayout.HORIZONTAL
-            panes.forEachIndexed { index, pane ->
-                if (index == 1) {
-                    row.addView(divider().also { arrangedExtras.add(it) },
-                        if (portrait) LinearLayout.LayoutParams(match, line) else LinearLayout.LayoutParams(line, match))
+            if (!chats) {
+                panes.forEachIndexed { index, pane ->
+                    if (index == 1) {
+                        row.addView(divider().also { arrangedExtras.add(it) },
+                            if (portrait) LinearLayout.LayoutParams(match, line) else LinearLayout.LayoutParams(line, match))
+                    }
+                    row.addView(pane.videoFrame, if (portrait) LinearLayout.LayoutParams(match, 0, 1f) else LinearLayout.LayoutParams(0, match, 1f))
                 }
-                row.addView(pane.videoFrame, if (portrait) LinearLayout.LayoutParams(match, 0, 1f) else LinearLayout.LayoutParams(0, match, 1f))
+            } else if (portrait) {
+                row.addView(panes[0].videoFrame, LinearLayout.LayoutParams(match, wrap))
+                val between = divider()
+                row.addView(between, LinearLayout.LayoutParams(match, line))
+                row.addView(panes[1].videoFrame, LinearLayout.LayoutParams(match, wrap))
+                val chatRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+                chatRow.addView(panes[0].chat, LinearLayout.LayoutParams(0, match, 1f))
+                chatRow.addView(divider(), LinearLayout.LayoutParams(line, match))
+                chatRow.addView(panes[1].chat, LinearLayout.LayoutParams(0, match, 1f))
+                row.addView(chatRow, LinearLayout.LayoutParams(match, 0, 1f))
+                arrangedExtras.add(between)
+                arrangedExtras.add(chatRow)
+            } else {
+                panes.forEachIndexed { index, pane ->
+                    if (index == 1) row.addView(divider().also { arrangedExtras.add(it) }, LinearLayout.LayoutParams(line, match))
+                    pane.root.addView(pane.videoFrame, LinearLayout.LayoutParams(match, wrap))
+                    pane.root.addView(pane.chat, LinearLayout.LayoutParams(match, 0, 1f))
+                    row.addView(pane.root, LinearLayout.LayoutParams(0, match, 1f))
+                }
             }
+            // Rows moved with their chat re-load their emotes.
+            if (moved && chats) row.post { ChatLive.refreshChat() }
         }
         val open = expanded
         arrangedExtras.forEach { it.isVisible = open == null }
         panes.forEach { pane ->
             val isExpanded = pane == open
-            pane.videoFrame.isVisible = open == null || isExpanded
+            val hidden = open != null && !isExpanded
+            if (chats && !portrait) {
+                pane.root.isVisible = !hidden
+                pane.chat.isVisible = !isExpanded
+            }
+            pane.videoFrame.isVisible = !hidden
+            if (chats) {
+                pane.videoFrame.layoutParams = LinearLayout.LayoutParams(match, if (isExpanded) 0 else wrap, if (isExpanded) 1f else 0f)
+                pane.aspect.resizeMode = if (isExpanded) AspectRatioFrameLayout.RESIZE_MODE_FIT else AspectRatioFrameLayout.RESIZE_MODE_FIXED_WIDTH
+                pane.aspect.layoutParams = FrameLayout.LayoutParams(match, if (isExpanded) match else wrap, Gravity.CENTER)
+            } else {
+                pane.aspect.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT // the whole video, centred in its half
+                pane.aspect.layoutParams = FrameLayout.LayoutParams(match, match, Gravity.CENTER)
+            }
             pane.expand.setImageResource(if (isExpanded) R.drawable.xtra5s_fullscreen_exit else R.drawable.xtra5s_fullscreen)
             pane.expand.contentDescription = if (isExpanded) "Exit fullscreen" else "Fullscreen"
+        }
+    }
+
+    // ---- Chats ----
+
+    /** Shows or hides both chats. Hidden chats are closed (they come back fresh when shown). */
+    private fun toggleChat() {
+        chatShown = !chatShown
+        if (!chatShown) {
+            currentFocus?.let { focused ->
+                (getSystemService(INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager).hideSoftInputFromWindow(focused.windowToken, 0)
+            }
+            val transaction = supportFragmentManager.beginTransaction()
+            panes.forEach { pane -> supportFragmentManager.findFragmentById(pane.chatId)?.let { transaction.remove(it) } }
+            if (!supportFragmentManager.isStateSaved) transaction.commitNow()
+            panes.forEach { it.inputAvailable = false }
+        }
+        arrange()
+        if (chatShown) panes.forEach { addChat(it) }
+    }
+
+    /** Adds [pane]'s chat, once its channel is found (while chats are shown). */
+    private fun addChat(pane: Pane) {
+        val args = pane.chatArgs ?: return
+        if (!chatShown || isFinishing || supportFragmentManager.isStateSaved) return
+        if (supportFragmentManager.findFragmentById(pane.chatId) != null) return
+        supportFragmentManager.beginTransaction()
+            .replace(pane.chatId, ChatFragment.newInstance(args[0], args[1], args[2], args[3]))
+            .commit()
+    }
+
+    private fun toggleInput(pane: Pane) {
+        if (!pane.inputShown && !pane.inputAvailable) {
+            Toast.makeText(this, "Log in to chat", Toast.LENGTH_SHORT).show()
+            return
+        }
+        pane.inputShown = !pane.inputShown
+        SideBySide.setInputShown(this, pane.prefix, pane.inputShown)
+        pane.input.alpha = if (pane.inputShown) 1f else 0.6f
+        applyInput(pane)
+    }
+
+    /** Shows or hides [pane]'s chat input. The chat turns it on by itself when logged in. */
+    private fun applyInput(pane: Pane) {
+        val messageView = pane.chat.findViewById<View>(R.id.messageView) ?: return
+        // Long-pressing an emote puts it in the message: show the input then, as in the normal player.
+        val text = messageView.findViewById<TextView>(R.id.editText)?.text?.toString().orEmpty()
+        if (!pane.inputShown && pane.inputAvailable && !messageView.isVisible && text.isNotEmpty() && text != pane.textWhenHidden) {
+            pane.inputShown = true
+            SideBySide.setInputShown(this, pane.prefix, true)
+            pane.input.alpha = 1f
+            messageView.isVisible = true
+            return
+        }
+        if (messageView.isVisible && !pane.inputShown) {
+            pane.inputAvailable = true
+            pane.textWhenHidden = text
+            messageView.findFocus()?.let { focused ->
+                focused.clearFocus()
+                (getSystemService(INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager).hideSoftInputFromWindow(focused.windowToken, 0)
+            }
+            messageView.isVisible = false
+            (supportFragmentManager.findFragmentById(pane.chatId) as? ChatFragment)?.let { chat ->
+                if (chat.emoteMenuIsVisible()) chat.toggleEmoteMenu(false)
+            }
+        } else if (messageView.isVisible) {
+            pane.inputAvailable = true
+        } else if (pane.inputShown && pane.inputAvailable) {
+            messageView.isVisible = true
         }
     }
 
@@ -279,6 +416,12 @@ class SideBySideActivity : AppCompatActivity() {
 
     private fun buildPane(pane: Pane) {
         val dp = resources.displayMetrics.density
+        pane.root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        pane.chat = FrameLayout(this).apply {
+            id = pane.chatId
+            // Chat uses the app theme's background, as in the normal player.
+            TypedValue().also { theme.resolveAttribute(android.R.attr.colorBackground, it, true) }.let { setBackgroundColor(it.data) }
+        }
 
         pane.videoFrame = FrameLayout(this).apply {
             setBackgroundColor(Color.BLACK)
@@ -503,6 +646,8 @@ class SideBySideActivity : AppCompatActivity() {
                 override fun onNothingSelected(parent: AdapterView<*>?) {}
             }
         }
+        val chat = button(R.drawable.xtra5s_chat, "Show / hide chats") { toggleChat() }
+        pane.input = button(R.drawable.xtra5s_keyboard, "Show / hide message box") { toggleInput(pane) }
         pane.swap = button(R.drawable.xtra5s_swap, "Swap the two streams") { swapStreams() }
         val replace = button(R.drawable.xtra5s_tv, "Replace this channel") { replace(pane) }
         val reload = button(R.drawable.xtra5s_refresh, "Reload") { pane.paused = false; load(pane) }
@@ -512,7 +657,7 @@ class SideBySideActivity : AppCompatActivity() {
         val bottom = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL or Gravity.END }
         pane.controls.addView(top, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
         pane.controls.addView(bottom, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
-        val buttons = listOf(pane.qualitySpinner, pane.swap, replace, reload, only, pane.expand)
+        val buttons = listOf(pane.qualitySpinner, chat, pane.input, pane.swap, replace, reload, only, pane.expand)
         // One row when the video is wide enough, else volume on one row and the buttons below it.
         var twoRows: Boolean? = null
         fun place(narrow: Boolean) {
@@ -692,7 +837,7 @@ class SideBySideActivity : AppCompatActivity() {
         pane.player = player
     }
 
-    /** Looks the channel up and plays the stream (or waits while it's offline). */
+    /** Looks the channel up, adds its chat (when chats show), and plays the stream (or waits while it's offline). */
     private fun load(pane: Pane, after: Long = 0) {
         pane.job?.cancel()
         pane.job = lifecycleScope.launch {
@@ -713,6 +858,8 @@ class SideBySideActivity : AppCompatActivity() {
                 return@launch
             }
             pane.label.text = user.displayName ?: user.login ?: pane.side.login
+            pane.chatArgs = arrayOf(user.id, user.login, user.displayName, user.stream?.id)
+            addChat(pane)
             pane.stream = user.stream?.let { stream ->
                 Stream(
                     id = stream.id,
@@ -825,11 +972,17 @@ class SideBySideActivity : AppCompatActivity() {
             pane.muted = side.muted
             pane.stream = null
             pane.paused = false
+            pane.inputAvailable = false
+            pane.chatArgs = null
             pane.errors = 0
             pane.label.text = side.login
             pane.slider.value = side.volume.toFloat()
             pane.qualitySpinner.setSelection(SideBySide.QUALITIES.indexOf(side.quality).coerceAtLeast(0), false)
             pane.applyVolume()
+            // The old channel's chat goes; the new one's is added once the channel is found.
+            supportFragmentManager.findFragmentById(pane.chatId)?.let {
+                if (!supportFragmentManager.isStateSaved) supportFragmentManager.beginTransaction().remove(it).commitNow()
+            }
             SideBySide.addRecent(this, panes[0].side.login, panes[1].side.login)
             SideBySide.writeSides(intent,
                 panes[0].let { SideBySide.Side(it.side.login, it.quality, it.volume, it.muted) },
@@ -839,7 +992,7 @@ class SideBySideActivity : AppCompatActivity() {
     }
 
     /**
-     * Swaps the two streams' places (video and its settings move together). Stream 1
+     * Swaps the two streams' places (video, chat and their settings move together). Stream 1
      * is then the other channel; the recent pair and a restored screen follow the new order.
      */
     private fun swapStreams() {

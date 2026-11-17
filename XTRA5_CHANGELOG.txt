@@ -1,6 +1,31 @@
 Xtra5s changelog (newest first)
 
 ========================================
+Xtra5s 1.11.0 (2026-11-17)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+New
+- Crash log: if Xtra5s (or Companion) crashes, the error is saved to Download/
+  Xtra5s-crash-log.txt (Companion: Xtra5s-Companion-crash-log.txt), newest first, last 20
+  kept. The next time the app opens, a popup says it crashed, with Share to send the error.
+- Dual Stream: a chat button in each video's controls shows or hides both chats (hidden when
+  Dual Stream opens). With chats showing, the message box button is back (input hidden by
+  default). A faint note on the Dual Stream tab: chat doesn't work properly in Dual Stream.
+
+Changed
+- Dual Stream always plays both streams in Xtra5s again, on one screen. The split-screen
+  switch and the "Get Xtra5s Companion" button are gone.
+- Xtra5s Companion is now just a second copy of the app: the two no longer share anything.
+  Companion keeps its own settings and login (whatever it last copied from Xtra5s stays until
+  you change it). Removed: opening Companion next to Xtra5s, the settings / login copy, and
+  Companion's own back button and Dual Stream handling. Each app still installs its own APK
+  when updating.
+
+Behind the scenes
+- Removed the Companion hooks in MainActivity and PlayerFragment, the signature-protected
+  settings provider, its permission and the Dual Stream intent filter. Hook list updated.
+- Added a test for the crash log.
+========================================
 Xtra5s 1.10.1 (2026-11-17)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 

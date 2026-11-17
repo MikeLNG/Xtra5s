@@ -112,6 +112,18 @@ class Xtra5sLogicTest {
         assertEquals("8m 40s", VodChapters.lengthText(8 * 60 + 40))
     }
 
+    // ---- Crash log ----
+
+    @Test
+    fun crashLogNewestFirstAndTrimmed() {
+        var log = CrashLog.withEntry(null, "one\nerror A")
+        log = CrashLog.withEntry(log, "two\nerror B\n")
+        assertEquals("${CrashLog.SEPARATOR}\ntwo\nerror B\n${CrashLog.SEPARATOR}\none\nerror A\n", log)
+        for (i in 1..30) log = CrashLog.withEntry(log, "crash $i")
+        assertEquals(CrashLog.MAX_ENTRIES, log.split("${CrashLog.SEPARATOR}\n").count { it.isNotBlank() })
+        assertTrue(log.startsWith("${CrashLog.SEPARATOR}\ncrash 30\n"))
+    }
+
     // ---- Highlights ----
 
     @Test
