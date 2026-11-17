@@ -1,6 +1,25 @@
 Xtra5s changelog (newest first)
 
 ========================================
+Xtra5s 1.10.0 (2026-11-17)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+Changed
+- One-screen Dual Stream (TV, without Xtra5s Companion, or with split screen switched off) now
+  shows the two videos only: side by side, or stacked in portrait. Its chats are gone (two busy
+  chats in one window made some devices flicker to old pictures), and so is the message box
+  button. Pause, volume, quality, swap, replace, watch only this and fullscreen stay.
+- Xtra5s Companion now copies your Xtra5s settings and login every time it opens, also from its
+  own icon, so the two apps stay the same.
+- Rolled back the Dual Stream flicker attempts: the chat's own message copy (1.7.4), videos
+  drawn in the app window (1.7.5), the battery label change (1.7.6) and the full-screen
+  redraws (1.8.1, 1.8.2). The normal chat is back to how it was before them.
+
+Fixed
+- Dual Stream in split screen: Watch said "Couldn't open Xtra5s Companion". Since Android 14
+  another app only opens for requests it has declared; Companion now declares Dual Stream's,
+  so Watch can open it next to Xtra5s.
+========================================
 Xtra5s 1.9.1 (2026-11-17)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 

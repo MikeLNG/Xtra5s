@@ -1,4 +1,4 @@
-Xtra5s - feature list (version 1.9.0)
+Xtra5s - feature list (version 1.10.0)
 Everything official Xtra does, plus the features below.
 
 ========================================
@@ -11,27 +11,25 @@ Always up to date
 
 ========================================
 Dual Stream
-- Watch two live streams at once from the Dual Stream tab: each side has its video on top
-  and its own chat underneath, with all your highlights and chat colors. On a phone in
-  portrait, both videos stack at full width with the two chats side by side below.
+- Watch two live streams at once from the Dual Stream tab. On tablets and phones with Xtra5s
+  Companion (a second copy of the app), the two open side by side in split screen, each a full
+  player with its own chat and all your highlights. Otherwise, and on TV, both videos share
+  one screen (side by side, or stacked in portrait), without chats.
   - Tap + and type a channel for Stream 1 and Stream 2 (suggestions from the channels you
     follow), each with its own quality (720p by default) and its own mute and volume.
-  - Tap a video to pause it (playing again jumps to live, chat keeps going), mute it or set
-    its volume (the number matches how loud it sounds), change its quality, show or hide its
-    message box, reload it, or make it fullscreen.
+  - In one screen, tap a video to pause it (playing again jumps to live), mute it or set its
+    volume (the number matches how loud it sounds), change its quality, reload it, or make it
+    fullscreen.
   - Touch, hold and slide left / right on a video to set its volume, with a volume bar.
   - Swap the two streams' places with one button.
   - Put another channel in one stream's place (Replace, or swipe down on it), or keep just one
     stream in the normal player (Watch only this, or swipe up on it).
   - Offline channels start playing by themselves when they go live; dropped streams
     reconnect on their own.
-  - On tablets and phones, install Xtra5s Companion (a second copy of the app) and the two
-    streams open side by side in split screen, each a full player with its own chat, set up
-    from your Xtra5s settings and login automatically.
+  - Xtra5s Companion takes its settings and login from Xtra5s automatically.
   - Battery percentage in the corner, fading out of the way like in the player.
   - Recent pairs, with both profile pictures and a LIVE badge on whoever is live, are one
-    tap away; name suggestions show
-    profile pictures too.
+    tap away; name suggestions show profile pictures too.
 
 ========================================
 Chat

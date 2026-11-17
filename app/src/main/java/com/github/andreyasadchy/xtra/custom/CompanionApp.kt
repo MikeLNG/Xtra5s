@@ -54,6 +54,12 @@ object CompanionApp {
     private const val PREF_SPLIT = "xtra5s_dual_split_screen"
 
     private const val EXTRA_SESSION = "xtra5s_companion_session"
+    /**
+     * What Xtra5s asks Companion to open. Declared by MainActivity's intent filter: since Android
+     * 14 another app's screen only opens for requests it declares, so the internal "open stream"
+     * request was refused ("Couldn't open Xtra5s Companion").
+     */
+    const val ACTION_OPEN = "com.prime385.xtra5s.DUAL_STREAM_OPEN"
     private const val EXTRA_QUALITY = "xtra5s_companion_quality"
     private const val EXTRA_VOLUME = "xtra5s_companion_volume"
     private const val EXTRA_STREAM = "xtra5s_companion_stream"
@@ -129,7 +135,7 @@ object CompanionApp {
         session = true
         // Stream 2: Companion, next to this app.
         try {
-            activity.startActivity(Intent(MainActivity.INTENT_LIVE_NOTIFICATION).apply {
+            activity.startActivity(Intent(ACTION_OPEN).apply {
                 setClassName(COMPANION_PACKAGE, MainActivity::class.java.name)
                 // Plain values, not the Stream object: the two apps are built separately and
                 // needn't agree on its packed form. Companion rebuilds it (onIntent).
@@ -161,6 +167,8 @@ object CompanionApp {
     /** Start of MainActivity.handleIntent: a Dual Stream stream from Xtra5s, set up before it plays. */
     fun onIntent(activity: MainActivity, intent: Intent?) {
         if (intent == null || !intent.getBooleanExtra(EXTRA_SESSION, false) || !isCompanion(activity)) return
+        // Xtra5s's request becomes the app's own "open this stream" (handled right after this).
+        if (intent.action == ACTION_OPEN) intent.action = MainActivity.INTENT_LIVE_NOTIFICATION
         intent.removeExtra(EXTRA_SESSION) // once (not again on a restore)
         intent.getBundleExtra(EXTRA_STREAM)?.let { b ->
             intent.putExtra(MainActivity.KEY_VIDEO, Stream(
@@ -174,6 +182,14 @@ object CompanionApp {
         syncFromMain(activity)
         prepare(intent.getStringExtra(EXTRA_QUALITY) ?: SideBySide.DEFAULT_QUALITY, intent.getIntExtra(EXTRA_VOLUME, 100))
         session = true
+    }
+
+    /**
+     * Companion opening (MainActivity.onCreate): its settings and login follow Xtra5s's, so the
+     * two apps stay the same whether Companion was opened by Dual Stream or from its icon.
+     */
+    fun onCreate(activity: android.app.Activity) {
+        if (isCompanion(activity)) syncFromMain(activity)
     }
 
     /** Copies Xtra5s's settings and login into Companion. */

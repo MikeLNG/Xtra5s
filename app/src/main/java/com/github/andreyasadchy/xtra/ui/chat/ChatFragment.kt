@@ -75,7 +75,6 @@ class ChatFragment : BaseNetworkFragment(), MessageClickedDialog.OnButtonClickLi
     private val binding get() = _binding!!
     private val viewModel: ChatViewModel by viewModels { ChatViewModelFactory }
     private var adapter: ChatAdapter? = null
-    private val xtra5sScreen = com.github.andreyasadchy.xtra.custom.ChatScreen.newList<com.github.andreyasadchy.xtra.model.chat.ChatMessage>() // Xtra5s custom: the messages on screen (see ChatScreen)
 
     private var isChatTouched = false
     private var showChatStatus = false
@@ -128,7 +127,7 @@ class ChatFragment : BaseNetworkFragment(), MessageClickedDialog.OnButtonClickLi
                     val enableMessaging = isLive && isLoggedIn
                     val sizeModifier = (requireContext().prefs().getInt(C.CHAT_SIZE_MODIFIER, 100).toFloat() / 100f)
                     adapter = ChatAdapter(
-                        messages = xtra5sScreen, // Xtra5s custom: the screen list
+                        messages = viewModel.chatMessages,
                         localTwitchEmotes = viewModel.localTwitchEmotes,
                         thirdPartyEmotes = viewModel.thirdPartyEmotes,
                         globalBadges = viewModel.globalBadges,
@@ -225,7 +224,9 @@ class ChatFragment : BaseNetworkFragment(), MessageClickedDialog.OnButtonClickLi
                     }
                     btnDown.setOnClickListener {
                         view.post {
-                            val lastIndex = xtra5sScreen.lastIndex // Xtra5s custom: screen list
+                            val lastIndex = synchronized(viewModel.chatMessages) {
+                                viewModel.chatMessages.lastIndex
+                            }
                             recyclerView.scrollToPosition(lastIndex)
                             it.visibility = View.GONE
                         }
@@ -384,7 +385,9 @@ class ChatFragment : BaseNetworkFragment(), MessageClickedDialog.OnButtonClickLi
                             viewModel.reloadMessages.collectLatest {
                                 if (it) {
                                     adapter?.let { adapter ->
-                                        val size = xtra5sScreen.size // Xtra5s custom: screen list
+                                        val size = synchronized(viewModel.chatMessages) {
+                                            viewModel.chatMessages.size
+                                        }
                                         adapter.notifyItemRangeChanged(0, size)
                                     }
                                     messageDialog?.adapter?.let { adapter ->
@@ -706,26 +709,22 @@ class ChatFragment : BaseNetworkFragment(), MessageClickedDialog.OnButtonClickLi
                     }
                     viewLifecycleOwner.lifecycleScope.launch {
                         repeatOnLifecycle(Lifecycle.State.STARTED) {
-                            com.github.andreyasadchy.xtra.custom.ChatScreen.subscribed(viewModel.newMessage) { // Xtra5s custom: screen list copied afresh
-                                com.github.andreyasadchy.xtra.custom.ChatScreen.resync(xtra5sScreen, viewModel.chatMessages)
-                                adapter?.notifyDataSetChanged()
-                                if (!isChatTouched && binding.btnDown.isGone) binding.recyclerView.scrollToPosition(xtra5sScreen.lastIndex)
-                            }.collect { result ->
+                            viewModel.newMessage.collect { result ->
                                 val message = result.first
+                                val lastIndex = result.second
                                 val removeCount = result.third
-                                if (removeCount > 0) {
-                                    synchronized(viewModel.chatMessages) {
-                                        repeat(removeCount) {
-                                            viewModel.chatMessages.removeAt(0)
-                                        }
-                                    }
-                                }
-                                val (added, removed) = com.github.andreyasadchy.xtra.custom.ChatScreen.onNew(xtra5sScreen, message, removeCount) // Xtra5s custom: screen list
                                 adapter?.let { adapter ->
-                                    if (added != -1) adapter.notifyItemInserted(added)
-                                    if (removed > 0) adapter.notifyItemRangeRemoved(0, removed)
+                                    adapter.notifyItemInserted(lastIndex)
+                                    if (removeCount > 0) {
+                                        synchronized(viewModel.chatMessages) {
+                                            repeat(removeCount) {
+                                                viewModel.chatMessages.removeAt(0)
+                                            }
+                                        }
+                                        adapter.notifyItemRangeRemoved(0, removeCount)
+                                    }
                                     if (!isChatTouched && binding.btnDown.isGone) {
-                                        binding.recyclerView.scrollToPosition(xtra5sScreen.lastIndex)
+                                        binding.recyclerView.scrollToPosition(lastIndex - removeCount)
                                     }
                                 }
                                 messageDialog?.newMessage(message)
@@ -737,11 +736,11 @@ class ChatFragment : BaseNetworkFragment(), MessageClickedDialog.OnButtonClickLi
                         repeatOnLifecycle(Lifecycle.State.STARTED) {
                             viewModel.addMessages.collect { result ->
                                 val messages = result.first
-                                val added = com.github.andreyasadchy.xtra.custom.ChatScreen.onHistory(xtra5sScreen, messages) // Xtra5s custom: screen list
+                                val lastIndex = result.second
                                 adapter?.let { adapter ->
-                                    if (added) adapter.notifyItemRangeInserted(0, messages.size)
+                                    adapter.notifyItemRangeInserted(0, messages.size)
                                     if (!isChatTouched && binding.btnDown.isGone) {
-                                        binding.recyclerView.scrollToPosition(xtra5sScreen.lastIndex)
+                                        binding.recyclerView.scrollToPosition(lastIndex)
                                     }
                                 }
                                 messageDialog?.addMessages(messages)
@@ -751,8 +750,8 @@ class ChatFragment : BaseNetworkFragment(), MessageClickedDialog.OnButtonClickLi
                     }
                     viewLifecycleOwner.lifecycleScope.launch {
                         repeatOnLifecycle(Lifecycle.State.STARTED) {
-                            viewModel.removeMessages.collect { _ ->
-                                com.github.andreyasadchy.xtra.custom.ChatScreen.onClear(xtra5sScreen).let { if (it > 0) adapter?.notifyItemRangeRemoved(0, it) } // Xtra5s custom: screen list
+                            viewModel.removeMessages.collect { size ->
+                                adapter?.notifyItemRangeRemoved(0, size)
                             }
                         }
                     }
@@ -760,8 +759,8 @@ class ChatFragment : BaseNetworkFragment(), MessageClickedDialog.OnButtonClickLi
                         repeatOnLifecycle(Lifecycle.State.STARTED) {
                             viewModel.updateUserMessages.collectLatest { userId ->
                                 adapter?.let { adapter ->
-                                    run { // Xtra5s custom: positions in the screen list
-                                        xtra5sScreen.mapIndexedNotNull { index, message ->
+                                    synchronized(viewModel.chatMessages) {
+                                        viewModel.chatMessages.mapIndexedNotNull { index, message ->
                                             if (message.userId != null && message.userId == userId) {
                                                 index
                                             } else null
@@ -981,7 +980,9 @@ class ChatFragment : BaseNetworkFragment(), MessageClickedDialog.OnButtonClickLi
                     useApiChatMessages = requireContext().prefs().getBoolean(C.DEBUG_API_CHAT_MESSAGES, true),
                     enableIntegrity = requireContext().prefs().getBoolean(C.ENABLE_INTEGRITY, false),
                 )
-                val lastIndex = xtra5sScreen.lastIndex // Xtra5s custom: screen list
+                val lastIndex = synchronized(viewModel.chatMessages) {
+                    viewModel.chatMessages.lastIndex
+                }
                 recyclerView.scrollToPosition(lastIndex)
                 true
             } else {
@@ -1076,7 +1077,7 @@ class ChatFragment : BaseNetworkFragment(), MessageClickedDialog.OnButtonClickLi
                         chatMessage.messageLanguage = null
                         adapter?.let { adapter ->
                             synchronized(viewModel.chatMessages) {
-                                xtra5sScreen.indexOf(chatMessage).takeIf { it != -1 } // Xtra5s custom: screen list
+                                viewModel.chatMessages.indexOf(chatMessage).takeIf { it != -1 }
                             }?.let {
                                 (binding.recyclerView.layoutManager?.findViewByPosition(it) as? TextView)?.let {
                                     adapter.updateTranslation(chatMessage, it, previousTranslation)
@@ -1116,7 +1117,7 @@ class ChatFragment : BaseNetworkFragment(), MessageClickedDialog.OnButtonClickLi
                         chatMessage.messageLanguage = null
                         adapter?.let { adapter ->
                             synchronized(viewModel.chatMessages) {
-                                xtra5sScreen.indexOf(chatMessage).takeIf { it != -1 } // Xtra5s custom: screen list
+                                viewModel.chatMessages.indexOf(chatMessage).takeIf { it != -1 }
                             }?.let {
                                 (binding.recyclerView.layoutManager?.findViewByPosition(it) as? TextView)?.let {
                                     adapter.updateTranslation(chatMessage, it, previousTranslation)
@@ -1134,7 +1135,7 @@ class ChatFragment : BaseNetworkFragment(), MessageClickedDialog.OnButtonClickLi
                         chatMessage.messageLanguage = sourceLanguage
                         adapter?.let { adapter ->
                             synchronized(viewModel.chatMessages) {
-                                xtra5sScreen.indexOf(chatMessage).takeIf { it != -1 } // Xtra5s custom: screen list
+                                viewModel.chatMessages.indexOf(chatMessage).takeIf { it != -1 }
                             }?.let {
                                 (binding.recyclerView.layoutManager?.findViewByPosition(it) as? TextView)?.let {
                                     adapter.updateTranslation(chatMessage, it, previousTranslation)
@@ -1152,7 +1153,7 @@ class ChatFragment : BaseNetworkFragment(), MessageClickedDialog.OnButtonClickLi
             chatMessage.messageLanguage = null
             adapter?.let { adapter ->
                 synchronized(viewModel.chatMessages) {
-                    xtra5sScreen.indexOf(chatMessage).takeIf { it != -1 } // Xtra5s custom: screen list
+                    viewModel.chatMessages.indexOf(chatMessage).takeIf { it != -1 }
                 }?.let {
                     (binding.recyclerView.layoutManager?.findViewByPosition(it) as? TextView)?.let {
                         adapter.updateTranslation(chatMessage, it, previousTranslation)
@@ -1197,7 +1198,7 @@ class ChatFragment : BaseNetworkFragment(), MessageClickedDialog.OnButtonClickLi
                                     chatMessage.messageLanguage = null
                                     adapter?.let { adapter ->
                                         synchronized(viewModel.chatMessages) {
-                                            xtra5sScreen.indexOf(chatMessage).takeIf { it != -1 } // Xtra5s custom: screen list
+                                            viewModel.chatMessages.indexOf(chatMessage).takeIf { it != -1 }
                                         }?.let {
                                             (binding.recyclerView.layoutManager?.findViewByPosition(it) as? TextView)?.let {
                                                 adapter.updateTranslation(chatMessage, it, previousTranslation)
@@ -1237,7 +1238,7 @@ class ChatFragment : BaseNetworkFragment(), MessageClickedDialog.OnButtonClickLi
 
     override fun onStop() {
         super.onStop()
-        if (!requireArguments().getBoolean(KEY_IS_LIVE) || !requireContext().prefs().getBoolean(C.PLAYER_KEEP_CHAT_OPEN, false) || com.github.andreyasadchy.xtra.custom.SideBySide.isSideBySide(context)) { // Xtra5s custom: Side-By-Side always stops its chats in the background
+        if (!requireArguments().getBoolean(KEY_IS_LIVE) || !requireContext().prefs().getBoolean(C.PLAYER_KEEP_CHAT_OPEN, false)) {
             viewModel.stopLiveChat()
             viewModel.stopReplayChat()
         }

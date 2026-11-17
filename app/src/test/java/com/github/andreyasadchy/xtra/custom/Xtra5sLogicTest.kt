@@ -78,54 +78,6 @@ class Xtra5sLogicTest {
         assertEquals("s12" to "t12", many.first())
     }
 
-    // ---- Chat screen list ----
-
-    @Test
-    fun chatScreenFollowsNotices() {
-        val screen = ChatScreen.newList<String>()
-        // New messages go at the end; the chat's limit drops the oldest.
-        assertEquals(0 to 0, ChatScreen.onNew(screen, "a", 0))
-        assertEquals(1 to 0, ChatScreen.onNew(screen, "b", 0))
-        assertEquals(2 to 1, ChatScreen.onNew(screen, "c", 1))
-        assertEquals(listOf("b", "c"), screen)
-        // History loaded when joining goes on top.
-        assertTrue(ChatScreen.onHistory(screen, listOf("x", "y")))
-        assertEquals(listOf("x", "y", "b", "c"), screen)
-        // Cleared.
-        assertEquals(4, ChatScreen.onClear(screen))
-        assertTrue(screen.isEmpty())
-        assertEquals(0, ChatScreen.onClear(screen))
-    }
-
-    @Test
-    fun chatScreenResyncDoesNotDuplicate() {
-        // The background thread has already added "c" (and its notice arrives after the copy).
-        val source = mutableListOf("a", "b", "c")
-        val screen = ChatScreen.newList<String>()
-        ChatScreen.resync(screen, source)
-        assertEquals(listOf("a", "b", "c"), screen)
-        // Its notice: not added again, but the drop from the top still happens.
-        assertEquals(-1 to 1, ChatScreen.onNew(screen, source[2], 1))
-        assertEquals(listOf("b", "c"), screen)
-        // History already copied by a resync isn't added twice.
-        val history = mutableListOf("h1", "h2")
-        val withHistory = ChatScreen.newList<String>()
-        ChatScreen.resync(withHistory, (history + listOf("m")).toMutableList())
-        assertFalse(ChatScreen.onHistory(withHistory, history))
-        assertEquals(listOf("h1", "h2", "m"), withHistory)
-    }
-
-    @Test
-    fun chatScreenUsesSameMessageNotEqualText() {
-        // Two different messages with the same text are both shown.
-        val first = StringBuilder("hi")
-        val second = StringBuilder("hi")
-        val screen = ChatScreen.newList<StringBuilder>()
-        ChatScreen.onNew(screen, first, 0)
-        assertEquals(1 to 0, ChatScreen.onNew(screen, second, 0))
-        assertEquals(2, screen.size)
-    }
-
     // ---- Split-screen Dual Stream (Companion) ----
 
     @Test

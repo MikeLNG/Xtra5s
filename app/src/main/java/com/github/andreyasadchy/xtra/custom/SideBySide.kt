@@ -123,11 +123,6 @@ object SideBySide {
         context.prefs().edit { putString(PREF_RECENT, serializeRecent(list)) }
     }
 
-    // ---- Chat input per side (hidden by default; only for Side-By-Side) ----
-
-    fun inputShown(context: Context, side: String) = context.prefs().getBoolean("xtra5s_sbs_input_$side", false)
-    fun setInputShown(context: Context, side: String, shown: Boolean) = context.prefs().edit { putBoolean("xtra5s_sbs_input_$side", shown) }
-
     // ---- Launching ----
 
     fun start(activity: FragmentActivity, left: Side, right: Side) {

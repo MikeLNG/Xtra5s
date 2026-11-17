@@ -131,17 +131,18 @@
         <item>- [TV] Back: closes the video.</item>
         <item>- [TV] Hold Back: closes the video.</item>
         <item># Dual Stream</item>
-        <item>- Tap the big + on the Dual Stream tab: type two channels (Stream 1 and Stream 2), each with its own quality and volume. The arrows show where each plays: left / right in landscape, top / bottom in portrait.</item>
+        <item>- Tap the big + on the Dual Stream tab: type two channels (Stream 1 and Stream 2), each with its own quality and volume.</item>
+        <item>- With Xtra5s Companion installed (tablets and phones): Watch opens Stream 1 in Xtra5s and Stream 2 in Xtra5s Companion, side by side in split screen, each a normal player with its own chat. Back in either player closes that stream and its half. A switch on the Dual Stream tab turns this off.</item>
+        <item>- Otherwise (and on TV): both videos in one screen, without chats: side by side, or stacked in portrait.</item>
         <item>- Tap a recent pair: opens the popup with it filled in. Long-press it: removes it.</item>
-        <item>- Tap a video (or OK on it): shows its controls: pause / play in the middle, then mute, volume, quality, message box, swap, replace, reload, watch only this and fullscreen. They hide after 4 seconds.</item>
-        <item>- Pause / play (big button in the middle): pauses that stream only; the chat keeps going. Playing again jumps to live.</item>
-        <item>- Touch and hold a video, then slide left / right: changes that video\'s volume (half the video\'s width is 0 to 100%), with a volume bar while you slide.</item>
-        <item>- Swap button: the two streams change places (video, chat and their settings move together).</item>
-        <item>- Swipe down on a video (or the Replace button, TV icon): puts another channel in that stream\'s place.</item>
-        <item>- Swipe up on a video (or the Watch only this button): closes the other stream and plays this one on its own in the normal player.</item>
-        <item>- Message box button: shows or hides that stream\'s chat input (hidden by default, remembered per stream). Long-pressing an emote shows it.</item>
-        <item>- Back: leaves fullscreen first, otherwise closes Dual Stream.</item>
-        <item>- Remote, keyboard or controller (no setting needed): Left / Right / Up / Down move between the two videos, their controls and the chats. The selected video has a gold outline.</item>
+        <item>- One-screen Dual Stream, tap a video (or OK on it): shows its controls: pause / play in the middle, then mute, volume, quality, swap, replace, reload, watch only this and fullscreen. They hide after 4 seconds.</item>
+        <item>-- Pause / play (big button in the middle): pauses that stream only. Playing again jumps to live.</item>
+        <item>-- Touch and hold a video, then slide left / right: changes that video\'s volume (half the video\'s width is 0 to 100%), with a volume bar while you slide.</item>
+        <item>-- Swap button: the two streams change places.</item>
+        <item>-- Swipe down on a video (or the Replace button, TV icon): puts another channel in that stream\'s place.</item>
+        <item>-- Swipe up on a video (or the Watch only this button): closes the other stream and plays this one on its own in the normal player.</item>
+        <item>-- Back: leaves fullscreen first, otherwise closes Dual Stream.</item>
+        <item>-- Remote, keyboard or controller (no setting needed): Left / Right / Up / Down move between the two videos and their controls. The selected video has a gold outline.</item>
         <item># Chat</item>
         <item>- Tap an emote: shows the emote\'s details.</item>
         <item>- Long-press an emote: puts it in your message (not sent; the chat input appears if it was hidden).</item>

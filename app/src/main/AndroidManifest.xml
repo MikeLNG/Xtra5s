@@ -61,6 +61,11 @@
                 <data android:host="*.twitch.tv" />
                 <data android:host="twitch.tv" />
             </intent-filter>
+            <!-- Xtra5s custom: Dual Stream asks Xtra5s Companion to open a stream (see CompanionApp) -->
+            <intent-filter>
+                <action android:name="com.prime385.xtra5s.DUAL_STREAM_OPEN" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
         </activity>
         <activity android:name=".ui.settings.SettingsActivity" />
         <!-- Xtra5s custom: settings for Xtra5s Companion (signature-protected) -->
