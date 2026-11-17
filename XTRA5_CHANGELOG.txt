@@ -1,6 +1,17 @@
 Xtra5s changelog (newest first)
 
 ========================================
+Xtra5s 1.10.1 (2026-11-17)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+Changed
+- VOD chapter menu: each chapter now shows where it starts, then how long it is in brackets,
+  e.g. "Deadlock 00:00 (3hr 12m 02s)" or "Minecraft 03:12:03 (1hr 20m 56s)". Chapters under
+  an hour leave the hours out of the length, e.g. "(8m 40s)".
+
+Behind the scenes
+- Added a test for the chapter time format.
+========================================
 Xtra5s 1.10.0 (2026-11-17)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 

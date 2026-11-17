@@ -155,8 +155,8 @@ object VodChapters {
                 image.setImageDrawable(null)
                 chapter.boxArt?.let { url -> ctx.imageLoader.enqueue(ImageRequest.Builder(ctx).data(url).target(image).build()) }
                 (texts.getChildAt(0) as TextView).text = chapter.name ?: "Unknown"
-                val start = android.text.format.DateUtils.formatElapsedTime((chapter.vodPosition ?: 0) / 1000L)
-                val length = chapter.vodDuration?.takeIf { it > 0 }?.let { " · " + android.text.format.DateUtils.formatElapsedTime(it / 1000L) } ?: ""
+                val start = startText((chapter.vodPosition ?: 0) / 1000L)
+                val length = chapter.vodDuration?.takeIf { it > 0 }?.let { " (" + lengthText(it / 1000L) + ")" } ?: ""
                 (texts.getChildAt(1) as TextView).text = start + length
                 return row
             }
@@ -187,5 +187,25 @@ object VodChapters {
                 if (!activity.isFinishing) activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
             }, 300L)
         }
+    }
+
+    // Xtra5s: "start (length)", e.g. "00:00 (3hr 12m 02s)", "03:12:03 (1hr 20m 56s)".
+
+    /** Where a chapter starts: "mm:ss", or "hh:mm:ss" from an hour on. */
+    internal fun startText(seconds: Long): String {
+        val s = seconds.coerceAtLeast(0)
+        val h = s / 3600
+        val m = s % 3600 / 60
+        val sec = s % 60
+        return if (h > 0) "%02d:%02d:%02d".format(h, m, sec) else "%02d:%02d".format(m, sec)
+    }
+
+    /** How long a chapter is: "3hr 12m 02s", or "8m 40s" under an hour. */
+    internal fun lengthText(seconds: Long): String {
+        val s = seconds.coerceAtLeast(0)
+        val h = s / 3600
+        val m = s % 3600 / 60
+        val sec = s % 60
+        return if (h > 0) "%dhr %02dm %02ds".format(h, m, sec) else "%dm %02ds".format(m, sec)
     }
 }

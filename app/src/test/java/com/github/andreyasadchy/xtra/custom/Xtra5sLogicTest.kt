@@ -99,6 +99,19 @@ class Xtra5sLogicTest {
         assertFalse(CompanionApp.isMyUpdate(true, "Xtra5s-1.9.0.apk"))
     }
 
+    // ---- VOD chapters menu ----
+
+    @Test
+    fun chapterTimes() {
+        assertEquals("00:00", VodChapters.startText(0))
+        assertEquals("03:12:03", VodChapters.startText(3 * 3600 + 12 * 60 + 3))
+        assertEquals("12:05", VodChapters.startText(12 * 60 + 5))
+        assertEquals("3hr 12m 02s", VodChapters.lengthText(3 * 3600 + 12 * 60 + 2))
+        assertEquals("1hr 20m 56s", VodChapters.lengthText(3600 + 20 * 60 + 56))
+        assertEquals("1hr 05m 00s", VodChapters.lengthText(3900))
+        assertEquals("8m 40s", VodChapters.lengthText(8 * 60 + 40))
+    }
+
     // ---- Highlights ----
 
     @Test
