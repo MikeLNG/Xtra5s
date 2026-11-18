@@ -125,7 +125,7 @@
         <item>- Hold OK on a live stream: reloads the stream (like Restart player).</item>
         <item>- Hold Back: closes the video.</item>
         <item># Video player (touch)</item>
-        <item>- ! button (top right): the channel\'s chat-bot commands (Nightbot, StreamElements, Fossabot) and their replies, in a table you can scroll and search. Tap a command: puts it in your message box (or copies it if chat isn\'t open). Long-press: copies the reply. Also in each Dual Stream video\'s controls.</item>
+        <item>- ! button (top right): the channel\'s chat-bot commands (Nightbot, StreamElements, Fossabot) and their replies, in a table you can scroll and search, with emotes shown as in chat. Tap a command: puts it in your message box (or copies it if chat isn\'t open). Long-press: copies the reply. Also in each Dual Stream video\'s controls.</item>
         <item>- Touch and hold the video (a short buzz), then slide left / right: changes the volume (half the video\'s width is 0 to 100%), with a volume bar while you slide. Same volume as the Volume button.</item>
         <item># Minimized video</item>
         <item>- Tap a paused mini player: resumes it.</item>

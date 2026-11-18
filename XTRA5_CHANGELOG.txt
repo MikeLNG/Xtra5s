@@ -1,6 +1,20 @@
 Xtra5s changelog (newest first)
 
 ========================================
+Xtra5s 1.13.0 (2026-11-18)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+New
+- Chat commands table: emotes in replies now show as emotes, as in chat (animated too, at
+  your chat emote size and quality). Covered: the channel's Twitch emotes (whether or not
+  you're subscribed), Twitch global emotes, every Twitch emote you can use when logged in,
+  and 7TV, BTTV and FFZ, the channel's and global ones. The table opens with text straight
+  away; emotes swap in as they load. Kept 10 minutes per channel, with the commands.
+
+Behind the scenes
+- BotEmotes: reuses Xtra's 7TV / BTTV / FFZ and user emote loaders; the channel's Twitch emotes
+  and the global set come from Twitch's GraphQL. Tests for emote matching and the Twitch reply.
+========================================
 Xtra5s 1.12.0 (2026-11-18)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 

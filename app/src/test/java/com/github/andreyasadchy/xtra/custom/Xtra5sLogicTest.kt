@@ -165,6 +165,32 @@ class Xtra5sLogicTest {
         assertEquals(listOf("$(user)", "[twitch [channel]]", "\${count}"), found)
     }
 
+    // ---- Emotes in the commands table ----
+
+    @Test
+    fun botEmoteWordsFound() {
+        val emotes = mapOf("moon2E" to 1, "Kappa" to 2, "peepoHas" to 3)
+        val text = "moon2E I have annoyed my human Kappa  kappa peepoHas!"
+        assertEquals(listOf("moon2E", "Kappa"), BotEmotes.find(text, emotes).map { text.substring(it) })
+        assertEquals(listOf("peepoHas"), BotEmotes.find("🤘 peepoHas", emotes).map { "🤘 peepoHas".substring(it) })
+        assertTrue(BotEmotes.find("nothing here", emptyMap<String, Int>()).isEmpty())
+    }
+
+    @Test
+    fun botEmotesFirstSourceWins() {
+        val map = BotEmotes.byName(listOf(listOf("a" to "twitch"), listOf("a" to "7tv", "b" to "7tv"), listOf("b" to "bttv", "" to "x"))) { it.first }
+        assertEquals(mapOf("a" to ("a" to "twitch"), "b" to ("b" to "7tv")), map)
+    }
+
+    @Test
+    fun twitchEmotesFromGraphQL() {
+        val body = """{"data":{"user":{"subscriptionProducts":[{"emotes":[{"id":"301","token":"moon2E"},{"id":"302","token":"moon2M"}]},{"emotes":[]}]}}}"""
+        val emotes = BotEmotes.parseTwitchEmotes(body)
+        assertEquals(listOf("moon2E", "moon2M"), emotes.map { it.name })
+        assertEquals("https://static-cdn.jtvnw.net/emoticons/v2/301/default/dark/3.0", emotes[0].url4x)
+        assertTrue(BotEmotes.parseTwitchEmotes("""{"data":{"user":null}}""").isEmpty())
+    }
+
     // ---- Crash log ----
 
     @Test

@@ -57,7 +57,7 @@ import okhttp3.Request
  *  - Search filters by command or reply; bot placeholders ($(user), [count]) are dimmed.
  *  - Tap a row: the command goes in the message box (or is copied, if chat isn't open).
  *    Long-press: copies the reply.
- * Lists are kept for 10 minutes per channel.
+ * Emote names in replies show as emotes (BotEmotes). Lists are kept for 10 minutes per channel.
  */
 object BotCommands {
 
@@ -257,6 +257,7 @@ object BotCommands {
 
         val adapter = object : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
             var items: List<Command> = emptyList()
+            var emotes: Map<String, com.github.andreyasadchy.xtra.model.chat.Emote> = emptyMap()
             override fun getItemCount() = items.size
             override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
                 val row = LinearLayout(parent.context).apply {
@@ -282,9 +283,12 @@ object BotCommands {
                     setSpan(android.text.style.StyleSpan(Typeface.NORMAL), command.name.length, length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                     setSpan(ForegroundColorSpan(dim), command.name.length, length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                 }
-                reply.text = SpannableString(command.reply).apply {
+                val replyText = SpannableString(command.reply).apply {
                     placeholders(command.reply).forEach { setSpan(ForegroundColorSpan(dim), it.first, it.last + 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE) }
                 }
+                reply.setTag(com.github.andreyasadchy.xtra.R.id.xtra5s_player_commands, null)
+                reply.text = replyText
+                BotEmotes.apply(reply, replyText, emotes)
                 row.setOnClickListener {
                     if (insert(command.name)) dialog.dismiss() else copy(command.name, command.name)
                 }
@@ -312,6 +316,14 @@ object BotCommands {
         val metrics = activity.resources.displayMetrics
         dialog.window?.setLayout(minOf((metrics.widthPixels * 0.92f).toInt(), px(760)), (metrics.heightPixels * 0.88f).toInt())
 
+        // Emotes load next to the commands; the table shows text until they're in.
+        activity.lifecycleScope.launch {
+            val emotes = try { BotEmotes.load(activity, login) } catch (_: Exception) { emptyMap() }
+            if (!dialog.isShowing || emotes.isEmpty()) return@launch
+            adapter.emotes = emotes
+            @Suppress("NotifyDataSetChanged")
+            adapter.notifyDataSetChanged()
+        }
         activity.lifecycleScope.launch {
             val result = try { load(activity, login, live) } catch (_: Exception) { Result(emptyList(), emptyList()) }
             if (!dialog.isShowing) return@launch
