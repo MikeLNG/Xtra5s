@@ -100,7 +100,7 @@ class SideBySideFragment : Fragment() {
         }) }
         // Who's live now (and pictures for channels that have none saved yet), each time the
         // tab is shown. The last known status shows until the answer arrives.
-        viewLifecycleOwner.lifecycleScope.launch {
+        if (AutoRefreshSettings.enabled(context, AutoRefreshSettings.DUAL_BADGES)) viewLifecycleOwner.lifecycleScope.launch {
             val logins = pairs.flatMap { listOf(it.first, it.second) }
             if (!SideBySide.refreshLive(context, logins) || recentList !== list) return@launch
             list.avatarViews().forEach { (view, login) -> SideBySide.loadAvatar(view, login) }

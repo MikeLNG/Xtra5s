@@ -82,7 +82,8 @@ Browsing
 - Clean stream cards: streamer, category and title, with text sizes you can adjust.
 - Layouts that stay readable on big screens and TVs with lots of columns.
 - Refresh everything with one button (or just tap the Live tab), and lists refresh themselves
-  when you come back to the app.
+  when you come back to the app. Every automatic refresh, reload and resume can be switched
+  on or off in one place (Settings > UI > Automatic refresh).
 - Optional fixed top bar that stays in place while you scroll.
 - Back always takes you home to your Live list before leaving the app.
 - Press Following again from its main page to jump straight to a freshly refreshed Live list.

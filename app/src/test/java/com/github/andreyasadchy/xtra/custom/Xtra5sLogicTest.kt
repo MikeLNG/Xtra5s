@@ -191,6 +191,17 @@ class Xtra5sLogicTest {
         assertTrue(BotEmotes.parseTwitchEmotes("""{"data":{"user":null}}""").isEmpty())
     }
 
+    // ---- Automatic refresh switches ----
+
+    @Test
+    fun autoRefreshSwitches() {
+        val keys = AutoRefreshSettings.items.map { it.key }
+        assertEquals(keys.size, keys.toSet().size) // one switch per behaviour
+        assertEquals("All on", AutoRefreshSettings.summary(13, 13))
+        assertEquals("All off", AutoRefreshSettings.summary(0, 13))
+        assertEquals("11 of 13 on", AutoRefreshSettings.summary(11, 13))
+    }
+
     // ---- Crash log ----
 
     @Test

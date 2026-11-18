@@ -79,15 +79,20 @@ object Favorites {
     fun bind(binding: FragmentStreamsListItemBinding, stream: Stream, fragment: Fragment) {
         binding.root.post { remember(binding.root) }
         decorate(binding.userImage, stream.channelId, stream.channelName ?: stream.channelLogin) {
-            fragment.activity?.let { RefreshButton.refreshCurrentScreen(it, showMessage = false) } // re-sort
-            FavoriteChannels.onFavoritesChanged(lists.mapNotNull { it.get() }) // Channels, if favourites first
+            val activity = fragment.activity
+            if (activity != null && AutoRefreshSettings.enabled(activity, AutoRefreshSettings.FAVORITES)) {
+                RefreshButton.refreshCurrentScreen(activity, showMessage = false) // re-sort
+                FavoriteChannels.onFavoritesChanged(lists.mapNotNull { it.get() }) // Channels, if favourites first
+            }
         }
     }
 
     /** Following > Channels cards: same toggle and look; the order only changes with "Favourites first". */
     fun bindChannel(binding: FragmentFollowedChannelsListItemBinding, user: User) {
         remember(binding.root)
-        decorate(binding.userImage, user.id, user.name ?: user.login) { reloadLiveLists() }
+        decorate(binding.userImage, user.id, user.name ?: user.login) {
+            if (AutoRefreshSettings.enabled(binding.root.context, AutoRefreshSettings.FAVORITES)) reloadLiveLists()
+        }
     }
 
     /**

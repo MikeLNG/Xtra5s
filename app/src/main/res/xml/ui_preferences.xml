@@ -269,4 +269,17 @@
 
     </PreferenceCategory>
 
+    <!-- Xtra5s custom: automatic refresh switches -->
+    <PreferenceCategory
+        android:title="Automatic refresh"
+        app:iconSpaceReserved="false">
+
+        <com.github.andreyasadchy.xtra.custom.AutoRefreshPreference
+            android:key="xtra5_auto_refresh_dialog"
+            android:title="Automatic refresh and reload"
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false" />
+
+    </PreferenceCategory>
+
 </androidx.preference.PreferenceScreen>

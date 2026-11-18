@@ -819,7 +819,7 @@ class SideBySideActivity : AppCompatActivity() {
                     }
                     Player.STATE_ENDED -> {
                         pane.showStatus("Stream ended")
-                        load(pane, after = 5000)
+                        if (reconnect()) load(pane, after = 5000)
                     }
                     else -> {}
                 }
@@ -833,12 +833,19 @@ class SideBySideActivity : AppCompatActivity() {
 
             override fun onPlayerError(error: PlaybackException) {
                 pane.errors++
+                if (!reconnect()) {
+                    pane.showStatus("Stream dropped")
+                    return
+                }
                 pane.showStatus("Reconnecting…")
                 load(pane, after = (2000L * pane.errors).coerceAtMost(15000))
             }
         })
         pane.player = player
     }
+
+    /** Reconnecting dropped / failed streams by themselves (Settings > UI > Automatic refresh). */
+    private fun reconnect() = AutoRefreshSettings.enabled(this, AutoRefreshSettings.DUAL_RECONNECT)
 
     /** Looks the channel up, adds its chat (when chats show), and plays the stream (or waits while it's offline). */
     private fun load(pane: Pane, after: Long = 0) {
@@ -853,7 +860,7 @@ class SideBySideActivity : AppCompatActivity() {
                 module.graphQLRepository.loadQueryUsersStream(networkLibrary, TwitchApiHelper.getGQLHeaders(this@SideBySideActivity), logins = listOf(pane.side.login)).data?.users?.firstOrNull()
             } catch (e: Exception) {
                 pane.showStatus("Couldn't load ${pane.side.login}")
-                load(pane, after = 10000)
+                if (reconnect()) load(pane, after = 10000)
                 return@launch
             }
             if (user == null) {
@@ -882,7 +889,7 @@ class SideBySideActivity : AppCompatActivity() {
             if (user.stream == null) {
                 pane.player?.stop()
                 pane.showStatus("Offline")
-                load(pane, after = OFFLINE_RECHECK)
+                if (AutoRefreshSettings.enabled(this@SideBySideActivity, AutoRefreshSettings.DUAL_OFFLINE)) load(pane, after = OFFLINE_RECHECK)
                 return@launch
             }
             val url = try {
@@ -904,7 +911,7 @@ class SideBySideActivity : AppCompatActivity() {
                 )
             } catch (e: Exception) {
                 pane.showStatus("Couldn't load the stream")
-                load(pane, after = 10000)
+                if (reconnect()) load(pane, after = 10000)
                 return@launch
             }
             play(pane, url)

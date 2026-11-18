@@ -77,7 +77,9 @@ object BackToLive {
                 if (tabs != null) liveTabIndex(activity, tabs)?.let { tabs.getTabAt(it)?.select() }
             }, 150L)
         }
-        handler.postDelayed({ RefreshButton.refreshCurrentScreen(activity, showMessage = false) }, 400L)
+        if (AutoRefreshSettings.enabled(activity, AutoRefreshSettings.BACK_LIVE)) {
+            handler.postDelayed({ RefreshButton.refreshCurrentScreen(activity, showMessage = false) }, 400L)
+        }
         return true
     }
 
@@ -89,10 +91,11 @@ object BackToLive {
         val pager = currentScreen(activity) as? FollowPagerFragment ?: return false
         val tabs = pager.view?.findViewById<TabLayout>(R.id.tabLayout) ?: return false
         val live = liveTabIndex(activity, tabs) ?: return false
+        val refresh = AutoRefreshSettings.enabled(activity, AutoRefreshSettings.FOLLOWING_AGAIN)
         if (tabs.selectedTabPosition != live) {
             tabs.getTabAt(live)?.select()
-            handler.postDelayed({ refreshLive(pager, live) }, 250L) // once the Live page is shown
-        } else {
+            if (refresh) handler.postDelayed({ refreshLive(pager, live) }, 250L) // once the Live page is shown
+        } else if (refresh) {
             refreshLive(pager, live)
         }
         return true
@@ -105,7 +108,9 @@ object BackToLive {
         if (tabView.getTag(R.id.xtra5_live_tab) == true) return
         tabView.setTag(R.id.xtra5_live_tab, true)
         // TabView still selects the tab after calling this listener.
-        tabView.setOnClickListener { handler.postDelayed({ refreshLive(pager, index) }, 250L) }
+        tabView.setOnClickListener {
+            if (AutoRefreshSettings.enabled(activity, AutoRefreshSettings.LIVE_TAB)) handler.postDelayed({ refreshLive(pager, index) }, 250L)
+        }
     }
 
     /** Reloads only the Live list and scrolls it to the top. */

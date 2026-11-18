@@ -1,6 +1,27 @@
 Xtra5s changelog (newest first)
 
 ========================================
+Xtra5s 1.14.0 (2026-11-18)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+New
+- Settings > UI > Automatic refresh: one window listing every automatic refresh, reload and
+  resume, each with a checkbox. All on by default, so nothing changes unless you turn one off.
+  - Video and app: refresh the lists after minimizing the video; refresh the lists when coming
+    back to the app; reload an open live stream when coming back; play again when coming back
+    from another screen of the app (e.g. Settings); play a paused mini player when it's made
+    full-size; redraw the chat when coming back from another screen (highlight changes).
+  - Following: tapping the Live tab refreshes it; Back on a main page refreshes Live (it still
+    goes there when off); pressing Following again refreshes Live (still switches to it); adding
+    or removing a favourite re-sorts the lists straight away.
+  - Dual Stream: offline channels start by themselves when they go live; dropped or ended
+    streams reconnect by themselves (when off, Reload does it); opening the tab checks who's
+    live for the LIVE badges (when off, the last known status stays).
+
+Behind the scenes
+- AutoRefreshSettings / AutoRefreshPreference (used straight from ui_preferences.xml, no code
+  hook). Test for the switch list.
+========================================
 Xtra5s 1.13.0 (2026-11-18)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 

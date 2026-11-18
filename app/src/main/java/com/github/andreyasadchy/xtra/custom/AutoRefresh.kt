@@ -20,6 +20,7 @@ import java.lang.ref.WeakReference
  *  - Coming back from another screen of the app (e.g. Settings) plays the video again if it was
  *    playing before; maximizing a paused minimized video plays it (live streams jump to live).
  *
+ * Each can be switched off in Settings > UI > Automatic refresh (AutoRefreshSettings).
  * Kept in its own package so upstream Xtra updates can be merged without conflicts.
  * Upstream hook: PlayerFragment.minimize(); the rest starts from UpstreamUpdates.onMainActivityCreate.
  */
@@ -35,6 +36,7 @@ object AutoRefresh {
 
     /** Called from PlayerFragment.maximize(): a paused video starts playing (live jumps to live). */
     fun onMaximized(player: PlayerFragment) {
+        if (!AutoRefreshSettings.enabled(player.context ?: return, AutoRefreshSettings.RESUME_MAXIMIZE)) return
         handler.postDelayed({ AudioGuard.resumeIfPaused(player) }, 300L)
     }
 
@@ -43,6 +45,7 @@ object AutoRefresh {
         val activity = player.activity as? MainActivity ?: return
         // Only when minimized by the user inside the app, not while the app is going away.
         if (!activity.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) return
+        if (!AutoRefreshSettings.enabled(activity, AutoRefreshSettings.MINIMIZE)) return
         handler.postDelayed({
             if (!activity.isFinishing && activity.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
                 RefreshButton.refreshCurrentScreen(activity, showMessage = false)
@@ -60,11 +63,11 @@ object AutoRefresh {
                 if (a is MainActivity) main = WeakReference(a)
                 startedActivities++
                 // Back from another screen of the app (e.g. Settings): show changed highlights.
-                if (a is MainActivity && startedActivities > 1) handler.post { ChatLive.refreshChat() }
+                if (a is MainActivity && startedActivities > 1 && AutoRefreshSettings.enabled(a, AutoRefreshSettings.CHAT_REDRAW)) handler.post { ChatLive.refreshChat() }
                 // ...and play again if it was playing.
                 if (a is MainActivity && startedActivities > 1 && playingWhenLeft) {
                     playingWhenLeft = false
-                    handler.postDelayed({
+                    if (AutoRefreshSettings.enabled(a, AutoRefreshSettings.RESUME_SCREEN)) handler.postDelayed({
                         (main?.get()?.playerFragment as? PlayerFragment)?.let { AudioGuard.resumeIfPaused(it) }
                     }, RESUME_DELAY_MS)
                 }
@@ -104,10 +107,10 @@ object AutoRefresh {
         val player = (activity.playerFragment as? PlayerFragment)?.takeIf { it.isAdded && it.view != null }
         val state = player?.xtra5PlayerState()
         // Refresh the lists when a main screen is visible: no video, or the video minimized.
-        if (state == null || !state.isMaximized) {
+        if ((state == null || !state.isMaximized) && AutoRefreshSettings.enabled(activity, AutoRefreshSettings.RETURN_LISTS)) {
             RefreshButton.refreshCurrentScreen(activity, showMessage = false)
         }
         // Reload an open live stream, minimized or full-size.
-        if (player != null && state?.isLiveStream == true) player.restartPlayer()
+        if (player != null && state?.isLiveStream == true && AutoRefreshSettings.enabled(activity, AutoRefreshSettings.RETURN_LIVE)) player.restartPlayer()
     }
 }
