@@ -90,6 +90,7 @@ object Favorites {
     /** Following > Channels cards: same toggle and look; the order only changes with "Favourites first". */
     fun bindChannel(binding: FragmentFollowedChannelsListItemBinding, user: User) {
         remember(binding.root)
+        ChannelChat.bind(binding.root, user) // Xtra5s: long-press the card = their chat
         decorate(binding.userImage, user.id, user.name ?: user.login) {
             if (AutoRefreshSettings.enabled(binding.root.context, AutoRefreshSettings.FAVORITES)) reloadLiveLists()
         }

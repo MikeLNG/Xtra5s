@@ -5,7 +5,7 @@ import android.content.Context
 /**
  * Xtra5s custom: Xtra5s Companion is the same app built under another package
  * (`-Pxtra5sCompanion`), so it installs next to Xtra5s as a separate app with its own settings
- * and login. Since Xtra5s 1.11.0 the two apps don't talk to each other at all.
+ * and login. Since Xtra5s 1.60.0 the two apps don't talk to each other at all.
  * The only thing here: each app's updater installs its own APK from a release.
  */
 object CompanionApp {

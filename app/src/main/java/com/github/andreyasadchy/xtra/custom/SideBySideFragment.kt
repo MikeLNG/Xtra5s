@@ -37,7 +37,7 @@ class SideBySideFragment : Fragment() {
             val pad = (16 * dp).toInt()
             setPadding(pad, (16 * dp).toInt(), pad, pad)
         }
-        // Xtra5s 1.11.0: two chats in one window don't draw properly (they flicker to old messages).
+        // Xtra5s 1.60.0: two chats in one window don't draw properly (they flicker to old messages).
         column.addView(TextView(context).apply {
             text = "Chat doesn't work properly in Dual Stream."
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)

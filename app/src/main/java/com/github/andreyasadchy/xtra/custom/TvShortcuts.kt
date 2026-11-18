@@ -157,6 +157,7 @@ object TvShortcuts {
             if (consumed.contains(keyCode)) return true
             if (!(event.isLongPress || event.repeatCount >= LONG_PRESS_REPEATS)) return false
             val handled = reloadStream(activity, playerFragment) ||
+                (canRefreshScreen(activity, playerFragment) && ChannelChat.onHoldOk(activity)) || // Xtra5s: Channels card = chat
                 (canRefreshScreen(activity, playerFragment) && RefreshButton.refreshCurrentScreen(activity))
             if (handled) {
                 consumed.add(keyCode)

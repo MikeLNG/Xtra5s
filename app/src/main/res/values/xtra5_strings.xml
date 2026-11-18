@@ -108,6 +108,8 @@
         <item>- Long-press a streamer\'s profile picture: adds or removes them as a favourite (gold ring and star) and lists them first in Live. Shared with Following &gt; Channels: favouriting here shows the ring and star there too, and vice versa.</item>
         <item># Following &gt; Channels</item>
         <item>- Long-press a profile picture: adds or removes the channel as a favourite. Shared with Following &gt; Live: favouriting here shows the ring and star there and moves them to the top of Live, and vice versa.</item>
+        <item>- Long-press anywhere else on a channel: opens their channel page on its Chat tab, live or offline.</item>
+        <item>- [TV] Hold OK on a channel: opens their chat (instead of refreshing).</item>
         <item>Setting: Favourites first</item>
         <item># [TV] Video player (full screen, controls hidden)</item>
         <item>- Left / Right: skip back / forward and show the seek bar (VODs, clips, downloads). While it shows, Left / Right keep skipping and Back hides the controls.</item>

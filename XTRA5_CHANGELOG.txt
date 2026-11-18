@@ -1,7 +1,22 @@
 Xtra5s changelog (newest first)
 
 ========================================
-Xtra5s 1.14.0 (2026-11-18)
+Xtra5s 1.64.0 (2026-11-18)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+New
+- Following > Channels: long-press a channel (anywhere but its profile picture, which still
+  adds or removes the favourite) to open their channel page straight on its Chat tab, live or
+  offline. If the Chat tab is hidden in Settings > UI > Channel tabs, the page opens normally
+  and says so. TV: holding OK on a channel opens their chat (instead of refreshing).
+
+Changed
+- Version numbers now carry on from Xtra5, which Xtra5s started from (Xtra5 1.48.1): the first
+  Xtra5s version is 1.49.0, and every earlier Xtra5s version in this changelog moved up by 49
+  in the middle number (1.0.0 is now 1.49.0, 1.14.0 is now 1.63.0). Releases already
+  published keep their old names.
+========================================
+Xtra5s 1.63.0 (2026-11-18)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
 New
@@ -22,7 +37,7 @@ Behind the scenes
 - AutoRefreshSettings / AutoRefreshPreference (used straight from ui_preferences.xml, no code
   hook). Test for the switch list.
 ========================================
-Xtra5s 1.13.0 (2026-11-18)
+Xtra5s 1.62.0 (2026-11-18)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
 New
@@ -36,7 +51,7 @@ Behind the scenes
 - BotEmotes: reuses Xtra's 7TV / BTTV / FFZ and user emote loaders; the channel's Twitch emotes
   and the global set come from Twitch's GraphQL. Tests for emote matching and the Twitch reply.
 ========================================
-Xtra5s 1.12.0 (2026-11-18)
+Xtra5s 1.61.0 (2026-11-18)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
 New
@@ -58,7 +73,7 @@ Behind the scenes
 - PlayerFragment.xtra5PlayerState now also passes the channel being watched (same hook).
 - Tests for reading the three bots' lists, merging, searching and placeholders.
 ========================================
-Xtra5s 1.11.0 (2026-11-17)
+Xtra5s 1.60.0 (2026-11-17)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
 New
@@ -83,7 +98,7 @@ Behind the scenes
   settings provider, its permission and the Dual Stream intent filter. Hook list updated.
 - Added a test for the crash log.
 ========================================
-Xtra5s 1.10.1 (2026-11-17)
+Xtra5s 1.59.1 (2026-11-17)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
 Changed
@@ -94,7 +109,7 @@ Changed
 Behind the scenes
 - Added a test for the chapter time format.
 ========================================
-Xtra5s 1.10.0 (2026-11-17)
+Xtra5s 1.59.0 (2026-11-17)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
 Changed
@@ -104,16 +119,16 @@ Changed
   button. Pause, volume, quality, swap, replace, watch only this and fullscreen stay.
 - Xtra5s Companion now copies your Xtra5s settings and login every time it opens, also from its
   own icon, so the two apps stay the same.
-- Rolled back the Dual Stream flicker attempts: the chat's own message copy (1.7.4), videos
-  drawn in the app window (1.7.5), the battery label change (1.7.6) and the full-screen
-  redraws (1.8.1, 1.8.2). The normal chat is back to how it was before them.
+- Rolled back the Dual Stream flicker attempts: the chat's own message copy (1.56.4), videos
+  drawn in the app window (1.56.5), the battery label change (1.56.6) and the full-screen
+  redraws (1.57.1, 1.57.2). The normal chat is back to how it was before them.
 
 Fixed
 - Dual Stream in split screen: Watch said "Couldn't open Xtra5s Companion". Since Android 14
   another app only opens for requests it has declared; Companion now declares Dual Stream's,
   so Watch can open it next to Xtra5s.
 ========================================
-Xtra5s 1.9.1 (2026-11-17)
+Xtra5s 1.58.1 (2026-11-17)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
 Changed
@@ -127,7 +142,7 @@ Fixed
 - TV: the player's own "10" rewind / fast-forward buttons no longer show underneath the big
   skip animation when skipping with Left / Right; they come back as it fades.
 ========================================
-Xtra5s 1.9.0 (2026-11-16)
+Xtra5s 1.58.0 (2026-11-16)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
 New
@@ -144,16 +159,16 @@ New
   channels also open there, as it waits for them to go live). Without Companion, the Dual
   Stream tab has a button to get it.
 ========================================
-Xtra5s 1.8.2 (2026-11-16)
+Xtra5s 1.57.2 (2026-11-16)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
 Fixed
-- Dual Stream (experiment): redrawing the whole screen when a chat changes (1.8.1) made the
+- Dual Stream (experiment): redrawing the whole screen when a chat changes (1.57.1) made the
   flicker to old pictures less chaotic but didn't stop it, so the whole screen is now redrawn
   on every frame (up to 60 a second) while Dual Stream is on screen. Uses more battery in Dual
   Stream; stops in the background. The normal player is unchanged.
 ========================================
-Xtra5s 1.8.1 (2026-11-16)
+Xtra5s 1.57.1 (2026-11-16)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
 Fixed
@@ -163,7 +178,7 @@ Fixed
   that changed. Slightly more drawing work while the chats are busy; the normal player is
   unchanged.
 ========================================
-Xtra5s 1.8.0 (2026-11-16)
+Xtra5s 1.57.0 (2026-11-16)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
 New
@@ -171,16 +186,16 @@ New
   bottom-right corner of that channel's profile picture. Offline channels look as before. It
   is checked every time you open the tab (the last known status shows until the check is back).
 ========================================
-Xtra5s 1.7.6 (2026-11-16)
+Xtra5s 1.56.6 (2026-11-16)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
 Fixed
 - Dual Stream: another attempt at the chats flickering to old, frozen pictures: the battery
-  percentage (added in 1.7.0, when the flicker started) no longer floats on its own raised
+  percentage (added in 1.56.0, when the flicker started) no longer floats on its own raised
   layer, which can confuse which parts of the screen Android redraws on some phones. It is
   still drawn on top.
 ========================================
-Xtra5s 1.7.5 (2026-11-16)
+Xtra5s 1.56.5 (2026-11-16)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
 Fixed
@@ -190,7 +205,7 @@ Fixed
   inside the app's own window. (Slightly more GPU work per video; the normal player is
   unchanged.)
 ========================================
-Xtra5s 1.7.4 (2026-11-16)
+Xtra5s 1.56.4 (2026-11-16)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
 Fixed
@@ -207,17 +222,17 @@ Behind the scenes
   into, nothing is published (as before) and it gets fixed by hand. Builds where this happened
   say so in their changelog entry.
 ========================================
-Xtra5s 1.7.3 (2026-11-16)
+Xtra5s 1.56.3 (2026-11-16)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
 Changed
 - Chat scrolling is back to official Xtra's own behaviour: the extra code that tried to keep
-  the chat's position when it re-draws (1.4.4, 1.7.1) and after a long-press (1.4.3) is gone,
+  the chat's position when it re-draws (1.53.4, 1.56.1) and after a long-press (1.53.3) is gone,
   as it could make the chat jump back to earlier messages. Kept: long-press highlighting
   recolours only that chatter's messages (no full re-draw), and a long-press can't drag the
   chat after the buzz.
 ========================================
-Xtra5s 1.7.2 (2026-11-16)
+Xtra5s 1.56.2 (2026-11-16)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
 Fixed
@@ -225,7 +240,7 @@ Fixed
   the video (no controls popping up, no pressed highlight). A plain tap there still shows the
   controls.
 ========================================
-Xtra5s 1.7.1 (2026-11-16)
+Xtra5s 1.56.1 (2026-11-16)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
 Fixed
@@ -236,7 +251,7 @@ Fixed
   it keeps the very message you were looking at in place, even as old messages drop off the
   top. (Normal player and Dual Stream.)
 ========================================
-Xtra5s 1.7.0 (2026-11-16)
+Xtra5s 1.56.0 (2026-11-16)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
 New
@@ -250,7 +265,7 @@ Fixed
   longer opens Replace (and holding there doesn't start the volume slide): that strip is left
   to Android. Android still needs a first swipe to show the bar in fullscreen, as in the player.
 ========================================
-Xtra5s 1.6.1 (2026-11-16)
+Xtra5s 1.55.1 (2026-11-16)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
 Fixed
@@ -258,7 +273,7 @@ Fixed
   are now one entry, kept in the order you watched last and moved to the top. Duplicates
   already in the list are merged.
 ========================================
-Xtra5s 1.6.0 (2026-11-16)
+Xtra5s 1.55.0 (2026-11-16)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
 New
@@ -273,14 +288,14 @@ Changed
   rotation while the popup is open). The Replace popup shows the stream it replaces.
 - The Replace button now has a TV icon (its old icon is the new Swap button).
 ========================================
-Xtra5s 1.5.4 (2026-11-16)
+Xtra5s 1.54.4 (2026-11-16)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
 Fixed
 - Side-By-Side "+" and Replace popups: the channel name is now centred vertically in its box
   (it sat too low).
 ========================================
-Xtra5s 1.5.3 (2026-11-16)
+Xtra5s 1.54.3 (2026-11-16)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
 Fixed
@@ -290,7 +305,7 @@ Fixed
   popup puts Left above Right, each box the popup's full width (it scrolls if the screen is
   short); TVs and wide screens keep them side by side.
 ========================================
-Xtra5s 1.5.2 (2026-11-16)
+Xtra5s 1.54.2 (2026-11-16)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
 Changed
@@ -304,14 +319,14 @@ Behind the scenes
   qualities, highlight colours, users and groups). If either fails, nothing is published and
   you stay on the last good version.
 ========================================
-Xtra5s 1.5.1 (2026-11-15)
+Xtra5s 1.54.1 (2026-11-15)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
 Changed
 - Channel and game pages: the banner sliding away while scrolling is back to how it was before
-  1.4.2 (that change made it worse).
+  1.53.2 (that change made it worse).
 ========================================
-Xtra5s 1.5.0 (2026-11-15)
+Xtra5s 1.54.0 (2026-11-15)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
 New
@@ -326,14 +341,14 @@ Changed
   loud, 50% about half (before, low settings were much louder than their number). Your saved
   volume stays the same number.
 ========================================
-Xtra5s 1.4.5 (2026-11-15)
+Xtra5s 1.53.5 (2026-11-15)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
 Fixed
 - Side-By-Side hold-and-slide volume: the video's white "pressed" highlight no longer stays on
   after you let go; it clears as soon as the volume slide starts.
 ========================================
-Xtra5s 1.4.4 (2026-11-15)
+Xtra5s 1.53.4 (2026-11-15)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
 Fixed
@@ -341,7 +356,7 @@ Fixed
   Settings) no longer nudges the chat: at the bottom it stays at the bottom, scrolled up the
   same message stays in the same spot.
 ========================================
-Xtra5s 1.4.3 (2026-11-15)
+Xtra5s 1.53.3 (2026-11-15)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
 Fixed
@@ -350,7 +365,7 @@ Fixed
   chat is put back: at the bottom it carries on following new messages, scrolled up it stays
   exactly where you were. (Normal player and Side-By-Side.)
 ========================================
-Xtra5s 1.4.2 (2026-11-15)
+Xtra5s 1.53.2 (2026-11-15)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
 Fixed
@@ -359,7 +374,7 @@ Fixed
 - Channel pages: scrolling a tab whose list loaded later (e.g. Videos) no longer hides the
   tabs along with the banner; the top bar and tabs always stay.
 ========================================
-Xtra5s 1.4.1 (2026-11-15)
+Xtra5s 1.53.1 (2026-11-15)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
 Changed
@@ -373,7 +388,7 @@ Fixed
   only their messages on screen change colour. At the bottom the chat keeps following new
   messages; scrolled up, it stays where you are. (Normal player and Side-By-Side.)
 ========================================
-Xtra5s 1.4.0 (2026-11-15)
+Xtra5s 1.53.0 (2026-11-15)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
 New
@@ -385,7 +400,7 @@ Fixed
 - Side-By-Side on narrow screens (phones): a video's controls now wrap onto two rows (volume
   on top, buttons below) instead of cutting off the last buttons and squashing the slider.
 ========================================
-Xtra5s 1.3.0 (2026-11-15)
+Xtra5s 1.52.0 (2026-11-15)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
 New
@@ -399,7 +414,7 @@ Fixed
 - Side-By-Side: long-pressing an emote while that side's message box is hidden now shows the
   message box with the emote in it (as in the normal player).
 ========================================
-Xtra5s 1.2.0 (2026-11-15)
+Xtra5s 1.51.0 (2026-11-15)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
 New
@@ -417,14 +432,14 @@ Fixed
   50% about half). Before, low settings were much louder than their number and the bottom of
   the slider jumped up quickly.
 ========================================
-Xtra5s 1.1.1 (2026-11-15)
+Xtra5s 1.50.1 (2026-11-15)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
 Fixed
 - Restoring settings exported from Xtra5 no longer points the updater at Xtra5: Xtra5s keeps
   updating from its own releases.
 ========================================
-Xtra5s 1.1.0 (2026-11-15)
+Xtra5s 1.50.0 (2026-11-15)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
 New
@@ -449,7 +464,7 @@ Fixed
 - Side-By-Side chats always disconnect in the background, even with "Keep chat open" on (that
   setting is for the normal player).
 ========================================
-Xtra5s 1.0.0 (2026-11-15)
+Xtra5s 1.49.0 (2026-11-15)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
 New
