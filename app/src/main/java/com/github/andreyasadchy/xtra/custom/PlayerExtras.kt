@@ -14,8 +14,8 @@ import com.github.andreyasadchy.xtra.ui.settings.SettingsActivity
 
 /**
  * Xtra5 custom: buttons in the player's top-right controls, part of the controls (they show and
- * hide with them): Highlighted users (after the quality cog) and Settings (just before the ⋮
- * menu), so neither needs the video minimized.
+ * hide with them): Chat commands (Xtra5s, "!": see BotCommands), Highlighted users (after the
+ * quality cog) and Settings (just before the ⋮ menu), so none needs the video minimized.
  *
  * Kept in its own package so upstream Xtra updates can be merged without conflicts.
  * Started from UpstreamUpdates.onMainActivityCreate (no extra upstream hook).
@@ -28,6 +28,7 @@ object PlayerExtras {
                 if (f is PlayerFragment) {
                     addSettingsButton(activity, v)
                     addHighlightsButton(activity, v)
+                    addCommandsButton(activity, f, v)
                 }
             }
         }, true)
@@ -53,6 +54,37 @@ object PlayerExtras {
             ?: LinearLayout.LayoutParams(size, size)
         val quality = row.findViewById<View>(R.id.quality)
         val index = quality?.let { row.indexOfChild(it) + 1 } ?: row.indexOfChild(row.findViewById(R.id.xtra5_player_settings))
+        row.addView(button, index.coerceIn(0, row.childCount), params)
+    }
+
+    /** Xtra5s: the channel's chat-bot commands ("!"), just before Highlighted users. */
+    private fun addCommandsButton(activity: MainActivity, player: PlayerFragment, view: View) {
+        val row = view.findViewById<LinearLayout>(R.id.topRightLayout) ?: return
+        if (row.findViewById<View>(R.id.xtra5s_player_commands) != null) return
+        val template = row.findViewById<ImageButton>(R.id.menu)
+        val button = ImageButton(row.context).apply {
+            id = R.id.xtra5s_player_commands
+            contentDescription = "Chat commands"
+            setImageResource(R.drawable.xtra5s_commands)
+            background = template?.background?.constantState?.newDrawable()?.mutate()
+            imageTintList = template?.imageTintList
+            scaleType = template?.scaleType ?: scaleType
+            template?.let { setPadding(it.paddingLeft, it.paddingTop, it.paddingRight, it.paddingBottom) }
+            setOnClickListener {
+                val state = player.xtra5PlayerState()
+                val login = state.channelLogin
+                if (login.isNullOrBlank()) {
+                    android.widget.Toast.makeText(activity, "No channel to look up", android.widget.Toast.LENGTH_SHORT).show()
+                } else {
+                    BotCommands.show(activity, login, state.isLiveStream) { command -> BotCommands.insertInto(player.view, command) }
+                }
+            }
+        }
+        val size = (40 * row.resources.displayMetrics.density).toInt()
+        val params = template?.layoutParams?.let { LinearLayout.LayoutParams(it as LinearLayout.LayoutParams) }
+            ?: LinearLayout.LayoutParams(size, size)
+        val highlights = row.findViewById<View>(R.id.xtra5_player_highlights)
+        val index = highlights?.let { row.indexOfChild(it) } ?: row.childCount
         row.addView(button, index.coerceIn(0, row.childCount), params)
     }
 

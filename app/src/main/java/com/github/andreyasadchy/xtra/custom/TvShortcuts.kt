@@ -72,6 +72,8 @@ object TvShortcuts {
         val type: String? = null,
         /** VOD chapter start times (ms). */
         val chapters: List<Long> = emptyList(),
+        /** The channel being watched (Xtra5s: chat commands). */
+        val channelLogin: String? = null,
     )
 
     /** Keys whose ACTION_DOWN we consumed, so their ACTION_UP is consumed too. */

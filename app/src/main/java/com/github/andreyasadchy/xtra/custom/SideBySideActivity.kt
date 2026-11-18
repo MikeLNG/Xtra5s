@@ -70,7 +70,7 @@ import kotlinx.coroutines.launch
  *
  * Tap (or OK on) a video to show its controls: a big pause / play in the middle (playing again
  * jumps to live), and mute, volume, quality, chat, message box (while chats show; hidden by
- * default), swap, replace (another channel on this side), reload, watch only this (in the
+ * default), chat commands (BotCommands), swap, replace (another channel on this side), reload, watch only this (in the
  * normal player) and fullscreen.
  * Swipe down on a video = replace it; swipe up = keep only that stream, in the normal player.
  * Touch and hold a video, then slide left / right: that video's volume (its width = 0-100%),
@@ -647,6 +647,9 @@ class SideBySideActivity : AppCompatActivity() {
             }
         }
         val chat = button(R.drawable.xtra5s_chat, "Show / hide chats") { toggleChat() }
+        val commands = button(R.drawable.xtra5s_commands, "Chat commands") {
+            BotCommands.show(this, pane.side.login, pane.stream != null) { command -> BotCommands.insertInto(pane.chat, command) }
+        }
         pane.input = button(R.drawable.xtra5s_keyboard, "Show / hide message box") { toggleInput(pane) }
         pane.swap = button(R.drawable.xtra5s_swap, "Swap the two streams") { swapStreams() }
         val replace = button(R.drawable.xtra5s_tv, "Replace this channel") { replace(pane) }
@@ -657,7 +660,7 @@ class SideBySideActivity : AppCompatActivity() {
         val bottom = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL or Gravity.END }
         pane.controls.addView(top, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
         pane.controls.addView(bottom, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
-        val buttons = listOf(pane.qualitySpinner, chat, pane.input, pane.swap, replace, reload, only, pane.expand)
+        val buttons = listOf(pane.qualitySpinner, chat, pane.input, commands, pane.swap, replace, reload, only, pane.expand)
         // One row when the video is wide enough, else volume on one row and the buttons below it.
         var twoRows: Boolean? = null
         fun place(narrow: Boolean) {

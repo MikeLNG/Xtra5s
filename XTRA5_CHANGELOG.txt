@@ -1,6 +1,28 @@
 Xtra5s changelog (newest first)
 
 ========================================
+Xtra5s 1.12.0 (2026-11-18)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+New
+- Chat commands: a "!" button in the player's top-right controls (and in each Dual Stream
+  video's controls) opens a table of the channel's chat-bot commands with their replies, from
+  Nightbot, StreamElements and Fossabot. Scroll it, or search by command or reply (e.g. "ram"
+  finds !specs). Aliases show under each command; bot placeholders like $(user) or [count]
+  are dimmed, since the bot fills those in.
+  - Only commands everyone can use (not switched-off, hidden or mod / sub-only ones); commands
+    that only work live or only offline follow the stream.
+  - Tap a command: it goes in your message box, ready to send (copied instead if chat isn't
+    open). Long-press: copies the reply.
+  - Several bots on one channel are merged, one row per command. The footer says which bots
+    the list came from. Lists are kept for 10 minutes.
+  - Moobot and channels' own bots have no public list, so they aren't covered. Nightbot lists
+    can be old if a channel stopped using Nightbot.
+
+Behind the scenes
+- PlayerFragment.xtra5PlayerState now also passes the channel being watched (same hook).
+- Tests for reading the three bots' lists, merging, searching and placeholders.
+========================================
 Xtra5s 1.11.0 (2026-11-17)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 

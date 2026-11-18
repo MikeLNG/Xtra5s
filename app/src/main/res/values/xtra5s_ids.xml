@@ -3,4 +3,6 @@
 <resources>
     <item name="xtra5s_sbs_chat_left" type="id" />
     <item name="xtra5s_sbs_chat_right" type="id" />
+    <!-- Chat commands button in the player -->
+    <item name="xtra5s_player_commands" type="id" />
 </resources>

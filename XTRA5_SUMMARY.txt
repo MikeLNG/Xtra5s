@@ -89,6 +89,10 @@ Browsing
 
 ========================================
 Extras
+- Chat commands: the ! button shows the channel's chat-bot commands and their replies (from
+  Nightbot, StreamElements and Fossabot) in a big table you can scroll and search, so you can
+  see a streamer's !specs or !socials without asking in chat. Tap one to put it in your
+  message box.
 - Xtra5s Companion: a second, separate copy of the app that installs next to Xtra5s, with
   its own settings and login. Useful for running two streams as two apps (for example in
   split screen). Each copy updates itself.

@@ -112,6 +112,59 @@ class Xtra5sLogicTest {
         assertEquals("8m 40s", VodChapters.lengthText(8 * 60 + 40))
     }
 
+    // ---- Chat commands (bots' public lists) ----
+
+    @Test
+    fun botCommandsParsed() {
+        val nightbot = """{"_total":3,"status":200,"commands":[
+            {"name":"!specs","message":"13900k | 4090","userLevel":"everyone","count":5},
+            {"name":"!modonly","message":"secret","userLevel":"moderator"},
+            {"name":"xd","message":"moon2M [user] [[count]]","userLevel":"everyone"}]}"""
+        val nb = BotCommands.parseNightbot(nightbot)
+        assertEquals(listOf("!specs", "xd"), nb.map { it.name })
+
+        val se = """[
+            {"command":"pc","aliases":["specs","rig"],"reply":"5800X3D, 32GB","enabled":true,"hidden":false,"accessLevel":100,"enabledOnline":true,"enabledOffline":true},
+            {"command":"old","reply":"gone","enabled":false,"hidden":false,"accessLevel":100},
+            {"command":"hide","reply":"x","enabled":true,"hidden":true,"accessLevel":100},
+            {"command":"subs","reply":"x","enabled":true,"hidden":false,"accessLevel":250},
+            {"command":"offlineonly","reply":"x","enabled":true,"hidden":false,"accessLevel":100,"enabledOnline":false,"enabledOffline":true}]"""
+        assertEquals(listOf("!pc"), BotCommands.parseStreamElements(se, live = true).map { it.name })
+        assertEquals(listOf("!pc", "!offlineonly"), BotCommands.parseStreamElements(se, live = false).map { it.name })
+        assertEquals(listOf("!specs", "!rig"), BotCommands.parseStreamElements(se, live = true)[0].aliases)
+
+        val fossa = """{"roles":[],"commands":[
+            {"name":"cat","response":"meow","aliases":["kitty"],"role_ids":[],"enabled_online":true,"enabled_offline":true},
+            {"name":"mods","response":"x","aliases":[],"role_ids":["CAEQERoCNzc"],"enabled_online":true,"enabled_offline":true},
+            {"name":"weather","response":"$(weather)","aliases":[],"role_ids":[],"enabled_online":false,"enabled_offline":true},
+            {"name":"empty","response":"","aliases":[],"role_ids":[],"enabled_online":true,"enabled_offline":true}]}"""
+        assertEquals(listOf("!cat"), BotCommands.parseFossabot(fossa, live = true).map { it.name })
+        assertEquals(listOf("!cat", "!weather"), BotCommands.parseFossabot(fossa, live = false).map { it.name })
+    }
+
+    @Test
+    fun botCommandsMergedAndSearched() {
+        val c = { name: String, reply: String, bot: String -> BotCommands.Command(name, emptyList(), reply, bot) }
+        val merged = BotCommands.merge(listOf(
+            listOf(c("!pc", "fossa pc", "F"), c("!Zoo", "z", "F")),
+            listOf(c("!PC", "se pc", "S"), c("!cat", "meow", "S")),
+            listOf(c("xd", "lol", "N")),
+        ))
+        // One row per name (earlier bots win), A-Z ignoring "!".
+        assertEquals(listOf("!cat", "!pc", "xd", "!Zoo"), merged.map { it.name })
+        assertEquals("fossa pc", merged[1].reply)
+        assertEquals(listOf("!cat"), BotCommands.search(merged, "MEOW").map { it.name })
+        assertEquals(listOf("!pc"), BotCommands.search(merged, "pc").map { it.name })
+        assertEquals(merged, BotCommands.search(merged, "  "))
+    }
+
+    @Test
+    fun botPlaceholdersFound() {
+        val text = "Hi $(user), uptime [twitch [channel]] count \${count} [1/2]"
+        val found = BotCommands.placeholders(text).map { text.substring(it) }
+        assertEquals(listOf("$(user)", "[twitch [channel]]", "\${count}"), found)
+    }
+
     // ---- Crash log ----
 
     @Test
