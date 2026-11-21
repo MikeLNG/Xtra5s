@@ -1,6 +1,20 @@
 Xtra5s changelog (newest first)
 
 ========================================
+Xtra5s 1.65.0 (2026-11-21)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+New
+- Hold-and-drag seek on VODs: touch and hold the bottom strip of the video (about the bottom
+  quarter, above the seek bar; a short buzz), then drag left to rewind or right to fast-forward.
+  - Steps of 10s, 20s, 30s, 45s, 1m, 1m 30s, 2m, 3m, 5m, 7m, 10m, 15m and 20m, with a tick at
+    each; the first steps are close together, so small jumps are easy, and 20 minutes is about
+    half the video's width away. Never past the start or end.
+  - The video keeps playing while you drag. A bubble shows the jump and where it lands
+    ("-30s -> 54:45"), and the seek bar's marker waits there in gold.
+  - Let go to jump. Drag back to where you started first to cancel.
+  - Holding anywhere else on the video is still the volume slide. Not for live streams or clips.
+========================================
 Xtra5s 1.64.0 (2026-11-18)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 

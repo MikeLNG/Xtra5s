@@ -32,6 +32,7 @@ import kotlin.math.pow
  *  - Hold-and-slide: with the video full size, touch and hold it (a short buzz), then slide left /
  *    right: half the video's width is 0 to 100%, with a volume bar in the middle while sliding.
  *    The same volume as the player's Volume button, saved when you let go.
+ *    On VODs, holding the bottom strip of the video seeks instead (HoldSeek).
  *
  * Kept in its own package so upstream Xtra updates can be merged without conflicts.
  * Upstream hooks: the volume lines in ExoPlayerService / MediaPlayerService / ExoPlayerFragment /
@@ -65,6 +66,8 @@ object SoloVolume {
     private val handler by lazy { Handler(Looper.getMainLooper()) }
     private var pending: Runnable? = null
     private var adjusting = false
+    /** Xtra5s: this hold is the VOD seek (bottom strip of the video, see HoldSeek), not the volume. */
+    private var seeking = false
     private var passing = false
     private var downX = 0f
     private var downY = 0f
@@ -94,6 +97,10 @@ object SoloVolume {
                 return false
             }
             MotionEvent.ACTION_MOVE -> {
+                if (adjusting && seeking) {
+                    HoldSeek.move(player, event.rawX)
+                    return true
+                }
                 if (adjusting) {
                     val layout = videoLayout(player) ?: view
                     val change = ((event.rawX - startX) / (layout.width / 2f).coerceAtLeast(1f) * 100).toInt()
@@ -112,6 +119,12 @@ object SoloVolume {
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 cancelPending()
+                if (adjusting && seeking) {
+                    adjusting = false
+                    seeking = false
+                    HoldSeek.end(player)
+                    return true
+                }
                 if (adjusting) {
                     adjusting = false
                     view.context.prefs().edit { putInt(C.PLAYER_VOLUME, volume) }
@@ -147,6 +160,12 @@ object SoloVolume {
         }
         view.isPressed = false
         adjusting = true
+        seeking = HoldSeek.applies(player, downY)
+        if (seeking) {
+            view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+            HoldSeek.begin(player, downX)
+            return
+        }
         startX = downX
         startVolume = view.context.prefs().getInt(C.PLAYER_VOLUME, 100).coerceIn(0, 100)
         volume = startVolume

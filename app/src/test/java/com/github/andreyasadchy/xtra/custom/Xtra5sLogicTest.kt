@@ -202,6 +202,27 @@ class Xtra5sLogicTest {
         assertEquals("11 of 13 on", AutoRefreshSettings.summary(11, 13))
     }
 
+    // ---- Hold-and-drag seek (VODs) ----
+
+    @Test
+    fun holdSeekSteps() {
+        assertEquals(0, HoldSeek.jumpFor(0f))
+        assertEquals(0, HoldSeek.jumpFor(-0.03f)) // back near the start = cancel
+        assertEquals(-10, HoldSeek.jumpFor(-0.05f))
+        assertEquals(10, HoldSeek.jumpFor(0.05f))
+        assertEquals(1200, HoldSeek.jumpFor(0.95f))
+        assertEquals(-1200, HoldSeek.jumpFor(-3f)) // never more than 20 minutes
+        // Longer drags never jump less, and every step can be reached.
+        val jumps = (0..200).map { HoldSeek.jumpFor(it / 200f) }
+        assertEquals(jumps, jumps.sorted())
+        assertEquals(HoldSeek.STEPS.toList(), jumps.filter { it > 0 }.distinct())
+        // The first steps are close together: 30s within the first sixth of the drag.
+        assertTrue(HoldSeek.jumpFor(1f / 6) >= 30)
+        assertEquals("30s", HoldSeek.label(-30))
+        assertEquals("1m 30s", HoldSeek.label(90))
+        assertEquals("20m", HoldSeek.label(1200))
+    }
+
     // ---- Crash log ----
 
     @Test

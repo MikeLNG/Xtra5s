@@ -129,6 +129,7 @@
         <item># Video player (touch)</item>
         <item>- ! button (top right): the channel\'s chat-bot commands (Nightbot, StreamElements, Fossabot) and their replies, in a table you can scroll and search, with emotes shown as in chat. Tap a command: puts it in your message box (or copies it if chat isn\'t open). Long-press: copies the reply. Also in each Dual Stream video\'s controls.</item>
         <item>- Touch and hold the video (a short buzz), then slide left / right: changes the volume (half the video\'s width is 0 to 100%), with a volume bar while you slide. Same volume as the Volume button.</item>
+        <item>- VODs: touch and hold the bottom strip of the video (a short buzz), then drag left / right: rewinds / fast-forwards in steps from 10 seconds to 20 minutes (further = bigger jump). The video keeps playing; a bubble shows the jump and the gold marker waits on the seek bar. Let go to jump; drag back to the start to cancel.</item>
         <item># Minimized video</item>
         <item>- Tap a paused mini player: resumes it.</item>
         <item>- [TV] Back: closes the video.</item>
