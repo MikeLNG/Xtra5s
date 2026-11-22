@@ -49,10 +49,10 @@ object HoldSeek {
     private const val MID_LAST = 14 // 20m
 
     /**
-     * Where step [index] starts, as a part (0-1) of the room before the edge zone, with [left]
-     * seconds before the start / end: the fine steps (2s to 1m) share the first half evenly,
-     * 1m 30s to 20m the next 30%, and the bigger steps that fit before the start / end the rest.
-     * Null for a step that can't be reached (past the start / end).
+     * Where step [index] starts, as a part (0-1) of the drag range (half the screen's width),
+     * with [left] seconds before the start / end: the fine steps (2s to 1m) share the first half
+     * evenly, 1m 30s to 20m the next 30%, and the bigger steps that fit before the start / end
+     * the rest. Null for a step that can't be reached (past the start / end).
      */
     internal fun threshold(index: Int, left: Long): Float? {
         if (index < 0 || index >= STEPS.size || STEPS[index] >= left) return null
@@ -63,18 +63,19 @@ object HoldSeek {
     }
 
     /**
-     * The jump in seconds (negative = back) for a drag of [dx] pixels, with [room] pixels before
-     * the edge zone on that side and [dead] pixels of cancel zone, when [backSeconds] /
-     * [forwardSeconds] are left before the start / end. In the edge zone: exactly what's left
-     * (Start / End); before it, never further than the biggest step that fits.
+     * The jump in seconds (negative = back) for a drag of [dx] pixels over a drag range of
+     * [range] pixels (the same wherever the drag starts), with [dead] pixels of cancel zone, when
+     * [backSeconds] / [forwardSeconds] are left before the start / end. Start / End only when the
+     * finger is [inEdgeZone] (the last pixels of the screen on that side) after dragging past the
+     * fine steps; otherwise never further than the biggest step that fits.
      */
-    internal fun jumpFor(dx: Float, room: Float, dead: Float, backSeconds: Long, forwardSeconds: Long): Long {
+    internal fun jumpFor(dx: Float, range: Float, dead: Float, inEdgeZone: Boolean, backSeconds: Long, forwardSeconds: Long): Long {
         val distance = abs(dx)
         if (distance < dead) return 0
         val left = if (dx < 0) backSeconds else forwardSeconds
         if (left <= 0) return 0
-        val jump = if (distance >= room) left else {
-            val part = distance / room.coerceAtLeast(1f)
+        val part = distance / range.coerceAtLeast(1f)
+        val jump = if (inEdgeZone && part >= 0.5f) left else {
             var found = 0L
             for (i in STEPS.indices) {
                 val t = threshold(i, left) ?: break
@@ -94,12 +95,6 @@ object HoldSeek {
         val index = STEPS.indexOfFirst { it == size }.takeIf { it >= 0 } ?: return 0f
         return ((threshold(index, left) ?: 0f) * 0.9f).coerceIn(0.04f, 0.9f)
     }
-
-    /**
-     * Pixels before the edge zone when dragging from [startX] towards an edge [toEdge] pixels
-     * away. Starting close to that edge shrinks the edge zone, so the steps still fit.
-     */
-    internal fun room(toEdge: Float): Float = toEdge - minOf(EDGE_PX, toEdge * 0.4f)
 
     /** "2s", "1m 30s", "20m", "1h 30m". */
     internal fun label(seconds: Long): String {
@@ -150,9 +145,9 @@ object HoldSeek {
         val layout = videoLayout(player) ?: return
         val dx = rawX - startX
         val screen = layout.rootView.width.takeIf { it > 0 } ?: layout.resources.displayMetrics.widthPixels
-        val toEdge = if (dx < 0) startX else screen - startX
+        val inEdgeZone = if (dx < 0) rawX <= EDGE_PX else rawX >= screen - EDGE_PX
         val dead = DEAD_ZONE_DP * layout.resources.displayMetrics.density
-        val newJump = jumpFor(dx, room(toEdge), dead, startPosition / 1000, (duration - startPosition) / 1000)
+        val newJump = jumpFor(dx, screen / 2f, dead, inEdgeZone, startPosition / 1000, (duration - startPosition) / 1000)
         if (newJump != jump) {
             jump = newJump
             layout.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)

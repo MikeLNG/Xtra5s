@@ -1,6 +1,17 @@
 Xtra5s changelog (newest first)
 
 ========================================
+Xtra5s 1.70.1 (2026-11-22)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+Fixed
+- VOD hold-and-drag seek: rewinding went 2s and then straight to the start. 1.70.0 measured the
+  drag from your finger to the screen's edge, so holding on the left left almost no room for the
+  steps. Now the steps always cover half the screen's width of drag, wherever you start: the
+  first half of that (a quarter of the screen) is 2s to 1m, then 1m 30s to 20m, then the bigger
+  steps. Start / End only happens with your finger in the last ~200 pixels of the screen and
+  after dragging past the fine steps; starting near the edge just gives the steps that fit.
+========================================
 Xtra5s 1.70.0 (2026-11-22)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 

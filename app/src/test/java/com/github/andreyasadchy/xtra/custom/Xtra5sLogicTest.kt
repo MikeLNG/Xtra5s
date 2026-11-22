@@ -207,9 +207,9 @@ class Xtra5sLogicTest {
     @Test
     fun holdSeekSteps() {
         val long = 100_000L // far from both ends
-        val room = 1000f
+        val range = 1000f // half of a 2000 px wide screen
         val dead = 40f
-        fun j(dx: Float) = HoldSeek.jumpFor(dx, room, dead, long, long)
+        fun j(dx: Float, edge: Boolean = false) = HoldSeek.jumpFor(dx, range, dead, edge, long, long)
         assertEquals(0L, j(0f))
         assertEquals(0L, j(-30f)) // back near the start = cancel
         assertEquals(-2L, j(-45f))
@@ -221,19 +221,22 @@ class Xtra5sLogicTest {
         assertEquals(90L, j(510f)) // the second part starts at half
         assertEquals(1200L, j(790f)) // 20m just before 80%
         assertTrue(j(900f) in 1801L until long) // the hours in the last 20%
-        assertEquals(long, j(1000f)) // the edge zone: End
-        assertEquals(-long, j(-5000f)) // the edge zone: Start
+        assertTrue(j(1500f) < long) // past the range but not at the screen's edge: no End
+        assertEquals(long, j(1500f, edge = true)) // in the edge zone: End
+        assertEquals(-long, j(-600f, edge = true)) // Start
+        // Rewinding from near the left: in the edge zone straight away, but no Start until the
+        // fine steps are passed - only the fine steps, as far as there's room.
+        assertEquals(-2L, j(-45f, edge = true))
+        assertEquals(-20L, j(-250f, edge = true))
+        assertEquals(-60L, j(-450f, edge = true))
         // Longer drags never jump less, and every step that fits can be reached.
         val jumps = (0..2000).map { j(it / 2f) }
         assertEquals(jumps, jumps.sorted())
-        assertEquals(HoldSeek.STEPS.filter { it < long }.toList() + long, jumps.filter { it > 0 }.distinct())
-        // Near the start: before the edge zone it stops at the biggest step that fits; never Start.
-        assertEquals(-30L, HoldSeek.jumpFor(-990f, room, dead, 40, long))
-        assertEquals(-40L, HoldSeek.jumpFor(-1000f, room, dead, 40, long))
-        assertEquals(0L, HoldSeek.jumpFor(-500f, room, dead, 0, long)) // at the very start: nothing to rewind
-        // The edge zone is the last 200 px, smaller when the drag starts near the edge.
-        assertEquals(800f, HoldSeek.room(1000f), 0.01f)
-        assertEquals(60f, HoldSeek.room(100f), 0.01f)
+        assertEquals(HoldSeek.STEPS.filter { it < long }.toList(), jumps.filter { it > 0 }.distinct())
+        // Near the start of the VOD: it stops at the biggest step that fits; Start only at the edge.
+        assertEquals(-30L, HoldSeek.jumpFor(-990f, range, dead, false, 40, long))
+        assertEquals(-40L, HoldSeek.jumpFor(-990f, range, dead, true, 40, long))
+        assertEquals(0L, HoldSeek.jumpFor(-500f, range, dead, false, 0, long)) // at the very start: nothing to rewind
         assertEquals(1f, HoldSeek.fill(-40, 40))
         assertTrue(HoldSeek.fill(2, long) < HoldSeek.fill(10, long))
         assertEquals("2s", HoldSeek.label(-2))
