@@ -1,6 +1,18 @@
 Xtra5s changelog (newest first)
 
 ========================================
+Xtra5s 1.67.0 (2026-11-22)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+Fixed
+- Updates: the update check now compares version numbers, so it only offers a release that is
+  actually newer than the installed version. Before, it offered whatever was uploaded after the
+  last check, so a version installed from a file (or a check made while the next version was
+  still being built) offered the same version again. When there's nothing newer, Settings >
+  Check for updates now says "You're on the latest version (Xtra5s 1.67.0)".
+- Updates from Settings > Check for updates could pick the other app's APK (Xtra5s vs Xtra5s
+  Companion). Now each app always installs its own, as the automatic check already did.
+========================================
 Xtra5s 1.66.0 (2026-11-22)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 

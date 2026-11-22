@@ -234,6 +234,20 @@ class Xtra5sLogicTest {
         assertEquals("2h", HoldSeek.label(7200))
     }
 
+    // ---- Update check ----
+
+    @Test
+    fun updateComparesVersions() {
+        assertEquals(listOf(1, 66, 0), UpdateCheck.parse("xtra5s-v1.66.0"))
+        assertNull(UpdateCheck.parse("latest"))
+        assertEquals(true, UpdateCheck.isNewer("xtra5s-v1.66.0", "1.65.0"))
+        assertEquals(false, UpdateCheck.isNewer("xtra5s-v1.65.0", "1.65.0")) // same version: no reinstall
+        assertEquals(false, UpdateCheck.isNewer("xtra5s-v1.14.0", "1.64.0")) // old numbering is older
+        assertEquals(true, UpdateCheck.isNewer("xtra5s-v1.66.1", "1.66.0"))
+        assertEquals(true, UpdateCheck.isNewer("xtra5s-v2.0.0", "1.99.9"))
+        assertNull(UpdateCheck.isNewer("latest", "1.66.0"))
+    }
+
     // ---- Crash log ----
 
     @Test

@@ -1082,7 +1082,7 @@ class MainViewModel(
                         obj.getValue("updated_at").jsonPrimitive.contentOrNull?.let {
                             Instant.parseOrNull(it)?.toEpochMilliseconds()?.takeIf { ms -> ms > 0 }
                         }?.let {
-                            if (it > lastChecked) {
+                            if (com.github.andreyasadchy.xtra.custom.UpdateCheck.offer(response, it > lastChecked)) { // Xtra5s custom: compare versions
                                 updateSize = obj["size"]?.jsonPrimitive?.longOrNull
                                 obj.getValue("browser_download_url").jsonPrimitive.contentOrNull
                             } else null

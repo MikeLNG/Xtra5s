@@ -314,12 +314,13 @@ class SettingsViewModel(
                         }
                     }
                     response["assets"]?.jsonArray?.find {
-                        it.jsonObject.getValue("content_type").jsonPrimitive.contentOrNull == "application/vnd.android.package-archive"
+                        it.jsonObject.getValue("content_type").jsonPrimitive.contentOrNull == "application/vnd.android.package-archive" &&
+                            com.github.andreyasadchy.xtra.custom.CompanionApp.isMyUpdate(applicationContext, it.jsonObject["name"]?.jsonPrimitive?.contentOrNull) // Xtra5s custom: Xtra5s / Companion APK
                     }?.jsonObject?.let { obj ->
                         obj.getValue("updated_at").jsonPrimitive.contentOrNull?.let {
                             Instant.parseOrNull(it)?.toEpochMilliseconds()?.takeIf { ms -> ms > 0 }
                         }?.let {
-                            if (it > lastChecked) {
+                            if (com.github.andreyasadchy.xtra.custom.UpdateCheck.offer(response, it > lastChecked)) { // Xtra5s custom: compare versions
                                 updateSize = obj["size"]?.jsonPrimitive?.longOrNull
                                 obj.getValue("browser_download_url").jsonPrimitive.contentOrNull
                             } else null

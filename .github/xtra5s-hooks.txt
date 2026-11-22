@@ -14,7 +14,7 @@
 2 app/src/main/java/com/github/andreyasadchy/xtra/ui/following/channels/FollowedChannelsViewModel.kt
 1 app/src/main/java/com/github/andreyasadchy/xtra/ui/game/GamePagerFragment.kt
 4 app/src/main/java/com/github/andreyasadchy/xtra/ui/main/MainActivity.kt
-1 app/src/main/java/com/github/andreyasadchy/xtra/ui/main/MainViewModel.kt
+2 app/src/main/java/com/github/andreyasadchy/xtra/ui/main/MainViewModel.kt
 1 app/src/main/java/com/github/andreyasadchy/xtra/ui/player/BasePlaybackService.kt
 2 app/src/main/java/com/github/andreyasadchy/xtra/ui/player/ExoPlayerFragment.kt
 13 app/src/main/java/com/github/andreyasadchy/xtra/ui/player/ExoPlayerService.kt
@@ -25,12 +25,12 @@
 1 app/src/main/java/com/github/andreyasadchy/xtra/ui/saved/SavedPagerFragment.kt
 1 app/src/main/java/com/github/andreyasadchy/xtra/ui/saved/bookmarks/BookmarksAdapter.kt
 1 app/src/main/java/com/github/andreyasadchy/xtra/ui/search/SearchPagerFragment.kt
-3 app/src/main/java/com/github/andreyasadchy/xtra/ui/settings/SettingsActivity.kt
-2 app/src/main/java/com/github/andreyasadchy/xtra/ui/settings/SettingsViewModel.kt
+4 app/src/main/java/com/github/andreyasadchy/xtra/ui/settings/SettingsActivity.kt
+4 app/src/main/java/com/github/andreyasadchy/xtra/ui/settings/SettingsViewModel.kt
 1 app/src/main/java/com/github/andreyasadchy/xtra/ui/view/AutoCompleteAdapter.kt
 1 app/src/main/java/com/github/andreyasadchy/xtra/util/C.kt
 8 app/src/main/java/com/github/andreyasadchy/xtra/util/chat/ChatAdapterUtils.kt
 11 app/src/main/res/xml/chat_preferences.xml
 3 app/src/main/res/xml/player_preferences.xml
 2 app/src/main/res/xml/root_preferences.xml
-3 app/src/main/res/xml/ui_preferences.xml
+5 app/src/main/res/xml/ui_preferences.xml

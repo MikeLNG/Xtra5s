@@ -566,7 +566,7 @@ class SettingsActivity : AppCompatActivity() {
                                 .setNegativeButton(getString(R.string.no), null)
                                 .show()
                         } else {
-                            Toast.makeText(requireContext(), R.string.no_updates_found, Toast.LENGTH_LONG).show()
+                            Toast.makeText(requireContext(), com.github.andreyasadchy.xtra.custom.UpdateCheck.noUpdateMessage(requireContext()), Toast.LENGTH_LONG).show() // Xtra5s custom
                         }
                     }
                 }
