@@ -1,6 +1,22 @@
 Xtra5s changelog (newest first)
 
 ========================================
+Xtra5s 1.69.0 (2026-11-22)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+New
+- The highlights panel (palette button in the player, or Settings) is now "Chat colors", with
+  two tabs: Users (what it opens on, as before) and Special messages. Special messages lists
+  the colors for subs and notices, first-time chatters, channel point rewards, cheers (bits),
+  mentions of you and bot messages, each opening the color picker with the chat updating live,
+  plus the cheer minimum and the bot accounts list. With room beside the chat it uses two
+  columns (Messages | Cheers and bots). Add user / New group only show on the Users tab.
+
+Changed
+- Tapping the video (normal player or Dual Stream) or the chat's messages while the message box
+  has the cursor takes the cursor out: it stops flashing and the keyboard closes. The message
+  box stays, with what you typed. The tap still does what it normally does.
+========================================
 Xtra5s 1.68.0 (2026-11-22)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 

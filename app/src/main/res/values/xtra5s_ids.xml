@@ -7,4 +7,6 @@
     <item name="xtra5s_player_commands" type="id" />
     <!-- Channels cards that open their chat on long-press -->
     <item name="xtra5s_channel_chat" type="id" />
+    <!-- Chat lists whose taps release the input cursor -->
+    <item name="xtra5s_chat_focus" type="id" />
 </resources>

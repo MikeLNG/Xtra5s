@@ -83,6 +83,7 @@ object SoloVolume {
         if (passing) return false
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
+                ChatInputFocus.release(view.context) // Xtra5s: tapping the video stops the input cursor
                 cancelPending()
                 adjusting = false
                 if (!player.xtra5PlayerState().isMaximized || overButton(player, event)) return false

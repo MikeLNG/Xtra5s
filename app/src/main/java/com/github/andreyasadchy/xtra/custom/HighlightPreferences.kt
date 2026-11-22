@@ -410,14 +410,129 @@ object HighlightDialogs {
             }
         }
         render()
+
+        // ---- Xtra5s: "Special messages" tab (the special message colors, cheer minimum, bots) ----
+        val special = column()
+        val specialScroll = ScrollView(ctx).apply {
+            setPadding(dp(ctx, 16), dp(ctx, 8), dp(ctx, 16), 0)
+            addView(special)
+            visibility = View.GONE
+        }
+        /** A setting row: icon, title and its current value underneath. */
+        fun settingRow(icon: String, title: String, value: String, onClick: () -> Unit) = LinearLayout(ctx).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            minimumHeight = dp(ctx, 52)
+            setPadding(dp(ctx, 4), 0, 0, 0)
+            background = selectableBackground(ctx)
+            isClickable = true
+            setOnClickListener { onClick() }
+            addView(TextView(ctx).apply { text = icon; gravity = Gravity.CENTER; setTextSize(TypedValue.COMPLEX_UNIT_SP, 18f) },
+                LinearLayout.LayoutParams(dp(ctx, 44), dp(ctx, 44)))
+            addView(LinearLayout(ctx).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(dp(ctx, 16), 0, dp(ctx, 8), 0)
+                addView(TextView(ctx).apply { text = title; setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f) })
+                addView(TextView(ctx).apply { text = value; setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f); alpha = 0.7f })
+            }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        }
+        lateinit var renderSpecial: () -> Unit
+        renderSpecial = {
+            special.removeAllViews()
+            fun colorRow(key: String, title: String): View {
+                val pick = {
+                    showColorPicker(ctx, title, "chatter", SpecialMessages.color(ctx, key)) { color ->
+                        SpecialMessages.setColor(ctx, key, color)
+                        ChatLive.refreshChat()
+                        renderSpecial()
+                    }
+                }
+                return row(SpecialMessages.color(ctx, key), title, pick, null, pick)
+            }
+            val messages = listOf(
+                colorRow(SpecialMessages.PREF_NOTICE, ctx.getString(R.string.xtra5_color_notice)),
+                colorRow(SpecialMessages.PREF_FIRST, ctx.getString(R.string.xtra5_color_first)),
+                colorRow(SpecialMessages.PREF_REWARD, ctx.getString(R.string.xtra5_color_reward)),
+                colorRow(SpecialMessages.PREF_MENTION, ctx.getString(R.string.xtra5_color_mention)),
+            )
+            val cheersAndBots = listOf(
+                colorRow(SpecialMessages.PREF_CHEER, ctx.getString(R.string.xtra5s_color_cheer)),
+                settingRow("💎", "Cheer minimum", SpecialMessages.cheerMinimumSummary(ctx)) { SpecialMessages.showCheerMinimum(ctx) { renderSpecial() } },
+                colorRow(SpecialMessages.PREF_BOT, ctx.getString(R.string.xtra5_color_bot)),
+                settingRow("🤖", ctx.getString(R.string.xtra5_bot_accounts), SpecialMessages.botAccountsSummary(ctx)) { SpecialMessages.showBotAccounts(ctx) { renderSpecial() } },
+            )
+            if (wide) {
+                // Two columns: the message types | cheers and bots, each setting under its color.
+                val left = column().apply { addView(header("Messages")); messages.forEach { addView(it) } }
+                val right = column().apply { addView(header("Cheers and bots")); cheersAndBots.forEach { addView(it) } }
+                special.addView(LinearLayout(ctx).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    addView(left, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { marginEnd = dp(ctx, 8) })
+                    addView(right, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { marginStart = dp(ctx, 8) })
+                })
+            } else {
+                // One list: the message types, cheers (with the minimum) before mentions, then bots.
+                listOf(messages[0], messages[1], messages[2], cheersAndBots[0], cheersAndBots[1], messages[3], cheersAndBots[2], cheersAndBots[3])
+                    .forEach { special.addView(it) }
+            }
+        }
+        renderSpecial()
+
+        // Tabs: Users (as it opens) | Special messages.
+        val accent = TypedValue().let { ctx.theme.resolveAttribute(androidx.appcompat.R.attr.colorPrimary, it, true); it.data }
+        val tabRow = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; setPadding(dp(ctx, 16), 0, dp(ctx, 16), 0) }
+        val tabViews = listOf("Users", "Special messages").map { label ->
+            TextView(ctx).apply {
+                text = label
+                gravity = Gravity.CENTER
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
+                setTypeface(typeface, Typeface.BOLD)
+                setPadding(0, dp(ctx, 10), 0, dp(ctx, 10))
+                background = selectableBackground(ctx)
+                isFocusable = true
+                isClickable = true
+            }.also { tabRow.addView(it, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)) }
+        }
+        val tabText = tabViews[0].currentTextColor
+        val tabDim = (tabText and 0x00FFFFFF) or 0xB3000000.toInt()
+        val underline = android.widget.FrameLayout(ctx)
+        val indicator = View(ctx).apply { setBackgroundColor(accent) }
+        underline.addView(View(ctx).apply { setBackgroundColor(0x40808080) }, android.widget.FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(ctx, 1), Gravity.BOTTOM))
+        underline.addView(indicator, android.widget.FrameLayout.LayoutParams(0, dp(ctx, 3), Gravity.BOTTOM))
+        val panelContent = LinearLayout(ctx).apply {
+            orientation = LinearLayout.VERTICAL
+            addView(tabRow)
+            addView(underline, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(ctx, 3)).apply {
+                marginStart = dp(ctx, 16); marginEnd = dp(ctx, 16)
+            })
+            addView(content)
+            addView(specialScroll)
+        }
         val dialog = builder
-            .setTitle("Highlighted users")
-            .setView(content)
+            .setTitle("Chat colors")
+            .setView(panelContent)
             .setPositiveButton("Done", null)
             .setNeutralButton("Add user", null)
             .setNegativeButton("New group", null)
             .show()
         ChatLive.placeBesideChat(dialog, panelWidth)
+        fun selectTab(index: Int) {
+            content.visibility = if (index == 0) View.VISIBLE else View.GONE
+            specialScroll.visibility = if (index == 1) View.VISIBLE else View.GONE
+            tabViews.forEachIndexed { i, tab -> tab.setTextColor(if (i == index) accent else tabDim) }
+            // Add user / New group only belong to the Users tab.
+            dialog.getButton(AlertDialog.BUTTON_NEUTRAL)?.visibility = if (index == 0) View.VISIBLE else View.GONE
+            dialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.visibility = if (index == 0) View.VISIBLE else View.GONE
+            underline.post {
+                val width = (underline.width) / 2
+                indicator.layoutParams = (indicator.layoutParams as android.widget.FrameLayout.LayoutParams).apply {
+                    this.width = width
+                    leftMargin = width * index
+                }
+            }
+        }
+        tabViews.forEachIndexed { i, tab -> tab.setOnClickListener { selectTab(i) } }
+        selectTab(0)
         // Keep the list open after these.
         dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener { addUser(null) {} }
         dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setOnClickListener {

@@ -1,4 +1,4 @@
-Xtra5s - feature list (version 1.68.0)
+Xtra5s - feature list (version 1.69.0)
 Everything official Xtra does, plus the features below.
 
 ========================================
@@ -37,7 +37,7 @@ Chat
   - Change a color, rename, move or remove anyone in a couple of taps, and see the result live
     in the chat while you choose.
   - Open your highlights straight from the video player; in landscape the panels sit beside
-    the chat and use the extra width.
+    the chat and use the extra width. A second tab there sets the special message colors too.
   - Pick a default group, then long-press anyone in chat to add them to it (or take them out).
 - A full color picker: color wheel, hex codes, brightness and transparency, presets and your
   own saved colors, with a realistic chat preview.

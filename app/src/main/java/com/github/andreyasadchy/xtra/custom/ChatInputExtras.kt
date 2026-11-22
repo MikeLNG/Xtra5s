@@ -43,6 +43,7 @@ object ChatInputExtras {
     fun attach(input: MultiAutoCompleteTextView, row: View, adapter: ArrayAdapter<*>?) {
         val activity = generateSequence(input.context) { (it as? ContextWrapper)?.baseContext }.firstNotNullOfOrNull { it as? android.app.Activity } ?: return // Xtra5s: any screen with a chat (also Side-By-Side)
         val top = activity.findViewById<FrameLayout>(android.R.id.content) ?: return
+        row.post { ChatInputFocus.watchChat(row) } // Xtra5s: tapping the messages stops the input cursor
         val density = input.resources.displayMetrics.density
         fun dp(v: Int) = (v * density).toInt()
 

@@ -148,6 +148,74 @@ object SpecialMessages {
         icon.setBounds(0, 0, size, size)
         return SpannableString(text).apply { setSpan(CenteredImageSpan(icon), 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE) }
     }
+
+    /** The "minimum bits" editor (Settings and the Chat colors panel). */
+    fun showCheerMinimum(context: Context, onDone: () -> Unit) {
+        val builder = context.getAlertDialogBuilder()
+        val ctx = builder.context
+        val density = ctx.resources.displayMetrics.density
+        val input = EditText(ctx).apply {
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER
+            setText(cheerMinimum(ctx).toString())
+            selectAll()
+            isSingleLine = true
+    }
+    val frame = LinearLayout(ctx).apply {
+        setPadding((24 * density).toInt(), (8 * density).toInt(), (24 * density).toInt(), 0)
+        addView(input, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+    }
+    builder.setTitle("Minimum bits")
+        .setMessage("Cheers with at least this many bits get the cheer color (1 = every cheer; TTS cheers are often 200 or more).")
+        .setView(frame)
+        .setPositiveButton(android.R.string.ok) { _, _ ->
+            val value = input.text.toString().trim().toIntOrNull()?.coerceIn(1, 1_000_000) ?: 1
+            context.prefs().edit { putInt(PREF_CHEER_MIN, value) }
+            onDone()
+            ChatLive.refreshChat()
+        }
+        .setNegativeButton(android.R.string.cancel, null)
+        .show()
+    }
+
+    fun cheerMinimumSummary(context: Context): String {
+        val min = cheerMinimum(context)
+        return if (min <= 1) "Every cheer" else "$min bits or more"
+    }
+
+    /** The bot accounts editor (Settings and the Chat colors panel). */
+    fun showBotAccounts(context: Context, onDone: () -> Unit) {
+        val builder = context.getAlertDialogBuilder()
+        val ctx = builder.context
+        val density = ctx.resources.displayMetrics.density
+        val input = EditText(ctx).apply {
+            setText(bots(ctx).joinToString("\n"))
+            minLines = 6
+            maxLines = 14
+            isSingleLine = false
+    }
+    val frame = LinearLayout(ctx).apply {
+        setPadding((24 * density).toInt(), (8 * density).toInt(), (24 * density).toInt(), 0)
+        addView(input, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+    }
+    builder.setTitle("Bot accounts (one per line)")
+        .setView(frame)
+        .setPositiveButton(android.R.string.ok) { _, _ ->
+            val names = input.text.lines().map { it.trim().removePrefix("@") }.filter { it.isNotEmpty() }
+            context.prefs().edit { putString(PREF_BOTS, names.joinToString("\n")) }
+            onDone()
+            ChatLive.refreshChat()
+        }
+        .setNeutralButton("Reset to built-in") { _, _ ->
+            context.prefs().edit { remove(PREF_BOTS) }
+            onDone()
+            ChatLive.refreshChat()
+        }
+        .setNegativeButton(android.R.string.cancel, null)
+        .show()
+    }
+
+    fun botAccountsSummary(context: Context) = "${bots(context).size} accounts"
+
 }
 
 /** A special message color in Settings: shows a swatch, opens the color picker. */
@@ -188,35 +256,11 @@ class CheerMinimumPreference @JvmOverloads constructor(context: Context, attrs: 
     }
 
     override fun onClick() {
-        val builder = context.getAlertDialogBuilder()
-        val ctx = builder.context
-        val density = ctx.resources.displayMetrics.density
-        val input = EditText(ctx).apply {
-            inputType = android.text.InputType.TYPE_CLASS_NUMBER
-            setText(SpecialMessages.cheerMinimum(ctx).toString())
-            selectAll()
-            isSingleLine = true
-        }
-        val frame = LinearLayout(ctx).apply {
-            setPadding((24 * density).toInt(), (8 * density).toInt(), (24 * density).toInt(), 0)
-            addView(input, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
-        }
-        builder.setTitle("Minimum bits")
-            .setMessage("Cheers with at least this many bits get the cheer color (1 = every cheer; TTS cheers are often 200 or more).")
-            .setView(frame)
-            .setPositiveButton(android.R.string.ok) { _, _ ->
-                val value = input.text.toString().trim().toIntOrNull()?.coerceIn(1, 1_000_000) ?: 1
-                context.prefs().edit { putInt(SpecialMessages.PREF_CHEER_MIN, value) }
-                update()
-                ChatLive.refreshChat()
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
+        SpecialMessages.showCheerMinimum(context) { update() }
     }
 
     private fun update() {
-        val min = SpecialMessages.cheerMinimum(context)
-        summary = if (min <= 1) "Every cheer" else "$min bits or more"
+        summary = SpecialMessages.cheerMinimumSummary(context)
     }
 }
 
@@ -230,37 +274,10 @@ class BotAccountsPreference @JvmOverloads constructor(context: Context, attrs: A
     }
 
     override fun onClick() {
-        val builder = context.getAlertDialogBuilder()
-        val ctx = builder.context
-        val density = ctx.resources.displayMetrics.density
-        val input = EditText(ctx).apply {
-            setText(SpecialMessages.bots(ctx).joinToString("\n"))
-            minLines = 6
-            maxLines = 14
-            isSingleLine = false
-        }
-        val frame = LinearLayout(ctx).apply {
-            setPadding((24 * density).toInt(), (8 * density).toInt(), (24 * density).toInt(), 0)
-            addView(input, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
-        }
-        builder.setTitle("Bot accounts (one per line)")
-            .setView(frame)
-            .setPositiveButton(android.R.string.ok) { _, _ ->
-                val names = input.text.lines().map { it.trim().removePrefix("@") }.filter { it.isNotEmpty() }
-                context.prefs().edit { putString(SpecialMessages.PREF_BOTS, names.joinToString("\n")) }
-                update()
-                ChatLive.refreshChat()
-            }
-            .setNeutralButton("Reset to built-in") { _, _ ->
-                context.prefs().edit { remove(SpecialMessages.PREF_BOTS) }
-                update()
-                ChatLive.refreshChat()
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
+        SpecialMessages.showBotAccounts(context) { update() }
     }
 
     private fun update() {
-        summary = "${SpecialMessages.bots(context).size} accounts"
+        summary = SpecialMessages.botAccountsSummary(context)
     }
 }

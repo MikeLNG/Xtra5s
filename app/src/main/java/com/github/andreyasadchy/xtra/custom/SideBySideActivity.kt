@@ -469,6 +469,7 @@ class SideBySideActivity : AppCompatActivity() {
             var edgeMoved = false
             setOnTouchListener { v, event ->
                 if (event.actionMasked == MotionEvent.ACTION_DOWN) {
+                    ChatInputFocus.release(this@SideBySideActivity) // tapping a video stops the input cursor
                     edgeTouch = inTopEdge(event)
                     edgeX = event.rawX
                     edgeY = event.rawY
