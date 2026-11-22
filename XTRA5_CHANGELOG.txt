@@ -1,6 +1,20 @@
 Xtra5s changelog (newest first)
 
 ========================================
+Xtra5s 1.70.2 (2026-11-22)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+Changed
+- VOD hold-and-drag seek, new spacing: every step is the same short drag (3% of the screen's
+  width, the same wherever you start), and the jumps grow quickly as you slide: 2s, 5s, 10s,
+  20s, 30s, 45s, 1m, 1m 30s, 2m, 3m, 5m, 7m, 10m, 15m, 20m, 30m, 45m, 1h... 1 minute is about a
+  fifth of the screen away, 20 minutes about 45%.
+
+Fixed
+- Start / End no longer flickers when your finger wobbles at the edge: once it shows, it stays
+  until you drag about 60 pixels back out. It still only happens in the last ~200 pixels of
+  the screen, and not if the hold started there.
+========================================
 Xtra5s 1.70.1 (2026-11-22)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 

@@ -21,8 +21,8 @@ import kotlin.math.pow
 /**
  * Xtra5s custom: hold-and-drag seek on VODs. Touch and hold the bottom strip of the video
  * (a short buzz), then drag: left rewinds, right fast-forwards, in steps from 2 seconds up to
- * hours (most of the drag goes to the small steps), and Start / End in the last ~200 pixels of
- * the screen (a tick at each step). The video keeps playing meanwhile; a
+ * hours, each step the same short drag (3% of the screen's width) so the jumps grow faster the
+ * further you slide, and Start / End in the last ~200 pixels of the screen (a tick at each step). The video keeps playing meanwhile; a
  * two-sided pill (like the volume slide's) shows the jump and where it lands, and the seek bar's
  * marker waits there in gold. Letting go jumps there;
  * dragging back to where you started first cancels. Elsewhere on the video, holding is the
@@ -45,46 +45,43 @@ object HoldSeek {
     /** The last pixels of the screen, on the side you drag to: Start / End. */
     internal const val EDGE_PX = 200f
 
-    private const val FINE_LAST = 6 // 1m
-    private const val MID_LAST = 14 // 20m
+    /** Once at Start / End, how far back out (pixels) the finger must go to leave it. */
+    internal const val EDGE_RELEASE_PX = 60f
+
+    /** Each step takes this part of the screen's width of drag. */
+    internal const val STEP_FRACTION = 0.03f
 
     /**
-     * Where step [index] starts, as a part (0-1) of the drag range (half the screen's width),
-     * with [left] seconds before the start / end: the fine steps (2s to 1m) share the first half
-     * evenly, 1m 30s to 20m the next 30%, and the bigger steps that fit before the start / end
-     * the rest. Null for a step that can't be reached (past the start / end).
+     * The jump in seconds (negative = back) for a drag of [dx] pixels, each step taking [step]
+     * pixels after [dead] pixels of cancel zone, when [backSeconds] / [forwardSeconds] are left
+     * before the start / end. The steps are evenly spaced and grow quickly (2s, 5s, 10s ... 20m,
+     * 30m, 1h ...); never past the biggest step that fits. [atEdge]: Start / End.
      */
-    internal fun threshold(index: Int, left: Long): Float? {
-        if (index < 0 || index >= STEPS.size || STEPS[index] >= left) return null
-        if (index <= FINE_LAST) return 0.5f * index / (FINE_LAST + 1)
-        if (index <= MID_LAST) return 0.5f + 0.3f * (index - FINE_LAST - 1) / (MID_LAST - FINE_LAST)
-        val coarse = (MID_LAST + 1 until STEPS.size).count { STEPS[it] < left }
-        return 0.8f + 0.2f * (index - MID_LAST - 1) / coarse.coerceAtLeast(1)
-    }
-
-    /**
-     * The jump in seconds (negative = back) for a drag of [dx] pixels over a drag range of
-     * [range] pixels (the same wherever the drag starts), with [dead] pixels of cancel zone, when
-     * [backSeconds] / [forwardSeconds] are left before the start / end. Start / End only when the
-     * finger is [inEdgeZone] (the last pixels of the screen on that side) after dragging past the
-     * fine steps; otherwise never further than the biggest step that fits.
-     */
-    internal fun jumpFor(dx: Float, range: Float, dead: Float, inEdgeZone: Boolean, backSeconds: Long, forwardSeconds: Long): Long {
+    internal fun jumpFor(dx: Float, step: Float, dead: Float, atEdge: Boolean, backSeconds: Long, forwardSeconds: Long): Long {
         val distance = abs(dx)
         if (distance < dead) return 0
         val left = if (dx < 0) backSeconds else forwardSeconds
         if (left <= 0) return 0
-        val part = distance / range.coerceAtLeast(1f)
-        val jump = if (inEdgeZone && part >= 0.5f) left else {
-            var found = 0L
-            for (i in STEPS.indices) {
-                val t = threshold(i, left) ?: break
-                if (part < t) break
-                found = STEPS[i]
-            }
-            if (found == 0L) STEPS[0].coerceAtMost(left) else found
+        val jump = if (atEdge) left else {
+            val fits = STEPS.count { it < left }
+            if (fits == 0) left
+            else STEPS[((distance - dead) / step.coerceAtLeast(1f)).toInt().coerceIn(0, fits - 1)]
         }
         return if (dx < 0) -jump else jump
+    }
+
+    /**
+     * Whether Start / End is showing after the finger moved to [rawX] (screen [width]) on a drag
+     * of [dx] that started at [startX], given whether it [was] showing: on when the finger is in
+     * the last [EDGE_PX] of the screen on the side it's dragging to (not if the drag started
+     * there), off again only once it's [EDGE_RELEASE_PX] back out, so it doesn't flicker.
+     */
+    internal fun edgeShowing(rawX: Float, startX: Float, dx: Float, width: Float, was: Boolean): Boolean {
+        if (dx == 0f) return false
+        val toEdge = if (dx < 0) rawX else width - rawX
+        val startToEdge = if (dx < 0) startX else width - startX
+        if (startToEdge <= EDGE_PX) return false
+        return if (was) toEdge <= EDGE_PX + EDGE_RELEASE_PX else toEdge <= EDGE_PX
     }
 
     /** How much of its side the pill's gold fill covers (0-1), for [jump] out of [left] seconds. */
@@ -93,7 +90,8 @@ object HoldSeek {
         if (size == 0L) return 0f
         if (size >= left) return 1f
         val index = STEPS.indexOfFirst { it == size }.takeIf { it >= 0 } ?: return 0f
-        return ((threshold(index, left) ?: 0f) * 0.9f).coerceIn(0.04f, 0.9f)
+        val fits = STEPS.count { it < left }
+        return (0.9f * (index + 1) / fits).coerceIn(0.04f, 0.9f)
     }
 
     /** "2s", "1m 30s", "20m", "1h 30m". */
@@ -126,12 +124,15 @@ object HoldSeek {
     private var startPosition = 0L
     private var duration = 0L
     private var jump = 0L
+    private var edge = false
+    private var edgeBack = false
 
     fun begin(player: PlayerFragment, rawX: Float) {
         startX = rawX
         duration = player.getTotalDuration() ?: 0L
         startPosition = (player.getCurrentPosition() ?: 0L).coerceIn(0L, duration)
         jump = 0L
+        edge = false
         player.xtra5PlayerState().showController()
         // A pressed seek bar keeps its marker where it's put and the controls from hiding.
         player.view?.findViewById<DefaultTimeBar>(R.id.progressBar)?.apply {
@@ -145,9 +146,12 @@ object HoldSeek {
         val layout = videoLayout(player) ?: return
         val dx = rawX - startX
         val screen = layout.rootView.width.takeIf { it > 0 } ?: layout.resources.displayMetrics.widthPixels
-        val inEdgeZone = if (dx < 0) rawX <= EDGE_PX else rawX >= screen - EDGE_PX
+        // Leaving Start / End by dragging back the other way past the start point ends it too.
+        if (dx < 0 != edgeBack) edge = false
+        edge = edgeShowing(rawX, startX, dx, screen.toFloat(), edge)
+        edgeBack = dx < 0
         val dead = DEAD_ZONE_DP * layout.resources.displayMetrics.density
-        val newJump = jumpFor(dx, screen / 2f, dead, inEdgeZone, startPosition / 1000, (duration - startPosition) / 1000)
+        val newJump = jumpFor(dx, screen * STEP_FRACTION, dead, edge, startPosition / 1000, (duration - startPosition) / 1000)
         if (newJump != jump) {
             jump = newJump
             layout.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)

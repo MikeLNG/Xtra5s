@@ -207,36 +207,37 @@ class Xtra5sLogicTest {
     @Test
     fun holdSeekSteps() {
         val long = 100_000L // far from both ends
-        val range = 1000f // half of a 2000 px wide screen
+        val step = 60f // 3% of a 2000 px wide screen
         val dead = 40f
-        fun j(dx: Float, edge: Boolean = false) = HoldSeek.jumpFor(dx, range, dead, edge, long, long)
+        fun j(dx: Float, edge: Boolean = false) = HoldSeek.jumpFor(dx, step, dead, edge, long, long)
         assertEquals(0L, j(0f))
         assertEquals(0L, j(-30f)) // back near the start = cancel
         assertEquals(-2L, j(-45f))
-        // The fine steps share the first half evenly: about 71 px each here.
-        assertEquals(5L, j(80f))
-        assertEquals(10L, j(150f))
-        assertEquals(-45L, j(-370f))
-        assertEquals(60L, j(440f))
-        assertEquals(90L, j(510f)) // the second part starts at half
-        assertEquals(1200L, j(790f)) // 20m just before 80%
-        assertTrue(j(900f) in 1801L until long) // the hours in the last 20%
-        assertTrue(j(1500f) < long) // past the range but not at the screen's edge: no End
-        assertEquals(long, j(1500f, edge = true)) // in the edge zone: End
-        assertEquals(-long, j(-600f, edge = true)) // Start
-        // Rewinding from near the left: in the edge zone straight away, but no Start until the
-        // fine steps are passed - only the fine steps, as far as there's room.
-        assertEquals(-2L, j(-45f, edge = true))
-        assertEquals(-20L, j(-250f, edge = true))
-        assertEquals(-60L, j(-450f, edge = true))
-        // Longer drags never jump less, and every step that fits can be reached.
-        val jumps = (0..2000).map { j(it / 2f) }
+        assertEquals(5L, j(100f)) // each step 60 px: 40 + 60
+        assertEquals(10L, j(160f))
+        assertEquals(-60L, j(-400f)) // 1m after 6 steps
+        assertEquals(1200L, j(40f + 14 * 60f)) // 20m after 14 steps (about 45% of the screen)
+        assertEquals(3600L, j(40f + 17 * 60f))
+        assertEquals(long, j(300f, edge = true)) // at the edge: End
+        assertEquals(-long, j(-300f, edge = true)) // Start
+        // Longer drags never jump less, and every step that fits can be reached in order.
+        val jumps = (0..4000).map { j(it.toFloat()) }
         assertEquals(jumps, jumps.sorted())
         assertEquals(HoldSeek.STEPS.filter { it < long }.toList(), jumps.filter { it > 0 }.distinct())
-        // Near the start of the VOD: it stops at the biggest step that fits; Start only at the edge.
-        assertEquals(-30L, HoldSeek.jumpFor(-990f, range, dead, false, 40, long))
-        assertEquals(-40L, HoldSeek.jumpFor(-990f, range, dead, true, 40, long))
-        assertEquals(0L, HoldSeek.jumpFor(-500f, range, dead, false, 0, long)) // at the very start: nothing to rewind
+        // Near the start of the VOD: it stays at the biggest step that fits.
+        assertEquals(-30L, HoldSeek.jumpFor(-1500f, step, dead, false, 40, long))
+        assertEquals(-40L, HoldSeek.jumpFor(-1500f, step, dead, true, 40, long))
+        assertEquals(0L, HoldSeek.jumpFor(-500f, step, dead, false, 0, long)) // nothing to rewind
+        // Start / End: on in the last 200 px, off only 60 px back out (no flicker), never when
+        // the drag started in that zone, and only on the side you're dragging to.
+        val w = 2000f
+        assertFalse(HoldSeek.edgeShowing(250f, 900f, -650f, w, false))
+        assertTrue(HoldSeek.edgeShowing(190f, 900f, -710f, w, false))
+        assertTrue(HoldSeek.edgeShowing(240f, 900f, -660f, w, true)) // wobbled out a little: stays
+        assertFalse(HoldSeek.edgeShowing(270f, 900f, -630f, w, true)) // clearly back out
+        assertFalse(HoldSeek.edgeShowing(50f, 150f, -100f, w, false)) // started in the zone
+        assertTrue(HoldSeek.edgeShowing(1850f, 900f, 950f, w, false)) // End side
+        assertFalse(HoldSeek.edgeShowing(190f, 900f, 50f, w, false)) // dragging right: not Start
         assertEquals(1f, HoldSeek.fill(-40, 40))
         assertTrue(HoldSeek.fill(2, long) < HoldSeek.fill(10, long))
         assertEquals("2s", HoldSeek.label(-2))
