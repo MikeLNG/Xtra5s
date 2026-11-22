@@ -248,6 +248,19 @@ class Xtra5sLogicTest {
         assertNull(UpdateCheck.isNewer("latest", "1.66.0"))
     }
 
+    // ---- Cheer highlight ----
+
+    @Test
+    fun bitsCounted() {
+        val names = listOf("Cheer", "Kappa", "supertfCheer")
+        assertEquals(200, SpecialMessages.bitsIn(200, "anything", names)) // Twitch's own count wins
+        assertEquals(200, SpecialMessages.bitsIn(0, "Cheer100 Cheer100 my boss texted me", names)) // replay: add them up
+        assertEquals(1500, SpecialMessages.bitsIn(null, "cheer1000 Kappa500", names))
+        assertEquals(5000, SpecialMessages.bitsIn(null, "supertfCheer5000 hi", names))
+        assertEquals(0, SpecialMessages.bitsIn(null, "room101 Cheer 100 2024", names)) // not cheers
+        assertEquals(0, SpecialMessages.bitsIn(null, "Cheer100", emptyList()))
+    }
+
     // ---- Crash log ----
 
     @Test

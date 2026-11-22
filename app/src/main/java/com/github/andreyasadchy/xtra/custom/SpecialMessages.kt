@@ -40,6 +40,29 @@ object SpecialMessages {
     const val PREF_BOT = "xtra5_color_bot"
     const val PREF_BOTS = "xtra5_bot_accounts"
     private const val DEFAULT_BOT_COLOR = 0x80455A64.toInt()
+    /** Xtra5s: messages with bits (cheers), from [PREF_CHEER_MIN] bits up. */
+    const val PREF_CHEER = "xtra5_color_cheer"
+    const val PREF_CHEER_MIN = "xtra5_cheer_min"
+    private const val DEFAULT_CHEER_COLOR = 0x809146FF.toInt() // the bits gem's purple
+
+    fun cheerMinimum(context: Context) = context.prefs().getInt(PREF_CHEER_MIN, 1).coerceAtLeast(1)
+
+    /**
+     * Bits in a message: Twitch's own count (live chat), else the cheer emotes in the text added
+     * up (VOD replays have no count): any cheer emote of the channel, e.g. "Cheer100 Kappa500".
+     */
+    internal fun bitsIn(bits: Int?, message: String?, cheerNames: Collection<String>): Int {
+        if (bits != null && bits > 0) return bits
+        if (message.isNullOrEmpty() || cheerNames.isEmpty()) return 0
+        val names = cheerNames.map { it.lowercase() }.toSet()
+        var total = 0
+        message.split(' ', '\n', '\t').forEach { word ->
+            val digits = word.takeLastWhile { it.isDigit() }
+            if (digits.isEmpty() || digits.length > 7 || digits.length == word.length) return@forEach
+            if (word.dropLast(digits.length).lowercase() in names) total += digits.toInt()
+        }
+        return total
+    }
 
     val builtInBots = listOf(
         "nightbot", "streamelements", "moobot", "fossabot", "streamlabs", "wizebot", "sery_bot",
@@ -52,6 +75,7 @@ object SpecialMessages {
         PREF_FIRST -> context.getColor(R.color.chatMessageFirst)
         PREF_REWARD -> context.getColor(R.color.chatMessageReward)
         PREF_MENTION -> context.getColor(R.color.chatMessageMention)
+        PREF_CHEER -> DEFAULT_CHEER_COLOR
         else -> DEFAULT_BOT_COLOR
     }
 
@@ -80,13 +104,15 @@ object SpecialMessages {
 
     /**
      * Called right after official Xtra picks a message's background: applies the custom colors.
-     * Order as official: first message, reward, notice, mention; then the user's own highlight;
-     * then bots.
+     * Order as official: first message, reward, (Xtra5s: cheers), notice, mention; then the
+     * user's own highlight; then bots.
      */
-    fun applyColors(context: Context, itemView: View, chatMessage: ChatMessage, wasMentioned: Boolean, firstMsgVisibility: Int) {
+    fun applyColors(context: Context, itemView: View, chatMessage: ChatMessage, wasMentioned: Boolean, firstMsgVisibility: Int, cheerEmotes: List<com.github.andreyasadchy.xtra.model.chat.CheerEmote> = emptyList()) {
         when {
             chatMessage.isFirst && firstMsgVisibility < 2 -> itemView.setBackgroundColor(color(context, PREF_FIRST))
             chatMessage.reward?.id != null && firstMsgVisibility < 2 -> itemView.setBackgroundColor(color(context, PREF_REWARD))
+            bitsIn(chatMessage.bits, chatMessage.message, synchronized(cheerEmotes) { cheerEmotes.map { it.name } }) >= cheerMinimum(context) ->
+                itemView.setBackgroundColor(color(context, PREF_CHEER))
             chatMessage.systemMsg != null || chatMessage.msgId != null -> itemView.setBackgroundColor(color(context, PREF_NOTICE))
             wasMentioned -> itemView.setBackgroundColor(color(context, PREF_MENTION))
             UserHighlights.colorFor(context, chatMessage) != null -> Unit // already highlighted
@@ -149,6 +175,48 @@ class SpecialColorPreference @JvmOverloads constructor(context: Context, attrs: 
     override fun onBindViewHolder(holder: androidx.preference.PreferenceViewHolder) {
         super.onBindViewHolder(holder)
         HighlightDialogs.showSwatchColors(holder)
+    }
+}
+
+/** Xtra5s: Settings > Chat > Special messages > minimum bits for the cheer color. */
+@Keep
+class CheerMinimumPreference @JvmOverloads constructor(context: Context, attrs: AttributeSet? = null) : Preference(context, attrs) {
+
+    override fun onAttached() {
+        super.onAttached()
+        update()
+    }
+
+    override fun onClick() {
+        val builder = context.getAlertDialogBuilder()
+        val ctx = builder.context
+        val density = ctx.resources.displayMetrics.density
+        val input = EditText(ctx).apply {
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER
+            setText(SpecialMessages.cheerMinimum(ctx).toString())
+            selectAll()
+            isSingleLine = true
+        }
+        val frame = LinearLayout(ctx).apply {
+            setPadding((24 * density).toInt(), (8 * density).toInt(), (24 * density).toInt(), 0)
+            addView(input, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        }
+        builder.setTitle("Minimum bits")
+            .setMessage("Cheers with at least this many bits get the cheer color (1 = every cheer; TTS cheers are often 200 or more).")
+            .setView(frame)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                val value = input.text.toString().trim().toIntOrNull()?.coerceIn(1, 1_000_000) ?: 1
+                context.prefs().edit { putInt(SpecialMessages.PREF_CHEER_MIN, value) }
+                update()
+                ChatLive.refreshChat()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun update() {
+        val min = SpecialMessages.cheerMinimum(context)
+        summary = if (min <= 1) "Every cheer" else "$min bits or more"
     }
 }
 

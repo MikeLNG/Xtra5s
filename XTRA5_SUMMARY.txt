@@ -1,4 +1,4 @@
-Xtra5s - feature list (version 1.66.0)
+Xtra5s - feature list (version 1.68.0)
 Everything official Xtra does, plus the features below.
 
 ========================================
@@ -42,7 +42,8 @@ Chat
 - A full color picker: color wheel, hex codes, brightness and transparency, presets and your
   own saved colors, with a realistic chat preview.
 - Color-code special messages: subs and announcements, first-time chatters, channel point
-  rewards, mentions of you and bot messages.
+  rewards, mentions of you, bot messages, and cheers (bits), with a minimum number of bits so
+  you can pick out the bigger ones (like TTS cheers).
   - Common bots are recognized out of the box, and you can add your own.
 - Make chat your own: message spacing, separator lines, font choice and username size.
 - Animated emotes play in sync across the whole chat.

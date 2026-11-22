@@ -1,6 +1,18 @@
 Xtra5s changelog (newest first)
 
 ========================================
+Xtra5s 1.68.0 (2026-11-22)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+New
+- Chat: messages with bits (cheers) get their own background color, in Settings > Chat >
+  Special messages > Cheers (bits) (purple by default, like the bits gem). "Cheer color:
+  minimum bits" sets how many bits a message needs (1 = every cheer; e.g. 200 for TTS-sized
+  cheers). The amount is Twitch's own count, whatever cheer emotes were used (100, 1000,
+  channel cheers...); in VOD chat replays, which have no count, the cheer emotes in the
+  message are added up ("Cheer100 Cheer100" = 200). A first-time message or channel point
+  reward keeps its own color; a cheer comes before notices, mentions, highlights and bots.
+========================================
 Xtra5s 1.67.0 (2026-11-22)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 

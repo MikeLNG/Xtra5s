@@ -462,6 +462,17 @@
             app:singleLineTitle="false" />
 
         <com.github.andreyasadchy.xtra.custom.SpecialColorPreference
+            android:key="xtra5_color_cheer"
+            android:title="@string/xtra5s_color_cheer"
+            app:singleLineTitle="false" />
+
+        <com.github.andreyasadchy.xtra.custom.CheerMinimumPreference
+            android:key="xtra5_cheer_min"
+            android:title="@string/xtra5s_cheer_min"
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false" />
+
+        <com.github.andreyasadchy.xtra.custom.SpecialColorPreference
             android:key="xtra5_color_mention"
             android:title="@string/xtra5_color_mention"
             app:singleLineTitle="false" />

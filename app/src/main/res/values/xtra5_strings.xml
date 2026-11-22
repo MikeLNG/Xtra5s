@@ -94,6 +94,8 @@
     <string name="xtra5_color_mention" translatable="false">Mentions of you</string>
     <string name="xtra5_color_bot" translatable="false">Bot messages</string>
     <string name="xtra5_bot_accounts" translatable="false">Bot accounts</string>
+    <string name="xtra5s_color_cheer" translatable="false">Cheers (bits)</string>
+    <string name="xtra5s_cheer_min" translatable="false">Cheer color: minimum bits</string>
     <!-- Settings > Shortcuts: "# " = heading, "- " = shortcut, two dashes and a space = sub-point of the shortcut above, "Setting: " = related setting, other = note -->
     <string-array name="xtra5_shortcuts" translatable="false">
         <item>Items marked [TV] need the setting Enable TV mode shortcuts. They work with a TV remote, keyboard or game controller.</item>
@@ -149,6 +151,7 @@
         <item>-- Back: leaves fullscreen first, otherwise closes Dual Stream.</item>
         <item>-- Remote, keyboard or controller (no setting needed): Left / Right / Up / Down move between the two videos and their controls. The selected video has a gold outline.</item>
         <item># Chat</item>
+        <item>- Messages with bits (cheers) get their own background color, from a minimum number of bits. Setting: Settings &gt; Chat &gt; Special messages &gt; Cheers (bits).</item>
         <item>- Tap an emote: shows the emote\'s details.</item>
         <item>- Long-press an emote: puts it in your message (not sent; the chat input appears if it was hidden).</item>
         <item>- Long-press a message or name: adds the chatter to your default highlight group, or takes them out.</item>
