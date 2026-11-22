@@ -1,6 +1,21 @@
 Xtra5s changelog (newest first)
 
 ========================================
+Xtra5s 1.70.0 (2026-11-22)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+Changed
+- VOD hold-and-drag seek, tuned for small rewinds:
+  - Start / End now only happens in the last ~200 pixels of the screen on the side you drag
+    to; before that it stays on the biggest step that fits.
+  - The drag is measured towards the screen's edge, and the first half of it is the fine steps
+    (2s, 5s, 10s, 20s, 30s, 45s, 1m), evenly spaced; the next 30% is 1m 30s to 20m, and the
+    rest the bigger steps that fit (30m, 1h...). Starting near the edge squeezes the steps into
+    the room left. The cancel zone is a small fixed distance.
+  - The pill's gold fill follows the same scale (halfway = 1m).
+- Chat colors > Special messages: the cheer minimum row shows Twitch's real 100-bit cheer gem
+  (stored in the app, so it always shows) instead of a diamond.
+========================================
 Xtra5s 1.69.0 (2026-11-22)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 

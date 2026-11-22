@@ -21,7 +21,8 @@ import kotlin.math.pow
 /**
  * Xtra5s custom: hold-and-drag seek on VODs. Touch and hold the bottom strip of the video
  * (a short buzz), then drag: left rewinds, right fast-forwards, in steps from 2 seconds up to
- * hours, and Start / End at the edge (a tick at each step). The video keeps playing meanwhile; a
+ * hours (most of the drag goes to the small steps), and Start / End in the last ~200 pixels of
+ * the screen (a tick at each step). The video keeps playing meanwhile; a
  * two-sided pill (like the volume slide's) shows the jump and where it lands, and the seek bar's
  * marker waits there in gold. Letting go jumps there;
  * dragging back to where you started first cancels. Elsewhere on the video, holding is the
@@ -38,45 +39,51 @@ object HoldSeek {
     /** Bottom part of the video that seeks instead of changing the volume. */
     internal const val BAND = 0.25f
 
-    /** Drags shorter than this (part of half the video's width) don't seek: a cancel. */
-    internal const val DEAD_ZONE = 0.03f
+    /** Drags shorter than this (dp) don't seek: a cancel. */
+    internal const val DEAD_ZONE_DP = 16
 
-    /** From here to the edge: Start / End. */
-    internal const val EDGE = 0.95f
+    /** The last pixels of the screen, on the side you drag to: Start / End. */
+    internal const val EDGE_PX = 200f
 
-    private const val FINE_LAST = 14 // 20m
-    private const val FINE_END = 0.66f
+    private const val FINE_LAST = 6 // 1m
+    private const val MID_LAST = 14 // 20m
 
     /**
-     * Where step [index] starts (part of half the video's width), with [left] seconds before the
-     * start / end: 2s at once, then 5s and 10s a short, even nudge apart, 1m at about a quarter,
-     * 20m at about two-thirds. The bigger steps that fit before the start / end share the rest
-     * evenly, so a short VOD gets roomy steps and the edge (Start / End) at the end.
+     * Where step [index] starts, as a part (0-1) of the room before the edge zone, with [left]
+     * seconds before the start / end: the fine steps (2s to 1m) share the first half evenly,
+     * 1m 30s to 20m the next 30%, and the bigger steps that fit before the start / end the rest.
+     * Null for a step that can't be reached (past the start / end).
      */
-    internal fun threshold(index: Int, left: Long): Float {
-        if (index <= FINE_LAST) return DEAD_ZONE + (FINE_END - DEAD_ZONE) * (index / FINE_LAST.toFloat()).pow(1.15f)
-        val coarse = (FINE_LAST + 1 until STEPS.size).count { STEPS[it] < left }
-        return FINE_END + (EDGE - FINE_END) * (index - FINE_LAST) / (coarse + 1f)
+    internal fun threshold(index: Int, left: Long): Float? {
+        if (index < 0 || index >= STEPS.size || STEPS[index] >= left) return null
+        if (index <= FINE_LAST) return 0.5f * index / (FINE_LAST + 1)
+        if (index <= MID_LAST) return 0.5f + 0.3f * (index - FINE_LAST - 1) / (MID_LAST - FINE_LAST)
+        val coarse = (MID_LAST + 1 until STEPS.size).count { STEPS[it] < left }
+        return 0.8f + 0.2f * (index - MID_LAST - 1) / coarse.coerceAtLeast(1)
     }
 
     /**
-     * The jump in seconds (negative = back) for a drag of [fraction] of half the video's width,
-     * when [backSeconds] / [forwardSeconds] are left before the start / end. A jump of exactly
-     * what's left is Start / End: at the edge, or once the next step would go past it.
+     * The jump in seconds (negative = back) for a drag of [dx] pixels, with [room] pixels before
+     * the edge zone on that side and [dead] pixels of cancel zone, when [backSeconds] /
+     * [forwardSeconds] are left before the start / end. In the edge zone: exactly what's left
+     * (Start / End); before it, never further than the biggest step that fits.
      */
-    internal fun jumpFor(fraction: Float, backSeconds: Long, forwardSeconds: Long): Long {
-        val distance = abs(fraction)
-        if (distance < DEAD_ZONE) return 0
-        val left = if (fraction < 0) backSeconds else forwardSeconds
+    internal fun jumpFor(dx: Float, room: Float, dead: Float, backSeconds: Long, forwardSeconds: Long): Long {
+        val distance = abs(dx)
+        if (distance < dead) return 0
+        val left = if (dx < 0) backSeconds else forwardSeconds
         if (left <= 0) return 0
-        var jump = 0L
-        if (distance >= EDGE) jump = left
-        else for (i in STEPS.indices) {
-            if (distance < threshold(i, left)) break
-            if (STEPS[i] >= left) { jump = left; break } // past the start / end: that's the edge
-            jump = STEPS[i]
+        val jump = if (distance >= room) left else {
+            val part = distance / room.coerceAtLeast(1f)
+            var found = 0L
+            for (i in STEPS.indices) {
+                val t = threshold(i, left) ?: break
+                if (part < t) break
+                found = STEPS[i]
+            }
+            if (found == 0L) STEPS[0].coerceAtMost(left) else found
         }
-        return if (fraction < 0) -jump else jump
+        return if (dx < 0) -jump else jump
     }
 
     /** How much of its side the pill's gold fill covers (0-1), for [jump] out of [left] seconds. */
@@ -85,8 +92,14 @@ object HoldSeek {
         if (size == 0L) return 0f
         if (size >= left) return 1f
         val index = STEPS.indexOfFirst { it == size }.takeIf { it >= 0 } ?: return 0f
-        return (threshold(index, left) / EDGE).coerceIn(0.04f, 1f)
+        return ((threshold(index, left) ?: 0f) * 0.9f).coerceIn(0.04f, 0.9f)
     }
+
+    /**
+     * Pixels before the edge zone when dragging from [startX] towards an edge [toEdge] pixels
+     * away. Starting close to that edge shrinks the edge zone, so the steps still fit.
+     */
+    internal fun room(toEdge: Float): Float = toEdge - minOf(EDGE_PX, toEdge * 0.4f)
 
     /** "2s", "1m 30s", "20m", "1h 30m". */
     internal fun label(seconds: Long): String {
@@ -135,7 +148,11 @@ object HoldSeek {
 
     fun move(player: PlayerFragment, rawX: Float) {
         val layout = videoLayout(player) ?: return
-        val newJump = jumpFor((rawX - startX) / (layout.width / 2f).coerceAtLeast(1f), startPosition / 1000, (duration - startPosition) / 1000)
+        val dx = rawX - startX
+        val screen = layout.rootView.width.takeIf { it > 0 } ?: layout.resources.displayMetrics.widthPixels
+        val toEdge = if (dx < 0) startX else screen - startX
+        val dead = DEAD_ZONE_DP * layout.resources.displayMetrics.density
+        val newJump = jumpFor(dx, room(toEdge), dead, startPosition / 1000, (duration - startPosition) / 1000)
         if (newJump != jump) {
             jump = newJump
             layout.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)

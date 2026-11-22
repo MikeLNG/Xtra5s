@@ -419,7 +419,7 @@ object HighlightDialogs {
             visibility = View.GONE
         }
         /** A setting row: icon, title and its current value underneath. */
-        fun settingRow(icon: String, title: String, value: String, onClick: () -> Unit) = LinearLayout(ctx).apply {
+        fun settingRow(icon: Any, title: String, value: String, onClick: () -> Unit) = LinearLayout(ctx).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
             minimumHeight = dp(ctx, 52)
@@ -427,7 +427,11 @@ object HighlightDialogs {
             background = selectableBackground(ctx)
             isClickable = true
             setOnClickListener { onClick() }
-            addView(TextView(ctx).apply { text = icon; gravity = Gravity.CENTER; setTextSize(TypedValue.COMPLEX_UNIT_SP, 18f) },
+            // An emoji, or a picture (the real 100-bit cheer gem, stored in the app).
+            if (icon is Int) addView(android.widget.FrameLayout(ctx).apply {
+                addView(android.widget.ImageView(ctx).apply { setImageResource(icon) }, android.widget.FrameLayout.LayoutParams(dp(ctx, 26), dp(ctx, 26), Gravity.CENTER))
+            }, LinearLayout.LayoutParams(dp(ctx, 44), dp(ctx, 44)))
+            else addView(TextView(ctx).apply { text = icon.toString(); gravity = Gravity.CENTER; setTextSize(TypedValue.COMPLEX_UNIT_SP, 18f) },
                 LinearLayout.LayoutParams(dp(ctx, 44), dp(ctx, 44)))
             addView(LinearLayout(ctx).apply {
                 orientation = LinearLayout.VERTICAL
@@ -457,7 +461,7 @@ object HighlightDialogs {
             )
             val cheersAndBots = listOf(
                 colorRow(SpecialMessages.PREF_CHEER, ctx.getString(R.string.xtra5s_color_cheer)),
-                settingRow("💎", "Cheer minimum", SpecialMessages.cheerMinimumSummary(ctx)) { SpecialMessages.showCheerMinimum(ctx) { renderSpecial() } },
+                settingRow(R.drawable.xtra5s_cheer100, "Cheer minimum", SpecialMessages.cheerMinimumSummary(ctx)) { SpecialMessages.showCheerMinimum(ctx) { renderSpecial() } },
                 colorRow(SpecialMessages.PREF_BOT, ctx.getString(R.string.xtra5_color_bot)),
                 settingRow("🤖", ctx.getString(R.string.xtra5_bot_accounts), SpecialMessages.botAccountsSummary(ctx)) { SpecialMessages.showBotAccounts(ctx) { renderSpecial() } },
             )
