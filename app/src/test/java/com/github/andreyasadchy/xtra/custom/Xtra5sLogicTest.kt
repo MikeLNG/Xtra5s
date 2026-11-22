@@ -206,21 +206,32 @@ class Xtra5sLogicTest {
 
     @Test
     fun holdSeekSteps() {
-        assertEquals(0, HoldSeek.jumpFor(0f))
-        assertEquals(0, HoldSeek.jumpFor(-0.03f)) // back near the start = cancel
-        assertEquals(-10, HoldSeek.jumpFor(-0.05f))
-        assertEquals(10, HoldSeek.jumpFor(0.05f))
-        assertEquals(1200, HoldSeek.jumpFor(0.95f))
-        assertEquals(-1200, HoldSeek.jumpFor(-3f)) // never more than 20 minutes
+        val long = 100_000L // far from both ends
+        fun j(f: Float) = HoldSeek.jumpFor(f, long, long)
+        assertEquals(0L, j(0f))
+        assertEquals(0L, j(-0.02f)) // back near the start = cancel
+        assertEquals(-2L, j(-0.035f))
+        assertEquals(5L, j(0.07f))
+        assertEquals(10L, j(0.125f)) // about an eighth of the way
+        assertTrue(j(0.27f) in 60L..90L) // 1m around a quarter
+        assertEquals(1200L, j(0.67f)) // 20m around two-thirds
+        assertEquals(long, j(0.96f)) // the edge: End
+        assertEquals(-long, j(-3f)) // the edge: Start
         // Longer drags never jump less, and every step can be reached.
-        val jumps = (0..200).map { HoldSeek.jumpFor(it / 200f) }
+        val jumps = (0..400).map { j(it / 400f) }
         assertEquals(jumps, jumps.sorted())
-        assertEquals(HoldSeek.STEPS.toList(), jumps.filter { it > 0 }.distinct())
-        // The first steps are close together: 30s within the first sixth of the drag.
-        assertTrue(HoldSeek.jumpFor(1f / 6) >= 30)
-        assertEquals("30s", HoldSeek.label(-30))
+        assertEquals(HoldSeek.STEPS.filter { it < long }.toList() + long, jumps.filter { it > 0 }.distinct())
+        // Near the start: the next step past it is Start, never a step that lands in the same place.
+        assertEquals(-40L, HoldSeek.jumpFor(-0.3f, 40, long))
+        assertEquals(-30L, HoldSeek.jumpFor(-0.18f, 40, long))
+        assertEquals(0L, HoldSeek.jumpFor(-0.5f, 0, long)) // at the very start: nothing to rewind
+        assertEquals(1f, HoldSeek.fill(-40, 40))
+        assertTrue(HoldSeek.fill(2, long) < HoldSeek.fill(10, long))
+        assertEquals("2s", HoldSeek.label(-2))
         assertEquals("1m 30s", HoldSeek.label(90))
         assertEquals("20m", HoldSeek.label(1200))
+        assertEquals("1h 30m", HoldSeek.label(5400))
+        assertEquals("2h", HoldSeek.label(7200))
     }
 
     // ---- Crash log ----

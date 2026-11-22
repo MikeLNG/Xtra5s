@@ -1,6 +1,22 @@
 Xtra5s changelog (newest first)
 
 ========================================
+Xtra5s 1.66.0 (2026-11-22)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+Changed
+- VOD hold-and-drag seek:
+  - Finer short drags: the steps now start at 2s and 5s, then 10s, 20s, 30s and on as before.
+    10s is about an eighth of the way to the edge, 1m about a quarter, 20m about two-thirds.
+  - No more 20 minute limit: after 20m the steps keep going (30m, 45m, 1h, 1h 30m, 2h, 3h…),
+    and the very edge jumps to the Start or End of the VOD. Only steps that fit before the
+    start / end are offered, spread evenly over the last part of the drag, so a step never
+    lands in the same place as the one before it.
+  - It now looks like the volume slide's pill, two-sided: rewind and fast-forward icons with a
+    track between them, a mark in the middle, and a gold fill growing out from the middle
+    towards the side you're dragging (that side's icon turns gold), then the jump and where
+    it lands ("-30s  54:45", "Start", "End").
+========================================
 Xtra5s 1.65.0 (2026-11-21)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 

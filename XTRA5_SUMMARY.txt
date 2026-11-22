@@ -1,4 +1,4 @@
-Xtra5s - feature list (version 1.65.0)
+Xtra5s - feature list (version 1.66.0)
 Everything official Xtra does, plus the features below.
 
 ========================================
@@ -64,8 +64,9 @@ Watching
     as you browse down.
 - Touch, hold and slide left / right on the video to set the volume, with a volume bar; the
   volume number matches how loud it sounds.
-- On VODs, touch and hold the bottom of the video and drag to rewind or fast-forward, from 10
-  seconds up to 20 minutes depending on how far you drag; the video keeps playing until you let go.
+- On VODs, touch and hold the bottom of the video and drag to rewind or fast-forward: a couple
+  of seconds for a short drag, minutes or hours for a long one, or straight to the start / end
+  at the edge. The video keeps playing until you let go.
 - Settings button right in the player, and playback picks up where it left off when you return.
 - Battery percentage in fullscreen that fades out of the way.
 - Optional always-visible progress bar with times on VODs and clips, and chapter markers on
