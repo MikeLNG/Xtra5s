@@ -81,6 +81,7 @@ object SoloVolume {
      */
     fun onTouch(player: PlayerFragment, view: View, event: MotionEvent): Boolean {
         if (passing) return false
+        if (DoubleTapSeek.onTouch(player, view, event)) return true // Xtra5s: YouTube-style double-tap seek on VODs
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
                 ChatInputFocus.release(view.context) // Xtra5s: tapping the video stops the input cursor

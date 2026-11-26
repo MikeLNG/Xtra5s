@@ -1,6 +1,17 @@
 Xtra5s changelog (newest first)
 
 ========================================
+Xtra5s 1.72.0 (2026-11-26)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+New
+- YouTube-style double-tap seek on VODs (full-size video, portrait or landscape): double-tap
+  the left side of the video (outer 40%) to rewind, the right side to fast-forward, by the
+  player's rewind / forward amount (10s by default). Keep tapping the same side to add more
+  (20s, 30s...), tap the other side to go the other way. A curved panel with a ripple, moving
+  arrows and the running total ("30 seconds") shows on that side. Double-tapping the middle
+  still toggles the chat, and live streams and clips are unchanged.
+========================================
 Xtra5s 1.71.1 (2026-11-26)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 

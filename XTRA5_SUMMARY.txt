@@ -1,4 +1,4 @@
-Xtra5s - feature list (version 1.71.1)
+Xtra5s - feature list (version 1.72.0)
 Everything official Xtra does, plus the features below.
 
 ========================================
@@ -68,6 +68,8 @@ Watching
 - On VODs, touch and hold the bottom of the video and drag to rewind or fast-forward: each
   step is a short slide and the jumps grow as you go (2 seconds, 5, 10... minutes, hours), with
   the start / end at the very edge of the screen. The video keeps playing until you let go.
+- Double-tap the left or right side of a VOD to rewind or fast-forward, just like YouTube; keep
+  tapping to go further.
 - Muted parts of VODs are marked red on the seek bar, and a "Skip" button (or OK on a remote)
   jumps past the one you're in.
 - Settings button right in the player, and playback picks up where it left off when you return.

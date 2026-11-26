@@ -261,6 +261,21 @@ class Xtra5sLogicTest {
         assertTrue(MutedParts.parse("""{"data":{"video":{"muteInfo":null}}}""").isEmpty())
     }
 
+    // ---- Double-tap seek (VODs) ----
+
+    @Test
+    fun doubleTapZones() {
+        assertEquals(-1, DoubleTapSeek.side(100f, 1000f)) // left 40%
+        assertEquals(-1, DoubleTapSeek.side(399f, 1000f))
+        assertEquals(0, DoubleTapSeek.side(500f, 1000f)) // middle: the official double-tap
+        assertEquals(1, DoubleTapSeek.side(601f, 1000f)) // right 40%
+        assertEquals(0, DoubleTapSeek.side(10f, 0f))
+        assertEquals("10 seconds", DoubleTapSeek.total(10))
+        assertEquals("1 minute", DoubleTapSeek.total(60))
+        assertEquals("1 minute 30 seconds", DoubleTapSeek.total(90))
+        assertEquals("2 minutes 10 seconds", DoubleTapSeek.total(130))
+    }
+
     // ---- Update check ----
 
     @Test
