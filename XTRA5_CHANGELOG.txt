@@ -1,6 +1,16 @@
 Xtra5s changelog (newest first)
 
 ========================================
+Xtra5s 1.71.1 (2026-11-26)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+Fixed
+- Crash when putting Xtra5s in split screen (or out of it) with a chat open. While Android
+  rebuilds the window, the chat's red clear button and expanding message box were taken off the
+  screen mid-way, which crashed the app (found with the crash log). They're now only removed a
+  moment later, and kept if the chat is still there (as in split screen). The dim layer behind
+  chat popups is removed the same way.
+========================================
 Xtra5s 1.71.0 (2026-11-26)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 

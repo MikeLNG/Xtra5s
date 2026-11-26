@@ -256,10 +256,16 @@ object ChatInputExtras {
         input.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
             override fun onViewAttachedToWindow(v: View) {}
             override fun onViewDetachedFromWindow(v: View) {
-                v.removeOnAttachStateChangeListener(this)
-                v.viewTreeObserver.removeOnPreDrawListener(preDraw)
-                top.removeView(clear)
-                top.removeView(big)
+                // Xtra5s: never take views out of the top layer while Android is detaching the
+                // window (split screen re-builds it, and removing them mid-way crashed the app).
+                // Wait a moment: if the message box is back (split screen), keep everything.
+                top.post {
+                    if (v.isAttachedToWindow) return@post
+                    v.removeOnAttachStateChangeListener(this)
+                    v.viewTreeObserver.removeOnPreDrawListener(preDraw)
+                    top.removeView(clear)
+                    top.removeView(big)
+                }
             }
         })
     }

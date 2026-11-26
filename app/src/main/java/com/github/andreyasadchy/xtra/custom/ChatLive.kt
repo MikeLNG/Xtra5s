@@ -166,9 +166,10 @@ object ChatLive {
                 v.removeOnAttachStateChangeListener(this)
                 dimUsers--
                 if (dimUsers <= 0) {
-                    (layer.parent as? ViewGroup)?.removeView(layer)
                     videoDim = null
                     dimUsers = 0
+                    // Xtra5s: removed a moment later, never while a window is being detached.
+                    layer.post { if (videoDim?.get() !== layer) (layer.parent as? ViewGroup)?.removeView(layer) }
                 }
             }
         })
