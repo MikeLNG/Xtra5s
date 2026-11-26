@@ -1,6 +1,24 @@
 Xtra5s changelog (newest first)
 
 ========================================
+Xtra5s 1.71.0 (2026-11-26)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+New
+- Muted parts of VODs (from Twitch's list of muted segments):
+  - Each muted part is a red band on the seek bar (and on the persistent progress bar), so you
+    can see where the silent stretches are, including while using the hold-and-drag seek.
+  - While a muted part plays, a button shows in the bottom-right of the video: "Muted · Skip
+    2m 10s" (the time left in the muted part). Tap it to jump to where the sound comes back.
+    On a remote, OK skips while the button shows (it has a gold outline), unless the controls
+    are open and one of them is selected.
+  - Settings > Player > Muted parts (VODs) > Show skip button (on by default). The red bands
+    always show. Downloaded videos don't have Twitch's muted list.
+
+Behind the scenes
+- PlayerFragment.xtra5PlayerState now also passes the VOD's id (same hook). Test for joining
+  Twitch's 3-minute muted pieces into parts.
+========================================
 Xtra5s 1.70.2 (2026-11-22)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 

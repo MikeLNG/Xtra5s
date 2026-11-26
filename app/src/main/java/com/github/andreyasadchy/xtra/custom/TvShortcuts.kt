@@ -74,6 +74,8 @@ object TvShortcuts {
         val chapters: List<Long> = emptyList(),
         /** The channel being watched (Xtra5s: chat commands). */
         val channelLogin: String? = null,
+        /** The VOD being watched (Xtra5s: muted parts). */
+        val videoId: String? = null,
     )
 
     /** Keys whose ACTION_DOWN we consumed, so their ACTION_UP is consumed too. */
@@ -145,6 +147,11 @@ object TvShortcuts {
         // Long-press OK:
         //   live stream full-size (controls hidden): reload it, like Restart player
         //   no video, or the video minimized: refresh every section of the current screen
+        // Xtra5s: OK while the "Muted · Skip" button shows skips the muted part.
+        if (keyCode in okKeys && !scrubbing && event.repeatCount == 0 && MutedParts.onOk(activity, playerFragment)) {
+            consumed.add(keyCode)
+            return true
+        }
         if (keyCode in okKeys && !scrubbing) {
             if (event.repeatCount == 0) {
                 // Holding OK refreshes here, so stop the focused item's own long-press

@@ -245,6 +245,22 @@ class Xtra5sLogicTest {
         assertEquals("1h 30m", HoldSeek.label(5400))
     }
 
+    // ---- Muted parts (VODs) ----
+
+    @Test
+    fun mutedPartsMerged() {
+        // Twitch splits muted parts into 3-minute pieces: touching ones become one part.
+        val body = """{"data":{"video":{"muteInfo":{"mutedSegmentConnection":{"nodes":[
+            {"duration":180,"offset":360},{"duration":180,"offset":0},{"duration":180,"offset":180},
+            {"duration":182,"offset":2522},{"duration":180,"offset":3785}]}}}}}"""
+        val parts = MutedParts.parse(body)
+        assertEquals(listOf(0L until 540_000L, 2_522_000L until 2_704_000L, 3_785_000L until 3_965_000L), parts)
+        assertEquals(0L until 540_000L, MutedParts.partAt(parts, 200_000))
+        assertNull(MutedParts.partAt(parts, 600_000))
+        assertEquals(540_000L, MutedParts.partAt(parts, 539_999)!!.last + 1) // skip lands where the sound returns
+        assertTrue(MutedParts.parse("""{"data":{"video":{"muteInfo":null}}}""").isEmpty())
+    }
+
     // ---- Update check ----
 
     @Test

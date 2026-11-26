@@ -95,6 +95,9 @@
     <string name="xtra5_color_bot" translatable="false">Bot messages</string>
     <string name="xtra5_bot_accounts" translatable="false">Bot accounts</string>
     <string name="xtra5s_color_cheer" translatable="false">Cheers (bits)</string>
+    <string name="xtra5s_muted_parts" translatable="false">Muted parts (VODs)</string>
+    <string name="xtra5s_muted_skip_button" translatable="false">Show skip button</string>
+    <string name="xtra5s_muted_skip_button_summary" translatable="false">While a VOD plays a muted part, a button shows to skip to where the sound comes back (OK on a remote). Muted parts are always marked red on the seek bar.</string>
     <string name="xtra5s_cheer_min" translatable="false">Cheer color: minimum bits</string>
     <!-- Settings > Shortcuts: "# " = heading, "- " = shortcut, two dashes and a space = sub-point of the shortcut above, "Setting: " = related setting, other = note -->
     <string-array name="xtra5_shortcuts" translatable="false">
@@ -131,6 +134,7 @@
         <item># Video player (touch)</item>
         <item>- ! button (top right): the channel\'s chat-bot commands (Nightbot, StreamElements, Fossabot) and their replies, in a table you can scroll and search, with emotes shown as in chat. Tap a command: puts it in your message box (or copies it if chat isn\'t open). Long-press: copies the reply. Also in each Dual Stream video\'s controls.</item>
         <item>- Touch and hold the video (a short buzz), then slide left / right: changes the volume (half the video\'s width is 0 to 100%), with a volume bar while you slide. Same volume as the Volume button.</item>
+        <item>- VODs: muted parts are red on the seek bar. While one plays, tap \"Muted · Skip\" (bottom right) to jump to where the sound comes back. [TV] Press OK to skip (unless you\'re on one of the controls).</item>
         <item>- VODs: touch and hold the bottom strip of the video (a short buzz), then drag left / right: rewinds / fast-forwards: every step is the same short drag and the jumps grow as you go (2s, 5s, 10s ... 1m ... 20m ... hours); drag into the last ~200 pixels of the screen for the start / end. The video keeps playing; a two-sided pill shows the jump and the gold marker waits on the seek bar. Let go to jump; drag back to the start to cancel.</item>
         <item># Minimized video</item>
         <item>- Tap a paused mini player: resumes it.</item>

@@ -54,6 +54,7 @@ object UpstreamUpdates {
             FavoriteChannels.register(it) // Xtra5: "Favourites first" on Following > Channels
             TvNavigation.register(it) // Xtra5: remote navigation (banner collapse, card outline)
             ProgressOverlay.register(it) // Xtra5: chapter markers and persistent progress bar
+            MutedParts.register(it) // Xtra5s: muted parts of VODs (bands, skip button)
         }
         val prefs = activity.prefs()
         // Xtra5: don't pause when headphones / Bluetooth audio disconnect (see AudioGuard).

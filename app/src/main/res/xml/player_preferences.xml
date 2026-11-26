@@ -197,4 +197,19 @@
 
     </PreferenceCategory>
 
+    <!-- Xtra5s custom: muted parts of VODs -->
+    <PreferenceCategory
+        android:title="@string/xtra5s_muted_parts"
+        app:iconSpaceReserved="false">
+
+        <SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:key="xtra5s_muted_skip_button"
+            android:summary="@string/xtra5s_muted_skip_button_summary"
+            android:title="@string/xtra5s_muted_skip_button"
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false" />
+
+    </PreferenceCategory>
+
 </androidx.preference.PreferenceScreen>
