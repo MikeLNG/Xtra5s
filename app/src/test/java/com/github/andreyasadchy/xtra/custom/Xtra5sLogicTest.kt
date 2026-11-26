@@ -276,6 +276,18 @@ class Xtra5sLogicTest {
         assertEquals("2 minutes 10 seconds", DoubleTapSeek.total(130))
     }
 
+    // ---- Battery label position ----
+
+    @Test
+    fun batteryLabelSnaps() {
+        // 1000 px wide, label 100 px, 8 px from the edges, snapping within 14 px.
+        assertEquals(500f, BatteryMove.snap(510f, 100f, 1000f, 8f, 14f), 0.01f) // the middle
+        assertEquals(58f, BatteryMove.snap(65f, 100f, 1000f, 8f, 14f), 0.01f) // the left edge
+        assertEquals(58f, BatteryMove.snap(-200f, 100f, 1000f, 8f, 14f), 0.01f) // never off the video
+        assertEquals(942f, BatteryMove.snap(990f, 100f, 1000f, 8f, 14f), 0.01f) // the right edge
+        assertEquals(300f, BatteryMove.snap(300f, 100f, 1000f, 8f, 14f), 0.01f) // anywhere else: where the finger is
+    }
+
     // ---- Update check ----
 
     @Test

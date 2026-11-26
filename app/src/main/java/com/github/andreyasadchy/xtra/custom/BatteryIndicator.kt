@@ -158,6 +158,13 @@ object BatteryIndicator {
             marginEnd = dp(8)
         })
         val standalone = Standalone(text)
+        // Xtra5s: hold to move; its own saved spot (else the top-right corner).
+        fun placeSaved() {
+            if (text.background != null) return // being dragged
+            BatteryMove.saved(text, BatteryMove.PREF_DUAL_X, BatteryMove.PREF_DUAL_Y)?.let { BatteryMove.place(text, overlay, it) }
+        }
+        overlay.viewTreeObserver.addOnGlobalLayoutListener { placeSaved() }
+        BatteryMove.attachStandalone(text, overlay) { standalone.wake() }
         fun apply(intent: Intent) {
             val present = intent.getBooleanExtra(BatteryManager.EXTRA_PRESENT, true)
             val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
@@ -233,9 +240,11 @@ object BatteryIndicator {
             text.tag == true && player.isAdded &&
             player.xtra5PlayerState().isMaximized &&
             context.resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        // Xtra5s: a spot you dragged it to (else the default place beside the ⋮ menu).
+        val custom = BatteryMove.saved(text, BatteryMove.PREF_X, BatteryMove.PREF_Y)
         // Make room right of the ⋮ button (or give it back).
         val params = indicator.buttons.layoutParams as? ViewGroup.MarginLayoutParams
-        val wantedMargin = if (show) indicator.originalButtonsMarginEnd + text.width + (6 * context.resources.displayMetrics.density).toInt() else indicator.originalButtonsMarginEnd
+        val wantedMargin = if (show && custom == null) indicator.originalButtonsMarginEnd + text.width + (6 * context.resources.displayMetrics.density).toInt() else indicator.originalButtonsMarginEnd
         if (params != null && params.marginEnd != wantedMargin && (!show || text.width > 0)) {
             params.marginEnd = wantedMargin
             indicator.buttons.layoutParams = params
@@ -258,10 +267,18 @@ object BatteryIndicator {
         val density = context.resources.displayMetrics.density
         val rowTop = (indicator.buttons.layoutParams as? ViewGroup.MarginLayoutParams)?.topMargin ?: (5 * density).toInt()
         val rowHeight = if (indicator.buttons.height > 0) indicator.buttons.height else (40 * density).toInt()
-        if (text.height > 0) {
+        if (custom != null) {
+            // Being dragged: it follows the finger, not the saved spot.
+            if (text.background == null) BatteryMove.place(text, indicator.container, custom)
+        } else if (text.height > 0) {
             val top = (rowTop + (rowHeight - text.height) / 2).coerceAtLeast(0)
             (text.layoutParams as? FrameLayout.LayoutParams)?.let {
-                if (it.topMargin != top) {
+                val default = Gravity.TOP or Gravity.END
+                val end = (10 * density).toInt()
+                if (it.topMargin != top || it.gravity != default || it.marginEnd != end || it.leftMargin != 0) {
+                    it.gravity = default
+                    it.leftMargin = 0
+                    it.marginEnd = end
                     it.topMargin = top
                     text.layoutParams = it
                 }
@@ -275,7 +292,7 @@ object BatteryIndicator {
         val controls = indicator.controls
         val shown = if (controls.isVisible) controls.alpha.coerceIn(0f, 1f) else 0f
         val faded = indicator.fadedAlpha()
-        val alpha = faded + (1f - faded) * shown
+        val alpha = if (indicator.text.background != null) 1f else faded + (1f - faded) * shown // Xtra5s: full while being moved
         if (indicator.text.alpha != alpha) indicator.text.alpha = alpha
     }
 }

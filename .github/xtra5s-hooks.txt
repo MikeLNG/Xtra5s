@@ -31,6 +31,6 @@
 1 app/src/main/java/com/github/andreyasadchy/xtra/util/C.kt
 8 app/src/main/java/com/github/andreyasadchy/xtra/util/chat/ChatAdapterUtils.kt
 13 app/src/main/res/xml/chat_preferences.xml
-4 app/src/main/res/xml/player_preferences.xml
+5 app/src/main/res/xml/player_preferences.xml
 2 app/src/main/res/xml/root_preferences.xml
 5 app/src/main/res/xml/ui_preferences.xml

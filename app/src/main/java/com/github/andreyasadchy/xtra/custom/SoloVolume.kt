@@ -81,6 +81,7 @@ object SoloVolume {
      */
     fun onTouch(player: PlayerFragment, view: View, event: MotionEvent): Boolean {
         if (passing) return false
+        if (BatteryMove.onTouch(player, view, event)) return true // Xtra5s: hold the battery label to move it
         if (DoubleTapSeek.onTouch(player, view, event)) return true // Xtra5s: YouTube-style double-tap seek on VODs
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
@@ -176,7 +177,7 @@ object SoloVolume {
     }
 
     /** True when the finger is on one of the player's buttons or the seek bar (they keep their own holds). */
-    private fun overButton(player: PlayerFragment, event: MotionEvent): Boolean {
+    internal fun overButton(player: PlayerFragment, event: MotionEvent): Boolean {
         val root = player.view ?: return false
         val controls = root.findViewById<View>(R.id.playerControls) ?: return false
         if (!controls.isShown) return false

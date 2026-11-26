@@ -168,6 +168,13 @@
             app:showSeekBarValue="true"
             app:singleLineTitle="false" />
 
+        <com.github.andreyasadchy.xtra.custom.BatteryPositionResetPreference
+            android:dependency="xtra5_battery_show"
+            android:key="xtra5s_battery_reset_position"
+            android:title="@string/xtra5s_battery_reset_position"
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false" />
+
     </PreferenceCategory>
 
     <!-- Xtra5 custom: persistent progress bar -->

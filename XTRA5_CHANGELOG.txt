@@ -1,6 +1,20 @@
 Xtra5s changelog (newest first)
 
 ========================================
+Xtra5s 1.73.0 (2026-11-26)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+New
+- Move the battery percentage: touch and hold it for half a second (a buzz and a gold outline),
+  then drag it anywhere on the video. It snaps to the edges and the middle, stays inside the
+  video, and is saved relative to the video, so it's in the same spot on any screen. It still
+  fades with the controls and doesn't jump when they show or hide; once moved, the top-right
+  buttons go back to their normal place. A tap on it still shows / hides the controls, and a
+  drag that starts on it without the hold goes to the player as usual.
+  - Dual Stream's battery label can be moved the same way, with its own spot.
+  - Settings > Player > Battery percentage > Reset position puts both back in their default
+    places (beside the ⋮ menu; top-right in Dual Stream).
+========================================
 Xtra5s 1.72.0 (2026-11-26)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
