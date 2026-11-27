@@ -1,6 +1,20 @@
 Xtra5s changelog (newest first)
 
 ========================================
+Xtra5s 1.73.2 (2026-11-27)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+Fixed
+- The screen could turn 180 degrees despite rotation lock, e.g. after split screen when one side
+  was minimised and the other went back to full screen. The player's fullscreen button (and the
+  chapter list opening a VOD in fullscreen) asked Android for "landscape, following the motion
+  sensor", which ignores rotation lock; they now ask for landscape that respects it. With
+  rotation unlocked it still flips with the tablet.
+
+Behind the scenes
+- The release build retries (up to 3 times) when a download from the plugin / library servers
+  fails, instead of failing the release; real build errors still fail straight away.
+========================================
 Xtra5s 1.73.1 (2026-11-27)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 

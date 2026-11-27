@@ -1173,7 +1173,7 @@ abstract class PlayerFragment : BaseNetworkFragment(), RadioButtonDialogFragment
                         fullscreen.setImageResource(R.drawable.baseline_fullscreen_black_24)
                         fullscreen.setOnClickListener {
                             showController(force = true)
-                            requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+                            requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE // Xtra5s custom: respects rotation lock (was SENSOR_LANDSCAPE)
                         }
                     }
                     aspectRatio.visibility = View.GONE

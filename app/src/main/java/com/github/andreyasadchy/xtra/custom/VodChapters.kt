@@ -184,7 +184,7 @@ object VodChapters {
         if (activity.resources.configuration.orientation != Configuration.ORIENTATION_LANDSCAPE) {
             // Same as the player's fullscreen button.
             activity.window.decorView.postDelayed({
-                if (!activity.isFinishing) activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+                if (!activity.isFinishing) activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE // respects rotation lock
             }, 300L)
         }
     }

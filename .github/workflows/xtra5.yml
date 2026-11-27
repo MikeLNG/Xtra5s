@@ -101,10 +101,21 @@ jobs:
     - name: Build
       if: steps.merge.outputs.release == 'true'
       run: |
-        ./gradlew assembleRelease
+        # Retry when a download fails (plugin / Maven servers sometimes don't answer); a real
+        # build error fails straight away.
+        gradle_retry() {
+          for attempt in 1 2 3; do
+            if ./gradlew "$@" 2>&1 | tee gradle.log; test ${PIPESTATUS[0]} -eq 0; then return 0; fi
+            if ! grep -qE "Could not resolve|Could not GET|Could not HEAD|was not found in any of the following sources|Read timed out|Connection reset|status code 5[0-9][0-9]" gradle.log; then return 1; fi
+            echo "Download failed (attempt $attempt), retrying in 30s..."
+            sleep 30
+          done
+          return 1
+        }
+        gradle_retry assembleRelease
         cp app/build/outputs/apk/release/app-release.apk "Xtra5s-${{ steps.merge.outputs.version }}.apk"
-        # Xtra5s Companion: the same app under its own package (split-screen Dual Stream)
-        ./gradlew assembleRelease -Pxtra5sCompanion
+        # Xtra5s Companion: the same app under its own package
+        gradle_retry assembleRelease -Pxtra5sCompanion
         cp app/build/outputs/apk/release/app-release.apk "Xtra5s-Companion-${{ steps.merge.outputs.version }}.apk"
 
     # Xtra5s: the custom features' logic tests must pass before anything is pushed or published.

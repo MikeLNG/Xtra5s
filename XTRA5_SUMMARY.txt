@@ -1,4 +1,4 @@
-Xtra5s - feature list (version 1.73.1)
+Xtra5s - feature list (version 1.73.2)
 Everything official Xtra does, plus the features below.
 
 ========================================
