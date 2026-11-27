@@ -81,7 +81,6 @@ object SoloVolume {
      */
     fun onTouch(player: PlayerFragment, view: View, event: MotionEvent): Boolean {
         if (passing) return false
-        if (BatteryMove.onTouch(player, view, event)) return true // Xtra5s: hold the battery label to move it
         if (DoubleTapSeek.onTouch(player, view, event)) return true // Xtra5s: YouTube-style double-tap seek on VODs
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {

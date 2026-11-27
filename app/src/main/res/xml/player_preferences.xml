@@ -168,6 +168,17 @@
             app:showSeekBarValue="true"
             app:singleLineTitle="false" />
 
+        <ListPreference
+            android:defaultValue="0"
+            android:dependency="xtra5_battery_show"
+            android:entries="@array/xtra5s_battery_position_entries"
+            android:entryValues="@array/xtra5s_battery_position_values"
+            android:key="xtra5s_battery_row_position"
+            android:summary="%s"
+            android:title="@string/xtra5s_battery_position"
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false" />
+
     </PreferenceCategory>
 
     <!-- Xtra5 custom: persistent progress bar -->

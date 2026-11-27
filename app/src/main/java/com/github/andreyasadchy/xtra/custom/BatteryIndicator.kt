@@ -52,8 +52,6 @@ object BatteryIndicator {
         var controlsShownAt = 0L
         var lastControlsVisible = false
         val originalButtonsMarginEnd = (buttons.layoutParams as? ViewGroup.MarginLayoutParams)?.marginEnd ?: 0
-        /** Xtra5s: the label's left edge when it sits in the button row (last known). */
-        var rowLeft: Int? = null
         val fade = Runnable { text.animate().alpha(fadedAlpha()).setDuration(400L).start() }
 
         fun fadedAlpha() = text.context.prefs().getInt(PREF_FADED_OPACITY, 40).coerceIn(0, 100) / 100f
@@ -265,16 +263,20 @@ object BatteryIndicator {
         val rowTop = (indicator.buttons.layoutParams as? ViewGroup.MarginLayoutParams)?.topMargin ?: (5 * density).toInt()
         val rowHeight = if (indicator.buttons.height > 0) indicator.buttons.height else (40 * density).toInt()
         if (inRow) {
-            // Over its spacer in the row. While the controls are hidden the row isn't laid out:
-            // keep the last place, so it doesn't jump.
-            val spacer = (indicator.buttons as? ViewGroup)?.findViewWithTag<View>(BatteryMove.SPACER_TAG)
-            if (spacer != null && spacer.isShown && spacer.width > 0) {
-                val loc = IntArray(2).also { spacer.getLocationInWindow(it) }
-                val box = IntArray(2).also { indicator.container.getLocationInWindow(it) }
-                indicator.rowLeft = loc[0] - box[0] + (spacer.width - text.width) / 2
-            }
-            val left = indicator.rowLeft
-            if (left != null && text.height > 0) {
+            // Over its gap in the row, worked out from the row's layout (it hugs the right edge;
+            // buttons are measured or 40dp), so it's the same whether the controls show or not.
+            val row = indicator.buttons as? ViewGroup
+            if (row != null && text.width > 0 && text.height > 0 && indicator.container.width > 0) {
+                val gap = (6 * density).toInt()
+                val rowRight = indicator.container.width - indicator.originalButtonsMarginEnd
+                val buttons = BatteryMove.buttons(row)
+                val k = slot.coerceAtMost(buttons.size)
+                val widths = buttons.takeLast(k).map { b ->
+                    val lp = b.layoutParams as? ViewGroup.MarginLayoutParams
+                    val w = if (b.width > 0) b.width else lp?.width?.takeIf { it > 0 } ?: (40 * density).toInt()
+                    w + (lp?.leftMargin ?: 0) + (lp?.rightMargin ?: 0)
+                }
+                val left = BatteryMove.labelLeft(rowRight, widths, text.width + 2 * gap, text.width).coerceAtLeast(0)
                 val top = (rowTop + (rowHeight - text.height) / 2).coerceAtLeast(0)
                 (text.layoutParams as? FrameLayout.LayoutParams)?.let {
                     val start = Gravity.TOP or Gravity.START
@@ -337,7 +339,6 @@ object BatteryIndicator {
     private fun removeSpacer(indicator: Indicator) {
         val row = indicator.buttons as? ViewGroup ?: return
         row.findViewWithTag<View>(BatteryMove.SPACER_TAG)?.let { spacer -> row.post { (spacer.parent as? ViewGroup)?.removeView(spacer) } }
-        indicator.rowLeft = null
     }
 
     /** Opacity follows the controls' own fade, frame by frame: full while shown, faded when hidden. */

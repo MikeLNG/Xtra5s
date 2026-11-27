@@ -1,4 +1,4 @@
-Xtra5s - feature list (version 1.73.2)
+Xtra5s - feature list (version 1.73.3)
 Everything official Xtra does, plus the features below.
 
 ========================================
@@ -73,8 +73,8 @@ Watching
 - Muted parts of VODs are marked red on the seek bar, and a "Skip" button (or OK on a remote)
   jumps past the one you're in.
 - Settings button right in the player, and playback picks up where it left off when you return.
-- Battery percentage in fullscreen that fades out of the way; touch, hold and slide it to put it
-  wherever you like among the player buttons.
+- Battery percentage in fullscreen that fades out of the way; choose where it sits among the
+  player buttons.
 - Optional always-visible progress bar with times on VODs and clips, and chapter markers on
   the seek bar.
 - A Chapters button on every VOD: jump straight to any chapter in fullscreen.

@@ -1,6 +1,18 @@
 Xtra5s changelog (newest first)
 
 ========================================
+Xtra5s 1.73.3 (2026-11-27)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+Changed
+- The battery percentage's place in the top-right player buttons is now a setting instead of
+  hold-and-drag (letting go of the drag jumped it to the left): Settings > Player > Battery
+  percentage > Position in the button row - Far right (right of the ⋮ menu, the default),
+  1 to 6 buttons in, or far left of the row. The buttons make room for it. Counted from the
+  right, so it keeps its place when a button comes or goes. Its spot is now worked out from the
+  row's layout rather than measured on screen, so it stays put whether the controls show or not,
+  fading as before.
+========================================
 Xtra5s 1.73.2 (2026-11-27)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 

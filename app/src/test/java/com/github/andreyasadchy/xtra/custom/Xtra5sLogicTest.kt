@@ -279,12 +279,11 @@ class Xtra5sLogicTest {
     // ---- Battery label position ----
 
     @Test
-    fun batterySlotInRow() {
-        val centres = listOf(100f, 160f, 220f, 280f) // four buttons, left to right
-        assertEquals(0, BatteryMove.slotFor(300f, centres)) // right of them all: far right (default)
-        assertEquals(1, BatteryMove.slotFor(250f, centres)) // left of the last one (the ⋮ menu)
-        assertEquals(3, BatteryMove.slotFor(130f, centres))
-        assertEquals(4, BatteryMove.slotFor(20f, centres)) // far left of the row
+    fun batteryPlaceInRow() {
+        // Row's right edge at 1000, buttons 40 wide, label 50 wide in a 62 wide gap.
+        assertEquals(944, BatteryMove.labelLeft(1000, emptyList(), 62, 50)) // far right (no buttons to its right)
+        assertEquals(904, BatteryMove.labelLeft(1000, listOf(40), 62, 50)) // left of the ⋮ menu
+        assertEquals(824, BatteryMove.labelLeft(1000, listOf(40, 40, 40), 62, 50))
     }
 
     // ---- Update check ----
