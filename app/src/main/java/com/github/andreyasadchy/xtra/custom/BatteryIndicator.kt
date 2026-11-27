@@ -52,6 +52,8 @@ object BatteryIndicator {
         var controlsShownAt = 0L
         var lastControlsVisible = false
         val originalButtonsMarginEnd = (buttons.layoutParams as? ViewGroup.MarginLayoutParams)?.marginEnd ?: 0
+        /** Xtra5s: the label's left edge when it sits in the button row (last known). */
+        var rowLeft: Int? = null
         val fade = Runnable { text.animate().alpha(fadedAlpha()).setDuration(400L).start() }
 
         fun fadedAlpha() = text.context.prefs().getInt(PREF_FADED_OPACITY, 40).coerceIn(0, 100) / 100f
@@ -158,13 +160,6 @@ object BatteryIndicator {
             marginEnd = dp(8)
         })
         val standalone = Standalone(text)
-        // Xtra5s: hold to move; its own saved spot (else the top-right corner).
-        fun placeSaved() {
-            if (text.background != null) return // being dragged
-            BatteryMove.saved(text, BatteryMove.PREF_DUAL_X, BatteryMove.PREF_DUAL_Y)?.let { BatteryMove.place(text, overlay, it) }
-        }
-        overlay.viewTreeObserver.addOnGlobalLayoutListener { placeSaved() }
-        BatteryMove.attachStandalone(text, overlay) { standalone.wake() }
         fun apply(intent: Intent) {
             val present = intent.getBooleanExtra(BatteryManager.EXTRA_PRESENT, true)
             val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
@@ -240,11 +235,13 @@ object BatteryIndicator {
             text.tag == true && player.isAdded &&
             player.xtra5PlayerState().isMaximized &&
             context.resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
-        // Xtra5s: a spot you dragged it to (else the default place beside the ⋮ menu).
-        val custom = BatteryMove.saved(text, BatteryMove.PREF_X, BatteryMove.PREF_Y)
+        // Xtra5s: its place in the button row (buttons to its right; 0 = right of the ⋮ menu).
+        val slot = if (show) BatteryMove.slot(text) else 0
+        val inRow = slot > 0 && placeSpacer(indicator, slot)
+        if (!inRow) removeSpacer(indicator)
         // Make room right of the ⋮ button (or give it back).
         val params = indicator.buttons.layoutParams as? ViewGroup.MarginLayoutParams
-        val wantedMargin = if (show && custom == null) indicator.originalButtonsMarginEnd + text.width + (6 * context.resources.displayMetrics.density).toInt() else indicator.originalButtonsMarginEnd
+        val wantedMargin = if (show && !inRow) indicator.originalButtonsMarginEnd + text.width + (6 * context.resources.displayMetrics.density).toInt() else indicator.originalButtonsMarginEnd
         if (params != null && params.marginEnd != wantedMargin && (!show || text.width > 0)) {
             params.marginEnd = wantedMargin
             indicator.buttons.layoutParams = params
@@ -267,9 +264,29 @@ object BatteryIndicator {
         val density = context.resources.displayMetrics.density
         val rowTop = (indicator.buttons.layoutParams as? ViewGroup.MarginLayoutParams)?.topMargin ?: (5 * density).toInt()
         val rowHeight = if (indicator.buttons.height > 0) indicator.buttons.height else (40 * density).toInt()
-        if (custom != null) {
-            // Being dragged: it follows the finger, not the saved spot.
-            if (text.background == null) BatteryMove.place(text, indicator.container, custom)
+        if (inRow) {
+            // Over its spacer in the row. While the controls are hidden the row isn't laid out:
+            // keep the last place, so it doesn't jump.
+            val spacer = (indicator.buttons as? ViewGroup)?.findViewWithTag<View>(BatteryMove.SPACER_TAG)
+            if (spacer != null && spacer.isShown && spacer.width > 0) {
+                val loc = IntArray(2).also { spacer.getLocationInWindow(it) }
+                val box = IntArray(2).also { indicator.container.getLocationInWindow(it) }
+                indicator.rowLeft = loc[0] - box[0] + (spacer.width - text.width) / 2
+            }
+            val left = indicator.rowLeft
+            if (left != null && text.height > 0) {
+                val top = (rowTop + (rowHeight - text.height) / 2).coerceAtLeast(0)
+                (text.layoutParams as? FrameLayout.LayoutParams)?.let {
+                    val start = Gravity.TOP or Gravity.START
+                    if (it.topMargin != top || it.gravity != start || it.leftMargin != left || it.marginEnd != 0) {
+                        it.gravity = start
+                        it.leftMargin = left
+                        it.marginEnd = 0
+                        it.topMargin = top
+                        text.layoutParams = it
+                    }
+                }
+            }
         } else if (text.height > 0) {
             val top = (rowTop + (rowHeight - text.height) / 2).coerceAtLeast(0)
             (text.layoutParams as? FrameLayout.LayoutParams)?.let {
@@ -285,6 +302,42 @@ object BatteryIndicator {
             }
         }
         applyAlpha(indicator)
+    }
+
+    /**
+     * Xtra5s: a gap in the button row, [slot] buttons from the right, for the label to sit over.
+     * False if the row can't take one.
+     */
+    private fun placeSpacer(indicator: Indicator, slot: Int): Boolean {
+        val row = indicator.buttons as? ViewGroup ?: return false
+        val text = indicator.text
+        if (text.width == 0) return false
+        val gap = (6 * text.resources.displayMetrics.density).toInt()
+        val spacer = row.findViewWithTag<View>(BatteryMove.SPACER_TAG) ?: View(row.context).apply {
+            tag = BatteryMove.SPACER_TAG
+            isClickable = false
+            isFocusable = false
+            importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+        }
+        val buttons = BatteryMove.buttons(row)
+        val k = slot.coerceAtMost(buttons.size)
+        val anchor = if (k == 0) null else buttons[buttons.size - k] // the spacer goes just left of this
+        val currentIndex = row.indexOfChild(spacer)
+        var wanted = if (anchor == null) row.childCount else row.indexOfChild(anchor)
+        if (currentIndex in 0 until wanted) wanted-- // indices shift once the spacer is out
+        if (currentIndex != wanted) {
+            if (currentIndex >= 0) row.removeView(spacer)
+            row.addView(spacer, wanted.coerceIn(0, row.childCount), android.widget.LinearLayout.LayoutParams(text.width + 2 * gap, 1))
+        } else if (spacer.layoutParams.width != text.width + 2 * gap) {
+            spacer.layoutParams = spacer.layoutParams.apply { width = text.width + 2 * gap }
+        }
+        return true
+    }
+
+    private fun removeSpacer(indicator: Indicator) {
+        val row = indicator.buttons as? ViewGroup ?: return
+        row.findViewWithTag<View>(BatteryMove.SPACER_TAG)?.let { spacer -> row.post { (spacer.parent as? ViewGroup)?.removeView(spacer) } }
+        indicator.rowLeft = null
     }
 
     /** Opacity follows the controls' own fade, frame by frame: full while shown, faded when hidden. */

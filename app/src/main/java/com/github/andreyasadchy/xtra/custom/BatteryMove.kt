@@ -3,11 +3,11 @@ package com.github.andreyasadchy.xtra.custom
 import android.graphics.drawable.GradientDrawable
 import android.os.Handler
 import android.os.Looper
-import android.view.Gravity
 import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
+import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.core.content.edit
@@ -17,61 +17,32 @@ import com.github.andreyasadchy.xtra.util.prefs
 import kotlin.math.abs
 
 /**
- * Xtra5s custom: move the battery percentage by touching and holding it (half a second, a buzz
- * and a gold outline), then dragging; it snaps to the edges and centre lines and stays inside the
- * video. The spot is saved relative to the video (centre of the label, 0-1 across and down), so
- * it's the same on any screen. Settings > Player > Battery percentage > Reset position puts it
- * back beside the ⋮ menu. The player's label is handled from SoloVolume.onTouch (the video's
- * touch hook); Dual Stream's has its own spot and listens on the label itself.
+ * Xtra5s custom: rearrange the battery percentage within the player's top-right button row.
+ * Touch and hold it (half a second, a buzz and a gold outline), then slide it left / right: it
+ * slots in between the buttons as you pass them, and they move over to make room. Saved as how
+ * many buttons are to its right (0 = far right, right of the ⋮ menu, the default), so it keeps
+ * its place when a button comes or goes. Handled from SoloVolume.onTouch (the video's touch hook);
+ * BatteryIndicator does the placing.
  */
 object BatteryMove {
 
-    const val PREF_X = "xtra5s_battery_x"
-    const val PREF_Y = "xtra5s_battery_y"
-    const val PREF_DUAL_X = "xtra5s_battery_dual_x"
-    const val PREF_DUAL_Y = "xtra5s_battery_dual_y"
+    const val PREF_SLOT = "xtra5s_battery_slot"
     private const val HOLD_MS = 500L
-    private const val SNAP_DP = 14
-    private const val EDGE_DP = 8
     private const val GRAB_DP = 14
+    const val SPACER_TAG = "xtra5s_battery_spacer"
 
-    /** The saved spot (centre, 0-1), or null for the default place. */
-    fun saved(view: View, keyX: String, keyY: String): Pair<Float, Float>? {
-        val prefs = view.context.prefs()
-        val x = prefs.getFloat(keyX, -1f)
-        val y = prefs.getFloat(keyY, -1f)
-        return if (x in 0f..1f && y in 0f..1f) x to y else null
-    }
+    /** Buttons to the battery's right while it's being dragged (else null: the saved slot). */
+    var dragSlot: Int? = null
+        private set
 
-    /**
-     * The label's centre along one side ([total] pixels) for a finger at [centre]: kept inside
-     * (with an [edge] gap), and snapped to the edges or the middle when within [snap].
-     */
-    internal fun snap(centre: Float, size: Float, total: Float, edge: Float, snap: Float): Float {
-        val min = edge + size / 2
-        val max = total - edge - size / 2
-        if (max <= min) return total / 2
-        val c = centre.coerceIn(min, max)
-        return listOf(min, total / 2, max).firstOrNull { abs(c - it) <= snap } ?: c
-    }
+    fun slot(view: View): Int = dragSlot ?: view.context.prefs().getInt(PREF_SLOT, 0).coerceAtLeast(0)
 
-    /** Puts [text] with its centre at [pos] (0-1) inside [container]. */
-    fun place(text: TextView, container: View, pos: Pair<Float, Float>) {
-        if (text.width == 0 || container.width == 0) return
-        val left = (pos.first * container.width - text.width / 2f).toInt().coerceIn(0, (container.width - text.width).coerceAtLeast(0))
-        val top = (pos.second * container.height - text.height / 2f).toInt().coerceIn(0, (container.height - text.height).coerceAtLeast(0))
-        val params = text.layoutParams as? FrameLayout.LayoutParams ?: return
-        if (params.gravity != (Gravity.TOP or Gravity.START) || params.leftMargin != left || params.topMargin != top || params.marginEnd != 0) {
-            params.gravity = Gravity.TOP or Gravity.START
-            params.leftMargin = left
-            params.topMargin = top
-            params.marginEnd = 0
-            params.rightMargin = 0
-            text.layoutParams = params
-        }
-    }
+    /** The slot for a finger at [fingerX]: how many buttons (by their centres) are right of it. */
+    internal fun slotFor(fingerX: Float, centres: List<Float>): Int = centres.count { it > fingerX }
 
-    // ---- One move at a time ----
+    /** The row's buttons that show, left to right (not the battery's spacer). */
+    fun buttons(row: ViewGroup): List<View> =
+        (0 until row.childCount).map { row.getChildAt(it) }.filter { it.tag != SPACER_TAG && it.visibility == View.VISIBLE }
 
     private val handler = Handler(Looper.getMainLooper())
     private var pending: Runnable? = null
@@ -82,8 +53,9 @@ object BatteryMove {
     private var downY = 0f
     private var down: MotionEvent? = null
 
-    private fun start(text: TextView) {
+    private fun start(player: PlayerFragment, text: TextView) {
         moving = text
+        dragSlot = text.context.prefs().getInt(PREF_SLOT, 0).coerceAtLeast(0)
         text.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
         val dp = text.resources.displayMetrics.density
         text.background = GradientDrawable().apply {
@@ -92,25 +64,30 @@ object BatteryMove {
             setColor(0x33000000)
         }
         text.alpha = 1f
+        // The buttons must show to slot in between them.
+        player.xtra5PlayerState().showController()
     }
 
-    private fun follow(text: TextView, container: View, rawX: Float, rawY: Float) {
-        val dp = text.resources.displayMetrics.density
-        val loc = IntArray(2).also { container.getLocationOnScreen(it) }
-        val x = snap(rawX - loc[0], text.width.toFloat(), container.width.toFloat(), EDGE_DP * dp, SNAP_DP * dp)
-        val y = snap(rawY - loc[1], text.height.toFloat(), container.height.toFloat(), EDGE_DP * dp, SNAP_DP * dp)
-        place(text, container, x / container.width to y / container.height)
-    }
-
-    private fun finish(text: TextView, container: View, keyX: String, keyY: String) {
-        text.background = null
-        val params = text.layoutParams as? FrameLayout.LayoutParams
-        if (params != null && container.width > 0 && container.height > 0) {
-            val x = (params.leftMargin + text.width / 2f) / container.width
-            val y = (params.topMargin + text.height / 2f) / container.height
-            text.context.prefs().edit { putFloat(keyX, x.coerceIn(0f, 1f)); putFloat(keyY, y.coerceIn(0f, 1f)) }
+    private fun follow(player: PlayerFragment, text: TextView, rawX: Float) {
+        val row = player.view?.findViewById<ViewGroup>(R.id.topRightLayout) ?: return
+        if (!row.isShown) return
+        val centres = buttons(row).map { val loc = IntArray(2).also { l -> it.getLocationOnScreen(l) }; loc[0] + it.width / 2f }
+        val slot = slotFor(rawX, centres)
+        if (slot != dragSlot) {
+            dragSlot = slot
+            text.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+            row.requestLayout() // BatteryIndicator moves the spacer and the label
         }
+        player.xtra5PlayerState().showController() // keep the controls up while dragging
+    }
+
+    private fun finish(player: PlayerFragment, text: TextView) {
+        text.background = null
+        dragSlot?.let { slot -> text.context.prefs().edit { putInt(PREF_SLOT, slot) } }
+        dragSlot = null
         moving = null
+        player.xtra5PlayerState().showController() // the normal auto-hide again
+        player.view?.findViewById<View>(R.id.topRightLayout)?.requestLayout()
     }
 
     private fun clear() {
@@ -122,9 +99,9 @@ object BatteryMove {
     }
 
     /**
-     * The player's video touches, first: a hold on the battery label moves it. True when the
-     * touch is the label's (the player sees nothing of it). A tap on it shows / hides the
-     * controls as usual; a drag that starts on it before the hold goes to the player.
+     * The player's video touches, first: a hold on the battery label rearranges it. True when the
+     * touch is the label's (the player sees nothing of it). A tap on it shows / hides the controls
+     * as usual; a drag that starts on it before the hold goes to the player.
      */
     fun onTouch(player: PlayerFragment, view: View, event: MotionEvent): Boolean {
         if (passing) return false
@@ -143,16 +120,17 @@ object BatteryMove {
                 owning = true
                 downX = event.rawX; downY = event.rawY
                 down = MotionEvent.obtain(event)
-                pending = Runnable { pending = null; start(text) }.also { handler.postDelayed(it, HOLD_MS) }
+                pending = Runnable { pending = null; start(player, text) }.also { handler.postDelayed(it, HOLD_MS) }
                 return true
             }
             MotionEvent.ACTION_MOVE -> {
-                if (moving === text) { follow(text, container, event.rawX, event.rawY); return true }
+                if (moving === text) { follow(player, text, event.rawX); return true }
                 if (!owning) return false
                 val slop = ViewConfiguration.get(view.context).scaledTouchSlop
                 if (abs(event.rawX - downX) > slop || abs(event.rawY - downY) > slop) {
                     // Not a hold: hand the gesture to the player as it happened.
                     val first = down
+                    down = null
                     clear()
                     passing = true
                     try {
@@ -162,12 +140,11 @@ object BatteryMove {
                         passing = false
                         first?.recycle()
                     }
-                    return true
                 }
                 return true
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                if (moving === text) { finish(text, container, PREF_X, PREF_Y); clear(); return true }
+                if (moving === text) { finish(player, text); clear(); return true }
                 if (!owning) return false
                 clear()
                 if (event.actionMasked == MotionEvent.ACTION_UP) {
@@ -180,59 +157,5 @@ object BatteryMove {
             }
             else -> return owning || moving === text
         }
-    }
-
-    /** Dual Stream: the label listens itself (it sits above both videos). */
-    fun attachStandalone(text: TextView, container: View, onMoved: () -> Unit) {
-        text.setOnTouchListener { _, event ->
-            when (event.actionMasked) {
-                MotionEvent.ACTION_DOWN -> {
-                    clear()
-                    downX = event.rawX; downY = event.rawY
-                    pending = Runnable { pending = null; start(text) }.also { handler.postDelayed(it, HOLD_MS) }
-                    true
-                }
-                MotionEvent.ACTION_MOVE -> {
-                    if (moving === text) follow(text, container, event.rawX, event.rawY)
-                    else {
-                        val slop = ViewConfiguration.get(text.context).scaledTouchSlop
-                        if (abs(event.rawX - downX) > slop || abs(event.rawY - downY) > slop) clear()
-                    }
-                    true
-                }
-                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                    if (moving === text) { finish(text, container, PREF_DUAL_X, PREF_DUAL_Y); onMoved() }
-                    clear()
-                    true
-                }
-                else -> true
-            }
-        }
-    }
-}
-
-/** Settings > Player > Battery percentage > Reset position. */
-@androidx.annotation.Keep
-class BatteryPositionResetPreference @JvmOverloads constructor(context: android.content.Context, attrs: android.util.AttributeSet? = null) :
-    androidx.preference.Preference(context, attrs) {
-
-    override fun onAttached() {
-        super.onAttached()
-        update()
-    }
-
-    override fun onClick() {
-        context.prefs().edit {
-            remove(BatteryMove.PREF_X); remove(BatteryMove.PREF_Y); remove(BatteryMove.PREF_DUAL_X); remove(BatteryMove.PREF_DUAL_Y)
-        }
-        android.widget.Toast.makeText(context, "Battery percentage back beside the ⋮ menu", android.widget.Toast.LENGTH_SHORT).show()
-        update()
-    }
-
-    private fun update() {
-        val prefs = context.prefs()
-        val moved = prefs.contains(BatteryMove.PREF_X) || prefs.contains(BatteryMove.PREF_DUAL_X)
-        summary = if (moved) "Moved. Tap to put it back beside the ⋮ menu (hold the label in the player to move it)" else
-            "Default place, beside the ⋮ menu. Hold the label in the player to move it"
     }
 }

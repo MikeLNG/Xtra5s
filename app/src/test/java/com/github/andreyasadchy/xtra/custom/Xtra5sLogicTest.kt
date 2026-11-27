@@ -279,13 +279,12 @@ class Xtra5sLogicTest {
     // ---- Battery label position ----
 
     @Test
-    fun batteryLabelSnaps() {
-        // 1000 px wide, label 100 px, 8 px from the edges, snapping within 14 px.
-        assertEquals(500f, BatteryMove.snap(510f, 100f, 1000f, 8f, 14f), 0.01f) // the middle
-        assertEquals(58f, BatteryMove.snap(65f, 100f, 1000f, 8f, 14f), 0.01f) // the left edge
-        assertEquals(58f, BatteryMove.snap(-200f, 100f, 1000f, 8f, 14f), 0.01f) // never off the video
-        assertEquals(942f, BatteryMove.snap(990f, 100f, 1000f, 8f, 14f), 0.01f) // the right edge
-        assertEquals(300f, BatteryMove.snap(300f, 100f, 1000f, 8f, 14f), 0.01f) // anywhere else: where the finger is
+    fun batterySlotInRow() {
+        val centres = listOf(100f, 160f, 220f, 280f) // four buttons, left to right
+        assertEquals(0, BatteryMove.slotFor(300f, centres)) // right of them all: far right (default)
+        assertEquals(1, BatteryMove.slotFor(250f, centres)) // left of the last one (the ⋮ menu)
+        assertEquals(3, BatteryMove.slotFor(130f, centres))
+        assertEquals(4, BatteryMove.slotFor(20f, centres)) // far left of the row
     }
 
     // ---- Update check ----

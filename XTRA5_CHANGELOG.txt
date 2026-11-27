@@ -1,6 +1,20 @@
 Xtra5s changelog (newest first)
 
 ========================================
+Xtra5s 1.73.1 (2026-11-27)
+Based on official Xtra 0ab697d (Xtra 2.60.10)
+
+Changed
+- Moving the battery percentage now rearranges it within the top-right player buttons instead
+  of anywhere on the video (which jumped to the left edge as soon as you held it): touch and
+  hold it (a buzz and a gold outline), then slide it left / right and it slots in between the
+  buttons as you pass them, the buttons moving over to make room (a tick at each). Let go to
+  keep it there; it's saved as how many buttons are to its right, so it keeps its place when a
+  button comes or goes. Slide it back past the ⋮ menu for its normal place. It still stays in
+  the same spot when the controls hide, fading as before.
+- Dual Stream's battery label is back in its fixed top-right corner, and the Reset position
+  setting is gone (sliding it back to the far right does the same).
+========================================
 Xtra5s 1.73.0 (2026-11-26)
 Based on official Xtra 0ab697d (Xtra 2.60.10)
 
